@@ -16,6 +16,7 @@ import {
   Bitcoin,
   Wallet,
 } from "lucide-react";
+import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 
 const Checkout = () => {
   const navigate = useNavigate();
