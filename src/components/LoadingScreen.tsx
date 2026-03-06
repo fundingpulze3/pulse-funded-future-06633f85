@@ -38,14 +38,18 @@ const LoadingScreen = ({ onComplete, duration = 2200 }: LoadingScreenProps) => {
             animate={{ opacity: 0.8, scale: 1 }}
             transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
           />
-          <motion.img
-            src={logoFull}
-            alt="Funding Pulze"
-            className="w-32 sm:w-44 relative z-10"
+          <motion.div
+            className="relative z-10 w-32 h-32 sm:w-44 sm:h-44 rounded-full overflow-hidden flex items-center justify-center bg-foreground/5 backdrop-blur-sm border border-border/30"
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-          />
+          >
+            <img
+              src={logoFull}
+              alt="Funding Pulze"
+              className="w-3/4 h-3/4 object-contain"
+            />
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
