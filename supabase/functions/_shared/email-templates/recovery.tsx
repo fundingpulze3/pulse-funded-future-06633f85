@@ -9,7 +9,9 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -18,26 +20,29 @@ interface RecoveryEmailProps {
   confirmationUrl: string
 }
 
+const logoUrl = 'https://rpshiyvndmnogbhbgmfm.supabase.co/storage/v1/object/public/email-assets/logo.png'
+
 export const RecoveryEmail = ({
-  siteName,
+  siteName = 'Funding Pulze',
   confirmationUrl,
 }: RecoveryEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Reset your password for {siteName}</Preview>
+    <Preview>Reset your Funding Pulze password</Preview>
     <Body style={main}>
       <Container style={container}>
+        <Section style={logoSection}>
+          <Img src={logoUrl} width="48" height="48" alt="Funding Pulze" style={logoStyle} />
+        </Section>
         <Heading style={h1}>Reset your password</Heading>
         <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          We received a request to reset your password. Click the button below to choose a new one.
         </Text>
         <Button style={button} href={confirmationUrl}>
           Reset Password
         </Button>
         <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+          If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
         </Text>
       </Container>
     </Body>
@@ -46,26 +51,30 @@ export const RecoveryEmail = ({
 
 export default RecoveryEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Space Grotesk', Arial, sans-serif" }
+const container = { padding: '40px 32px', maxWidth: '480px', margin: '0 auto' }
+const logoSection = { marginBottom: '24px' }
+const logoStyle = { borderRadius: '12px' }
 const h1 = {
-  fontSize: '22px',
+  fontSize: '24px',
   fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
+  color: '#0d0d0d',
+  margin: '0 0 16px',
+  fontFamily: "'Space Grotesk', Arial, sans-serif",
 }
 const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+  fontSize: '15px',
+  color: '#666666',
+  lineHeight: '1.6',
+  margin: '0 0 28px',
 }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#0d0d0d',
   color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontSize: '15px',
+  fontWeight: '600' as const,
+  borderRadius: '12px',
+  padding: '14px 28px',
   textDecoration: 'none',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const footer = { fontSize: '12px', color: '#999999', margin: '32px 0 0', lineHeight: '1.5' }
