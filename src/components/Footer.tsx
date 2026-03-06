@@ -1,6 +1,10 @@
 const footerLinks = {
   Company: ["About", "Careers"],
-  Resources: ["FAQ", "Blog"],
+  Resources: [
+    { label: "FAQ", href: "/faq" },
+    { label: "Help Center", href: "https://help.fundingpulze.com", external: true },
+    { label: "Blog", href: "#" },
+  ],
   Legal: ["Terms", "Privacy Policy"],
 };
 
@@ -22,13 +26,29 @@ const Footer = () => {
             <div key={title}>
               <h4 className="font-semibold text-foreground text-sm mb-4">{title}</h4>
               <ul className="space-y-2.5">
-                {links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300">
-                      {link}
-                    </a>
-                  </li>
-                ))}
+                {links.map((link) => {
+                  if (typeof link === "string") {
+                    return (
+                      <li key={link}>
+                        <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300">
+                          {link}
+                        </a>
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={link.label}>
+                      <a
+                        href={link.href}
+                        target={link.external ? "_blank" : undefined}
+                        rel={link.external ? "noopener noreferrer" : undefined}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300"
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

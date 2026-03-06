@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,13 +17,6 @@ import {
   Wallet,
 } from "lucide-react";
 
-interface ChallengeInfo {
-  stepType: string;
-  accountSize: string;
-  price: number;
-  swapFree: boolean;
-}
-
 const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -33,7 +26,6 @@ const Checkout = () => {
   const accountSize = searchParams.get("size") || "$50K";
   const basePrice = Number(searchParams.get("price") || "289");
 
-  const [swapFree, setSwapFree] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState<{
     code: string;
@@ -44,9 +36,7 @@ const Checkout = () => {
   const [selectedGateway, setSelectedGateway] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  const swapFeePercent = 0.1;
-  const swapFee = swapFree ? Math.round(basePrice * swapFeePercent) : 0;
-  const subtotal = basePrice + swapFee;
+  const subtotal = basePrice;
 
   let discount = 0;
   if (couponApplied) {
@@ -112,10 +102,7 @@ const Checkout = () => {
     }
 
     setProcessing(true);
-
-    // Simulate payment processing
     await new Promise((r) => setTimeout(r, 2000));
-
     toast.success("Order placed! You'll receive confirmation shortly.");
     setProcessing(false);
     navigate("/");
@@ -176,39 +163,6 @@ const Checkout = () => {
                 <div className="text-right">
                   <p className="font-display text-3xl font-bold">${basePrice}</p>
                 </div>
-              </div>
-
-              {/* Swap Free Toggle */}
-              <div className="mt-4 pt-4 border-t border-border/50">
-                <label className="flex items-center justify-between cursor-pointer group">
-                  <div>
-                    <p className="text-sm font-medium">Swap Free Add-on</p>
-                    <p className="text-xs text-muted-foreground">
-                      No overnight swap fees (+10%)
-                    </p>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={swapFree}
-                      onChange={(e) => setSwapFree(e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`w-11 h-6 rounded-full transition-colors ${
-                        swapFree
-                          ? "bg-primary"
-                          : "bg-muted"
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform mt-0.5 ${
-                          swapFree ? "translate-x-[22px]" : "translate-x-0.5"
-                        }`}
-                      />
-                    </div>
-                  </div>
-                </label>
               </div>
             </div>
 
@@ -317,18 +271,9 @@ const Checkout = () => {
                   <span className="font-medium">${basePrice}</span>
                 </div>
 
-                {swapFree && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Swap Free (+10%)</span>
-                    <span className="font-medium">+${swapFee}</span>
-                  </div>
-                )}
-
                 {couponApplied && (
                   <div className="flex justify-between text-primary">
-                    <span>
-                      Coupon ({couponApplied.code})
-                    </span>
+                    <span>Coupon ({couponApplied.code})</span>
                     <span className="font-medium">-${discount}</span>
                   </div>
                 )}
@@ -363,8 +308,8 @@ const Checkout = () => {
               </div>
 
               {/* Trust badges */}
-              <div className="mt-6 pt-4 border-t border-border/50 grid grid-cols-3 gap-3">
-                {["Instant Access", "Swap Free Option", "24/7 Support"].map((badge) => (
+              <div className="mt-6 pt-4 border-t border-border/50 grid grid-cols-2 gap-3">
+                {["Instant Access", "24/7 Support"].map((badge) => (
                   <div key={badge} className="text-center">
                     <Check size={14} className="text-primary mx-auto mb-1" />
                     <p className="text-[10px] text-muted-foreground leading-tight">{badge}</p>
