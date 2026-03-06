@@ -105,6 +105,26 @@ const Checkout = () => {
 
     setProcessing(true);
     await new Promise((r) => setTimeout(r, 2000));
+
+    // Send purchase confirmation email
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session?.access_token) {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            type: "purchase_confirmation",
+            data: {
+              challengeName: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge`,
+              accountSize,
+              amountPaid: `$${total}`,
+            },
+          },
+        });
+      }
+    } catch (emailErr) {
+      console.error("Failed to send confirmation email:", emailErr);
+    }
+
     toast.success("Order placed! You'll receive confirmation shortly.");
     setProcessing(false);
     navigate("/");
