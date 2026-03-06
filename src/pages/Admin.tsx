@@ -153,10 +153,18 @@ const Admin = () => {
   // Recent sales
   const recentSales = useMemo(() => purchases.slice(0, 8), [purchases]);
 
+  // Filter out Lovable preview visits
+  const filteredVisits = useMemo(() =>
+    pageVisits.filter((v: any) =>
+      !v.page_url?.includes("lovable") &&
+      !v.page_url?.includes("__lovable") &&
+      !v.referrer?.includes("lovable")
+    ), [pageVisits]);
+
   // UTM analytics
   const utmSourceStats = useMemo(() => {
     const sources: Record<string, { visits: number; signups: number }> = {};
-    pageVisits.forEach((v) => {
+    filteredVisits.forEach((v) => {
       const src = v.utm_source || "(direct)";
       if (!sources[src]) sources[src] = { visits: 0, signups: 0 };
       sources[src].visits++;
@@ -169,11 +177,11 @@ const Admin = () => {
     return Object.entries(sources)
       .map(([source, data]) => ({ source, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
       .sort((a, b) => b.visits - a.visits);
-  }, [pageVisits, profiles]);
+  }, [filteredVisits, profiles]);
 
   const utmCampaignStats = useMemo(() => {
     const campaigns: Record<string, { visits: number; signups: number }> = {};
-    pageVisits.filter(v => v.utm_campaign).forEach((v) => {
+    filteredVisits.filter(v => v.utm_campaign).forEach((v) => {
       const c = v.utm_campaign!;
       if (!campaigns[c]) campaigns[c] = { visits: 0, signups: 0 };
       campaigns[c].visits++;
@@ -186,11 +194,11 @@ const Admin = () => {
     return Object.entries(campaigns)
       .map(([campaign, data]) => ({ campaign, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
       .sort((a, b) => b.visits - a.visits);
-  }, [pageVisits, profiles]);
+  }, [filteredVisits, profiles]);
 
   const utmMediumStats = useMemo(() => {
     const mediums: Record<string, { visits: number; signups: number }> = {};
-    pageVisits.filter(v => v.utm_medium).forEach((v) => {
+    filteredVisits.filter(v => v.utm_medium).forEach((v) => {
       const m = v.utm_medium!;
       if (!mediums[m]) mediums[m] = { visits: 0, signups: 0 };
       mediums[m].visits++;
@@ -203,7 +211,7 @@ const Admin = () => {
     return Object.entries(mediums)
       .map(([medium, data]) => ({ medium, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
       .sort((a, b) => b.visits - a.visits);
-  }, [pageVisits, profiles]);
+  }, [filteredVisits, profiles]);
 
   // ---- Challenge CRUD ----
   const openCreateChallenge = () => { setChallengeForm(emptyChallengeForm); setEditingChallengeId(null); setChallengeDialogOpen(true); };
