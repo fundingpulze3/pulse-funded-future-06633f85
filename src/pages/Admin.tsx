@@ -665,15 +665,15 @@ const Admin = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
                   <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">Total Page Visits</span>
-                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{pageVisits.length.toLocaleString()}</p>
+                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{filteredVisits.length.toLocaleString()}</p>
                 </div>
                 <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
                   <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">UTM-Tagged Visits</span>
-                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{pageVisits.filter(v => v.utm_source).length.toLocaleString()}</p>
+                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{filteredVisits.filter(v => v.utm_source).length.toLocaleString()}</p>
                 </div>
                 <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
                   <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">Unique Sources</span>
-                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{new Set(pageVisits.filter(v => v.utm_source).map(v => v.utm_source)).size}</p>
+                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{new Set(filteredVisits.filter(v => v.utm_source).map(v => v.utm_source)).size}</p>
                 </div>
               </div>
 
@@ -779,7 +779,7 @@ const Admin = () => {
                       <th className="text-left px-5 py-3 font-medium">Referrer</th>
                     </tr></thead>
                     <tbody className="divide-y divide-[hsl(0,0%,95%)]">
-                      {pageVisits.slice(0, 50).map((v: any) => (
+                      {filteredVisits.slice(0, 50).map((v: any) => (
                         <tr key={v.id} className="hover:bg-[hsl(0,0%,98%)] transition-colors">
                           <td className="px-5 py-3 text-[hsl(0,0%,40%)] whitespace-nowrap">{new Date(v.created_at).toLocaleString()}</td>
                           <td className="px-5 py-3 font-mono text-xs text-[hsl(0,0%,30%)]">{v.page_url}</td>
@@ -789,7 +789,7 @@ const Admin = () => {
                           <td className="px-5 py-3 text-[hsl(0,0%,40%)] text-xs max-w-[200px] truncate">{v.referrer || "—"}</td>
                         </tr>
                       ))}
-                      {pageVisits.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No visits recorded yet.</td></tr>}
+                      {filteredVisits.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No visits recorded yet.</td></tr>}
                     </tbody>
                   </table>
                 </div>
