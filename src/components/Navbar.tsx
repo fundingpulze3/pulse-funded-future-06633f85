@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Moon, Sun, User } from "lucide-react";
+import { Moon, Sun, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface NavbarProps {
   isDark: boolean;
@@ -10,11 +12,11 @@ interface NavbarProps {
 const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -29,11 +31,10 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
     loadGsap();
   }, []);
 
-  const navItems = [
-    { label: "Home", href: "#home" },
-    { label: "FAQ", href: "#faq" },
-    { label: "Affiliate Dashboard", href: "#affiliate" },
-  ];
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <nav
@@ -43,20 +44,20 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
       }`}
     >
       <div className="flex items-center justify-between">
-        <a href="#home" className="font-display text-xl font-bold text-foreground tracking-tight">
+        <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="font-display text-xl font-bold text-foreground tracking-tight">
           Funding<span className="text-gradient"> Pulze</span>
         </a>
 
         <div className="hidden md:flex items-center gap-8">
-          {navItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
-            >
-              {item.label}
-            </a>
-          ))}
+          <a href="/#home" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300">Home</a>
+          <a href="/#rules" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300">Challenges</a>
+          <a
+            href="/affiliate"
+            onClick={(e) => { e.preventDefault(); navigate("/affiliate"); }}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
+          >
+            Affiliate Dashboard
+          </a>
         </div>
 
         <div className="flex items-center gap-3">
@@ -67,9 +68,21 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
           >
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <Button size="sm" className="rounded-xl font-medium">
-            Login
-          </Button>
+
+          {user ? (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <User size={16} className="text-primary-foreground" />
+              </div>
+              <button onClick={handleSignOut} className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors" title="Sign out">
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : (
+            <Button size="sm" className="rounded-xl font-medium" onClick={() => navigate("/auth")}>
+              Login
+            </Button>
+          )}
         </div>
       </div>
     </nav>
