@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Moon, Sun, User, LogOut, Shield, HelpCircle } from "lucide-react";
+import { Moon, Sun, User, LogOut, Shield } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,14 +68,6 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
           >
             Affiliate Dashboard
-          </a>
-          <a
-            href="https://help.fundingpulze.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300 flex items-center gap-1"
-          >
-            <HelpCircle size={14} /> Help Center
           </a>
           {isAdmin && (
             <a
