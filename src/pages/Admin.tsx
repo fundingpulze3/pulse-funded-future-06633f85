@@ -831,6 +831,11 @@ const Admin = () => {
               </div>
             </div>
           )}
+
+          {/* ===== Help Center Tab ===== */}
+          {tab === "helpcenter" && (
+            <HelpCenterCMS />
+          )}
         </div>
       </div>
 
