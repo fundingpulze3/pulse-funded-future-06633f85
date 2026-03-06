@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type StepType = "one" | "two";
 type AccountSize = "$5K" | "$10K" | "$25K" | "$50K" | "$100K";
@@ -24,6 +25,14 @@ const rulesData: Record<StepType, { student: Record<string, string>; practitione
   },
 };
 
+const ruleTooltips: Record<string, string> = {
+  "Profit Target": "The minimum profit you must reach to pass this evaluation phase. Calculated as a percentage of your account balance.",
+  "Maximum Loss": "The maximum total drawdown allowed on your account from the initial balance. Breaching this results in account termination.",
+  "Maximum Daily Loss": "The maximum loss you can incur in a single trading day. Resets at midnight server time (UTC).",
+  "Minimum Trading Days": "The minimum number of days you must actively trade before you can pass the evaluation phase.",
+  "Leverage": "The maximum leverage available for your trading account across all instruments.",
+};
+
 const rewardCycles = ["Weekly 60%", "Bi-weekly 80%", "On Demand 90%", "Monthly 100%"];
 const accountSizes: AccountSize[] = ["$5K", "$10K", "$25K", "$50K", "$100K"];
 const ruleLabels = ["Profit Target", "Maximum Loss", "Maximum Daily Loss", "Minimum Trading Days", "Leverage"];
@@ -42,11 +51,12 @@ const Shop = () => {
       gsap.registerPlugin(ScrollTrigger);
       const el = sectionRef.current;
       if (!el) return;
+
       gsap.fromTo(el.querySelector(".section-header"), { y: 40, opacity: 0 }, {
-        y: 0, opacity: 1, duration: 0.7, scrollTrigger: { trigger: el, start: "top 80%" },
+        y: 0, opacity: 1, duration: 0.7, scrollTrigger: { trigger: el, start: "top 80%", once: true },
       });
       gsap.fromTo(el.querySelector(".shop-card"), { y: 50, opacity: 0 }, {
-        y: 0, opacity: 1, duration: 0.8, scrollTrigger: { trigger: el, start: "top 70%" },
+        y: 0, opacity: 1, duration: 0.8, scrollTrigger: { trigger: el, start: "top 70%", once: true },
       });
     };
     loadGsap();
@@ -69,14 +79,14 @@ const Shop = () => {
   return (
     <section ref={sectionRef} id="rules" className="py-24 px-6">
       <div className="max-w-5xl mx-auto">
-        <div className="section-header text-center mb-14">
+        <div className="section-header text-center mb-14 opacity-0">
           <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
             Start Your <span className="text-gradient">Challenge</span>
           </h2>
           <p className="text-muted-foreground text-lg">Choose your path and account size.</p>
         </div>
 
-        <div className="shop-card glass-card p-6 sm:p-10">
+        <div className="shop-card glass-card p-6 sm:p-10 opacity-0">
           {/* Step & Account Selectors */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <div className="inline-flex surface-elevated rounded-full p-1 glow-border">
@@ -149,7 +159,16 @@ const Shop = () => {
               <div key={label} className="rule-row grid grid-cols-4 gap-4 py-4 items-center">
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   {label}
-                  <Info size={13} className="text-muted-foreground/50" />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+                        <Info size={13} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[240px] text-xs">
+                      {ruleTooltips[label]}
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
                 <p className="text-center text-sm font-medium text-foreground">{rules.student[label]}</p>
                 <p className="text-center text-sm font-medium text-foreground">{rules.practitioner[label]}</p>
@@ -168,7 +187,6 @@ const Shop = () => {
               <div>
                 <span className="text-sm text-muted-foreground">Price: </span>
                 <span className="font-display text-4xl font-bold text-foreground">{price}</span>
-                <p className="text-xs text-muted-foreground mt-1">Add-on available: <span className="font-medium text-foreground">Swap Free</span> (+10%)</p>
               </div>
             </div>
             <Button

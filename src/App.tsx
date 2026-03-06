@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
 import Admin from "./pages/Admin";
 import Checkout from "./pages/Checkout";
+import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/affiliate" element={<AffiliateDashboard />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
