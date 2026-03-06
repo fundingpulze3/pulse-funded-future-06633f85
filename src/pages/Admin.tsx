@@ -269,6 +269,23 @@ const Admin = () => {
       .sort((a, b) => b.visits - a.visits);
   }, [pageVisits, profiles]);
 
+  const utmMediumStats = useMemo(() => {
+    const mediums: Record<string, { visits: number; signups: number }> = {};
+    pageVisits.filter(v => v.utm_medium).forEach((v) => {
+      const m = v.utm_medium!;
+      if (!mediums[m]) mediums[m] = { visits: 0, signups: 0 };
+      mediums[m].visits++;
+    });
+    profiles.filter((p: any) => p.utm_medium).forEach((p: any) => {
+      const m = p.utm_medium;
+      if (!mediums[m]) mediums[m] = { visits: 0, signups: 0 };
+      mediums[m].signups++;
+    });
+    return Object.entries(mediums)
+      .map(([medium, data]) => ({ medium, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
+      .sort((a, b) => b.visits - a.visits);
+  }, [pageVisits, profiles]);
+
   const sidebarItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
     { id: "users", label: "Users", icon: <Users size={18} /> },
@@ -709,7 +726,35 @@ const Admin = () => {
                 </table>
               </div>
 
-              {/* Recent visits */}
+              {/* By Medium */}
+              <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)] flex items-center gap-2">
+                  <BarChart3 size={18} className="text-[hsl(0,0%,40%)]" />
+                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Medium</h3>
+                </div>
+                <table className="w-full text-sm">
+                  <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
+                    <th className="text-left px-5 py-3 font-medium">Medium</th>
+                    <th className="text-left px-5 py-3 font-medium">Visits</th>
+                    <th className="text-left px-5 py-3 font-medium">Signups</th>
+                    <th className="text-left px-5 py-3 font-medium">Conv. Rate</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-[hsl(0,0%,95%)]">
+                    {utmMediumStats.map((row) => (
+                      <tr key={row.medium} className="hover:bg-[hsl(0,0%,98%)] transition-colors">
+                        <td className="px-5 py-3 font-medium text-[hsl(0,0%,10%)]">{row.medium}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.visits}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.signups}</td>
+                        <td className="px-5 py-3">
+                          <span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {utmMediumStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No medium data yet.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+
               <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
                 <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)]">
                   <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Recent Visits</h3>
