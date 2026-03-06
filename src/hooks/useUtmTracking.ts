@@ -91,6 +91,16 @@ export function hasUtmData(utm: UtmData): boolean {
 /** Hook: capture UTM on mount, log page visit */
 export function useUtmTracking() {
   useEffect(() => {
+    // Skip tracking for Lovable preview/editor
+    const fullUrl = window.location.href;
+    if (
+      fullUrl.includes("lovable") ||
+      fullUrl.includes("__lovable") ||
+      document.referrer.includes("lovable")
+    ) {
+      return;
+    }
+
     const utm = captureUtmParams();
     const sessionId = getSessionId();
 
@@ -99,7 +109,7 @@ export function useUtmTracking() {
       .from("page_visits")
       .insert({
         session_id: sessionId,
-        page_url: window.location.pathname + window.location.search,
+        page_url: window.location.pathname,
         referrer: document.referrer || null,
         utm_source: utm.utm_source,
         utm_medium: utm.utm_medium,
