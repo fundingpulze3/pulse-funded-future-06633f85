@@ -63,6 +63,11 @@ export type Database = {
           swap_free: boolean
           updated_at: string
           user_id: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
           amount_paid: number
@@ -74,6 +79,11 @@ export type Database = {
           swap_free?: boolean
           updated_at?: string
           user_id: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
           amount_paid?: number
@@ -85,6 +95,11 @@ export type Database = {
           swap_free?: boolean
           updated_at?: string
           user_id?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: [
           {
@@ -177,6 +192,48 @@ export type Database = {
         }
         Relationships: []
       }
+      page_visits: {
+        Row: {
+          created_at: string
+          id: string
+          page_url: string
+          referrer: string | null
+          session_id: string
+          user_id: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_url: string
+          referrer?: string | null
+          session_id: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_url?: string
+          referrer?: string | null
+          session_id?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -188,6 +245,11 @@ export type Database = {
           referred_by: string | null
           updated_at: string
           user_id: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -199,6 +261,11 @@ export type Database = {
           referred_by?: string | null
           updated_at?: string
           user_id: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -210,6 +277,11 @@ export type Database = {
           referred_by?: string | null
           updated_at?: string
           user_id?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: []
       }
