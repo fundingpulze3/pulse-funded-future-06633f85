@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import Challenges from "@/components/Challenges";
-import Rules from "@/components/Rules";
-import FAQ from "@/components/FAQ";
+import Shop from "@/components/Shop";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -17,9 +15,7 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground">
       <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
       <Hero />
-      <Challenges />
-      <Rules />
-      <FAQ />
+      <Shop />
       <Footer />
     </div>
   );
