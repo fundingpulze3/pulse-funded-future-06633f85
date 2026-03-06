@@ -5,10 +5,12 @@ import WhyChoose from "@/components/WhyChoose";
 import Shop from "@/components/Shop";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
+import { useUtmTracking } from "@/hooks/useUtmTracking";
 
 const Index = () => {
   const [isDark, setIsDark] = useState(false);
   const [loading, setLoading] = useState(true);
+  useUtmTracking();
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
