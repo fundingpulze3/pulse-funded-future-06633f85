@@ -1,213 +1,482 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Mail, Lock, ArrowLeft } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-
-const getDelay = (index: number, isLogin: boolean) =>
-  isLogin ? 0.3 + index * 0.08 : 0.05 + index * 0.05;
+import { motion } from "framer-motion";
+import { ArrowRight, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import logo from "@/assets/logo.png";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const refCode = new URLSearchParams(window.location.search).get("ref");
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Logged in successfully!");
-        navigate("/");
+        if (error) { toast.error(error.message); }
+        else { toast.success("Welcome back!"); navigate("/"); }
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: refCode ? { referred_by_code: refCode } : undefined,
+            data: {
+              ...(username ? { display_name: username } : {}),
+              ...(refCode ? { referred_by_code: refCode } : {}),
+            },
           },
         });
-        if (error) throw error;
-        toast.success("Account created successfully!");
-        navigate("/");
+        if (error) { toast.error(error.message); }
+        else { toast.success("Account created successfully!"); navigate("/"); }
       }
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (err) {
+      toast.error("An unexpected error occurred");
     } finally {
       setLoading(false);
     }
   };
 
-  const formFields = [
-    {
-      id: "email",
-      label: "Email",
-      type: "email",
-      value: email,
-      onChange: (v: string) => setEmail(v),
-      placeholder: "you@example.com",
-      icon: Mail,
-    },
-    {
-      id: "password",
-      label: "Password",
-      type: "password",
-      value: password,
-      onChange: (v: string) => setPassword(v),
-      placeholder: "••••••••",
-      icon: Lock,
-      minLength: 6,
-    },
-  ];
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    setEmail("");
+    setPassword("");
+    setUsername("");
+  };
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6 overflow-hidden relative">
-      {/* Rotating background panel */}
-      <motion.div
-        className="absolute -top-1 right-0 w-[850px] h-[600px] z-0"
-        style={{
-          transformOrigin: "bottom right",
-          background: "hsl(var(--foreground))",
-        }}
-        animate={{
-          rotate: isLogin ? 10 : 0,
-          skewY: isLogin ? 40 : 0,
-        }}
-        transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1], delay: isLogin ? 1.2 : 0.3 }}
-      />
+  const getDelay = (index: number, entering: boolean) => {
+    return entering ? index * 0.1 : (5 - index) * 0.1;
+  };
 
-      {/* Accent glow */}
-      <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none z-0"
-        style={{
-          background: "radial-gradient(circle, hsl(var(--glow-primary) / 0.15) 0%, transparent 70%)",
-        }}
-        animate={{ scale: isLogin ? 1 : 1.3, opacity: isLogin ? 0.6 : 0.3 }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
-      />
+  // ─── Mobile layout ───
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-10">
+        <div className="w-full max-w-sm space-y-8">
+          {/* Logo */}
+          <motion.div
+            className="flex justify-center"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <img src={logo} alt="Funding Pulze" className="h-12 w-12 rounded-xl" />
+          </motion.div>
 
-      <div className="w-full max-w-md relative z-10">
-        <motion.button
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <ArrowLeft size={16} /> Back to home
-        </motion.button>
-
-        <motion.div
-          className="rounded-2xl p-8 relative overflow-hidden"
-          style={{
-            background: "hsl(var(--surface-elevated) / 0.4)",
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
-            border: "1px solid hsl(var(--glow-primary) / 0.12)",
-            boxShadow: "0 16px 48px hsl(var(--glow-primary) / 0.08)",
-          }}
-          initial={{ opacity: 0, y: 30, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={isLogin ? "login" : "signup"}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
+          {/* Mode Toggle */}
+          <motion.div
+            className="flex bg-secondary rounded-full p-1"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <button
+              onClick={() => setIsLogin(true)}
+              className={`flex-1 py-3 text-sm font-medium rounded-full transition-all duration-300 ${
+                isLogin ? "bg-foreground text-background" : "text-muted-foreground"
+              }`}
             >
-              <h1 className="font-display text-3xl font-bold text-center mb-2 text-foreground">
-                {isLogin ? "Welcome Back" : "Create Account"}
-              </h1>
-              <p className="text-muted-foreground text-center text-sm mb-8">
-                {isLogin
-                  ? "Sign in to your Funding Pulze account"
-                  : "Start your trading journey today"}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+              Login
+            </button>
+            <button
+              onClick={() => setIsLogin(false)}
+              className={`flex-1 py-3 text-sm font-medium rounded-full transition-all duration-300 ${
+                !isLogin ? "bg-foreground text-background" : "text-muted-foreground"
+              }`}
+            >
+              Sign Up
+            </button>
+          </motion.div>
 
-          <form onSubmit={handleEmailAuth} className="space-y-4">
-            {formFields.map((field, index) => (
-              <motion.div
-                key={field.id}
-                animate={{
-                  x: 0,
-                  opacity: 1,
-                  filter: "blur(0px)",
-                }}
-                initial={{
-                  x: -40,
-                  opacity: 0,
-                  filter: "blur(10px)",
-                }}
-                transition={{
-                  duration: 0.7,
-                  ease: "easeOut",
-                  delay: getDelay(index, isLogin),
-                }}
-              >
-                <Label htmlFor={field.id} className="text-sm text-muted-foreground">
-                  {field.label}
-                </Label>
-                <div className="relative mt-1">
-                  <field.icon
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  />
+          {/* Form Card */}
+          <motion.div
+            className="glass-card p-6 rounded-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <h2 className="font-display text-2xl font-bold text-foreground mb-6 text-center">
+              {isLogin ? "Welcome Back" : "Create Account"}
+            </h2>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <div className="relative">
                   <Input
-                    id={field.id}
-                    type={field.type}
-                    value={field.value}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    placeholder={field.placeholder}
-                    className="pl-10 rounded-xl bg-secondary border-border"
-                    required
-                    minLength={field.minLength}
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="h-12 pl-4 pr-10 rounded-xl bg-secondary border-border"
                   />
+                  <User size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                </div>
+              )}
+
+              <div className="relative">
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 pl-4 pr-10 rounded-xl bg-secondary border-border"
+                />
+                <Mail size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              </div>
+
+              <div className="relative">
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="h-12 pl-4 pr-10 rounded-xl bg-secondary border-border"
+                />
+                <Lock size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              </div>
+
+              <Button type="submit" className="w-full h-12 rounded-xl font-medium" disabled={loading}>
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                ) : isLogin ? "Login" : "Create Account"}
+              </Button>
+            </form>
+          </motion.div>
+
+          {/* Back to home */}
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mx-auto"
+          >
+            <ArrowLeft size={14} />
+            Back to home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Desktop layout — side by side with rotating panels ───
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="flex-1 flex relative overflow-hidden">
+        {/* Rotating background panels */}
+        <motion.div
+          className="absolute -top-1 right-0 w-[850px] h-[600px] z-[1]"
+          style={{ transformOrigin: "bottom right", background: "hsl(var(--foreground))" }}
+          animate={{ rotate: isLogin ? 10 : 0, skewY: isLogin ? 40 : 0 }}
+          transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1], delay: isLogin ? 1.2 : 0.3 }}
+        />
+        <motion.div
+          className="absolute -bottom-1 left-0 w-[850px] h-[600px] z-[1]"
+          style={{ transformOrigin: "top left", background: "hsl(var(--foreground) / 0.06)" }}
+          animate={{ rotate: isLogin ? 0 : -10, skewY: isLogin ? 0 : -40 }}
+          transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1], delay: isLogin ? 0.3 : 1.2 }}
+        />
+
+        {/* ───── Login Form (Left) ───── */}
+        <div className="flex-1 flex items-center justify-center relative z-10 px-12">
+          <div className="w-full max-w-sm">
+            <motion.div
+              animate={{
+                x: isLogin ? 0 : "-120%",
+                opacity: isLogin ? 1 : 0,
+                filter: isLogin ? "blur(0px)" : "blur(10px)",
+              }}
+              transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(0, isLogin) }}
+            >
+              <div className="flex items-center gap-3 mb-10">
+                <img src={logo} alt="Funding Pulze" className="h-9 w-9 rounded-lg" />
+                <h1 className="font-display text-3xl font-bold text-foreground">Login</h1>
+              </div>
+            </motion.div>
+
+            <form onSubmit={isLogin ? handleSubmit : (e) => e.preventDefault()} className="space-y-6">
+              <motion.div
+                animate={{
+                  x: isLogin ? 0 : "-120%",
+                  opacity: isLogin ? 1 : 0,
+                  filter: isLogin ? "blur(0px)" : "blur(10px)",
+                }}
+                transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(1, isLogin) }}
+              >
+                <div className="relative">
+                  <Input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={!isLogin}
+                    className="h-12 bg-transparent border-0 border-b-2 border-border rounded-none px-0 pr-8 focus:border-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
+                  />
+                  <Mail size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 </div>
               </motion.div>
-            ))}
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: getDelay(2, isLogin) }}
-            >
-              <Button type="submit" className="w-full rounded-xl py-5" disabled={loading}>
-                {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
-              </Button>
-            </motion.div>
-          </form>
+              <motion.div
+                animate={{
+                  x: isLogin ? 0 : "-120%",
+                  opacity: isLogin ? 1 : 0,
+                  filter: isLogin ? "blur(0px)" : "blur(10px)",
+                }}
+                transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(2, isLogin) }}
+              >
+                <div className="relative">
+                  <Input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={!isLogin}
+                    minLength={6}
+                    className="h-12 bg-transparent border-0 border-b-2 border-border rounded-none px-0 pr-8 focus:border-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
+                  />
+                  <Lock size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                </div>
+              </motion.div>
 
-          <motion.p
-            className="text-center text-sm text-muted-foreground mt-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
+              <motion.div
+                animate={{
+                  x: isLogin ? 0 : "-120%",
+                  opacity: isLogin ? 1 : 0,
+                  filter: isLogin ? "blur(0px)" : "blur(10px)",
+                }}
+                transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(3, isLogin) }}
+              >
+                <Button type="submit" disabled={loading || !isLogin} className="w-full h-12 rounded-xl font-medium">
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                  ) : "Login"}
+                </Button>
+              </motion.div>
+
+              <motion.p
+                className="text-sm text-muted-foreground text-center"
+                animate={{
+                  x: isLogin ? 0 : "-120%",
+                  opacity: isLogin ? 1 : 0,
+                  filter: isLogin ? "blur(0px)" : "blur(10px)",
+                }}
+                transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(4, isLogin) }}
+              >
+                Don't have an account?{" "}
+                <button type="button" onClick={toggleMode} className="text-primary hover:underline font-medium">
+                  Register
+                </button>
+              </motion.p>
+            </form>
+          </div>
+        </div>
+
+        {/* ───── Login Info Text (Right) ───── */}
+        <div className="flex-1 flex items-center justify-center relative z-10 px-12">
+          <motion.div
+            className="text-center"
+            animate={{
+              opacity: isLogin ? 1 : 0,
+              y: isLogin ? 0 : 30,
+              filter: isLogin ? "blur(0px)" : "blur(8px)",
+            }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: isLogin ? 0.8 : 0 }}
           >
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary hover:underline font-medium"
+            <h2 className="font-display text-5xl font-bold text-background leading-tight">
+              Welcome<br />Back!
+            </h2>
+            <div className="my-6">
+              <img src={logo} alt="Funding Pulze" className="h-14 w-14 rounded-xl mx-auto opacity-80" />
+            </div>
+            <p className="text-background/60 text-lg leading-relaxed">
+              Sign in to access exclusive<br />trading insights and content.
+            </p>
+          </motion.div>
+        </div>
+
+        {/* ───── Register Form (Right, overlapping) ───── */}
+        <div className="absolute inset-0 flex z-10 pointer-events-none">
+          <div className="flex-1" />
+          <div className="flex-1 flex items-center justify-center px-12 pointer-events-auto">
+            <div className="w-full max-w-sm">
+              <motion.div
+                animate={{
+                  x: !isLogin ? 0 : "120%",
+                  opacity: !isLogin ? 1 : 0,
+                  filter: !isLogin ? "blur(0px)" : "blur(10px)",
+                }}
+                transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(0, !isLogin) }}
+              >
+                <div className="flex items-center gap-3 mb-10">
+                  <img src={logo} alt="Funding Pulze" className="h-9 w-9 rounded-lg" />
+                  <h1 className="font-display text-3xl font-bold text-background">Sign Up</h1>
+                </div>
+              </motion.div>
+
+              <form onSubmit={!isLogin ? handleSubmit : (e) => e.preventDefault()} className="space-y-6">
+                <motion.div
+                  animate={{
+                    x: !isLogin ? 0 : "120%",
+                    opacity: !isLogin ? 1 : 0,
+                    filter: !isLogin ? "blur(0px)" : "blur(10px)",
+                  }}
+                  transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(1, !isLogin) }}
+                >
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="Username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      disabled={isLogin}
+                      className="h-12 bg-transparent border-0 border-b-2 border-background/20 rounded-none px-0 pr-8 text-background placeholder:text-background/40 focus:border-background/50 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    <User size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-background/40" />
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  animate={{
+                    x: !isLogin ? 0 : "120%",
+                    opacity: !isLogin ? 1 : 0,
+                    filter: !isLogin ? "blur(0px)" : "blur(10px)",
+                  }}
+                  transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(2, !isLogin) }}
+                >
+                  <div className="relative">
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLogin}
+                      className="h-12 bg-transparent border-0 border-b-2 border-background/20 rounded-none px-0 pr-8 text-background placeholder:text-background/40 focus:border-background/50 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    <Mail size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-background/40" />
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  animate={{
+                    x: !isLogin ? 0 : "120%",
+                    opacity: !isLogin ? 1 : 0,
+                    filter: !isLogin ? "blur(0px)" : "blur(10px)",
+                  }}
+                  transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(3, !isLogin) }}
+                >
+                  <div className="relative">
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLogin}
+                      minLength={6}
+                      className="h-12 bg-transparent border-0 border-b-2 border-background/20 rounded-none px-0 pr-8 text-background placeholder:text-background/40 focus:border-background/50 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    <Lock size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-background/40" />
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  animate={{
+                    x: !isLogin ? 0 : "120%",
+                    opacity: !isLogin ? 1 : 0,
+                    filter: !isLogin ? "blur(0px)" : "blur(10px)",
+                  }}
+                  transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(4, !isLogin) }}
+                >
+                  <Button
+                    type="submit"
+                    disabled={loading || isLogin}
+                    className="w-full h-12 rounded-xl font-medium bg-background text-foreground hover:bg-background/90"
+                  >
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" />
+                    ) : "Register"}
+                  </Button>
+                </motion.div>
+
+                <motion.p
+                  className="text-sm text-background/60 text-center"
+                  animate={{
+                    x: !isLogin ? 0 : "120%",
+                    opacity: !isLogin ? 1 : 0,
+                    filter: !isLogin ? "blur(0px)" : "blur(10px)",
+                  }}
+                  transition={{ duration: 0.7, ease: "easeOut", delay: getDelay(5, !isLogin) }}
+                >
+                  Already have an account?{" "}
+                  <button type="button" onClick={toggleMode} className="text-background hover:underline font-medium">
+                    Login
+                  </button>
+                </motion.p>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        {/* ───── Register Info Text (Left, overlapping) ───── */}
+        <div className="absolute inset-0 flex z-10 pointer-events-none">
+          <div className="flex-1 flex items-center justify-center px-12">
+            <motion.div
+              className="text-center"
+              animate={{
+                opacity: !isLogin ? 1 : 0,
+                y: !isLogin ? 0 : 30,
+                filter: !isLogin ? "blur(0px)" : "blur(8px)",
+              }}
+              transition={{ duration: 0.8, ease: "easeOut", delay: !isLogin ? 0.8 : 0 }}
             >
-              {isLogin ? "Sign up" : "Sign in"}
-            </button>
-          </motion.p>
-        </motion.div>
+              <h2 className="font-display text-5xl font-bold text-foreground leading-tight">
+                Hello<br />Friend!
+              </h2>
+              <div className="my-6">
+                <img src={logo} alt="Funding Pulze" className="h-14 w-14 rounded-xl mx-auto opacity-80" />
+              </div>
+              <p className="text-muted-foreground text-lg leading-relaxed">
+                Join the exclusive trading<br />community today.
+              </p>
+            </motion.div>
+          </div>
+          <div className="flex-1" />
+        </div>
+      </div>
+
+      {/* Back to home */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft size={14} />
+          Back to home
+        </button>
       </div>
     </div>
   );
