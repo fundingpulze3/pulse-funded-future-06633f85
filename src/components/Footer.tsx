@@ -1,3 +1,5 @@
+import logo from "@/assets/logo.png";
+
 const footerLinks = {
   Company: ["About", "Careers"],
   Resources: [
@@ -14,9 +16,12 @@ const Footer = () => {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           <div className="col-span-2 md:col-span-1">
-            <h3 className="font-display text-xl font-bold mb-4">
-              Funding<span className="text-gradient"> Pulze</span>
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <img src={logo} alt="Funding Pulze" className="h-8 w-8 rounded" />
+              <h3 className="font-display text-xl font-bold">
+                Funding<span className="text-gradient"> Pulze</span>
+              </h3>
+            </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Empowering traders worldwide with funded accounts and capital.
             </p>

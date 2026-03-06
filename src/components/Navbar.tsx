@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Moon, Sun, User, LogOut, Shield, HelpCircle } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -46,8 +47,9 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
       }`}
     >
       <div className="flex items-center justify-between">
-        <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="font-display text-xl font-bold text-foreground tracking-tight">
-          Funding<span className="text-gradient"> Pulze</span>
+        <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="flex items-center gap-2">
+          <img src={logo} alt="Funding Pulze" className="h-8 w-8 rounded" />
+          <span className="font-display text-xl font-bold text-foreground tracking-tight">Funding<span className="text-gradient"> Pulze</span></span>
         </a>
 
         <div className="hidden md:flex items-center gap-8">
