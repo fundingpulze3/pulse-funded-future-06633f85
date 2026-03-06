@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Info } from "lucide-react";
 
@@ -30,6 +31,7 @@ const ruleLabels = ["Profit Target", "Maximum Loss", "Maximum Daily Loss", "Mini
 const Shop = () => {
   const [step, setStep] = useState<StepType>("two");
   const [account, setAccount] = useState<AccountSize>("$50K");
+  const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
@@ -169,7 +171,15 @@ const Shop = () => {
                 <p className="text-xs text-muted-foreground mt-1">Add-on available: <span className="font-medium text-foreground">Swap Free</span> (+10%)</p>
               </div>
             </div>
-            <Button size="lg" className="rounded-xl px-10 py-6 text-base glow-box">
+            <Button
+              size="lg"
+              className="rounded-xl px-10 py-6 text-base glow-box"
+              onClick={() => {
+                const priceNum = price.replace("$", "");
+                const stepLabel = step === "one" ? "1-step" : "2-step";
+                navigate(`/checkout?step=${stepLabel}&size=${account}&price=${priceNum}`);
+              }}
+            >
               Buy Challenge
             </Button>
           </div>
