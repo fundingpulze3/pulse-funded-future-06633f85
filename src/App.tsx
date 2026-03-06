@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { useAdminSubdomain } from "@/hooks/useAdminSubdomain";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import AdminAuth from "./pages/AdminAuth";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
 import Admin from "./pages/Admin";
 import Checkout from "./pages/Checkout";
@@ -29,12 +30,12 @@ const AppRoutes = () => {
     );
   }
 
-  // Admin subdomain: only show admin + auth routes
+  // Admin subdomain: only show admin + admin auth routes
   if (isAdminDomain) {
     return (
       <Routes>
         <Route path="/admin" element={<Admin />} />
-        <Route path="/auth" element={<Auth />} />
+        <Route path="/auth" element={<AdminAuth />} />
         <Route path="*" element={<Admin />} />
       </Routes>
     );
