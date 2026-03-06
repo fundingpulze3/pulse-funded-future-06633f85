@@ -14,7 +14,169 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      affiliate_referrals: {
+        Row: {
+          commission_amount: number | null
+          commission_status: string
+          created_at: string
+          id: string
+          purchase_id: string | null
+          referred_id: string
+          referrer_id: string
+        }
+        Insert: {
+          commission_amount?: number | null
+          commission_status?: string
+          created_at?: string
+          id?: string
+          purchase_id?: string | null
+          referred_id: string
+          referrer_id: string
+        }
+        Update: {
+          commission_amount?: number | null
+          commission_status?: string
+          created_at?: string
+          id?: string
+          purchase_id?: string | null
+          referred_id?: string
+          referrer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_purchases: {
+        Row: {
+          amount_paid: number
+          challenge_id: string
+          created_at: string
+          id: string
+          payment_status: string
+          status: string
+          swap_free: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          challenge_id: string
+          created_at?: string
+          id?: string
+          payment_status?: string
+          status?: string
+          swap_free?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          payment_status?: string
+          status?: string
+          swap_free?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_purchases_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          account_size: number
+          created_at: string
+          daily_drawdown: string
+          id: string
+          is_active: boolean
+          leverage: string
+          max_drawdown: string
+          min_trading_days: string
+          name: string
+          price: number
+          profit_target: string
+          step_type: string
+        }
+        Insert: {
+          account_size: number
+          created_at?: string
+          daily_drawdown: string
+          id?: string
+          is_active?: boolean
+          leverage?: string
+          max_drawdown: string
+          min_trading_days: string
+          name: string
+          price: number
+          profit_target: string
+          step_type: string
+        }
+        Update: {
+          account_size?: number
+          created_at?: string
+          daily_drawdown?: string
+          id?: string
+          is_active?: boolean
+          leverage?: string
+          max_drawdown?: string
+          min_trading_days?: string
+          name?: string
+          price?: number
+          profit_target?: string
+          step_type?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          referral_code: string | null
+          referred_by: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          referral_code?: string | null
+          referred_by?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          referral_code?: string | null
+          referred_by?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
