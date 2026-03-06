@@ -36,7 +36,8 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast.success("Check your email for the confirmation link!");
+        toast.success("Account created successfully!");
+        navigate("/");
       }
     } catch (error: any) {
       toast.error(error.message);
