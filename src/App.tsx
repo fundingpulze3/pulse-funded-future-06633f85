@@ -11,16 +11,25 @@ import AffiliateDashboard from "./pages/AffiliateDashboard";
 import Admin from "./pages/Admin";
 import Checkout from "./pages/Checkout";
 import FAQ from "./pages/FAQ";
+import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const ADMIN_HOSTNAME = "pulze.fundingpulze.com";
-
 const AppRoutes = () => {
-  const { isAdminDomain } = useAdminSubdomain();
+  const { isAdminDomain, isHelpDomain } = useAdminSubdomain();
 
-  // On the admin subdomain, only show admin + auth routes
+  // Help subdomain: only show help center
+  if (isHelpDomain) {
+    return (
+      <Routes>
+        <Route path="/help" element={<HelpCenter />} />
+        <Route path="*" element={<HelpCenter />} />
+      </Routes>
+    );
+  }
+
+  // Admin subdomain: only show admin + auth routes
   if (isAdminDomain) {
     return (
       <Routes>
@@ -38,6 +47,7 @@ const AppRoutes = () => {
       <Route path="/affiliate" element={<AffiliateDashboard />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/faq" element={<FAQ />} />
+      <Route path="/help" element={<HelpCenter />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
