@@ -631,7 +631,117 @@ const Admin = () => {
               </div>
             </div>
           )}
-        </div>
+
+          {/* ===== UTM Tracker Tab ===== */}
+          {tab === "utm" && (
+            <div className="space-y-6">
+              {/* Summary cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
+                  <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">Total Page Visits</span>
+                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{pageVisits.length.toLocaleString()}</p>
+                </div>
+                <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
+                  <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">UTM-Tagged Visits</span>
+                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{pageVisits.filter(v => v.utm_source).length.toLocaleString()}</p>
+                </div>
+                <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
+                  <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">Unique Sources</span>
+                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{new Set(pageVisits.filter(v => v.utm_source).map(v => v.utm_source)).size}</p>
+                </div>
+              </div>
+
+              {/* By Source */}
+              <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)] flex items-center gap-2">
+                  <Globe size={18} className="text-[hsl(0,0%,40%)]" />
+                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Source</h3>
+                </div>
+                <table className="w-full text-sm">
+                  <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
+                    <th className="text-left px-5 py-3 font-medium">Source</th>
+                    <th className="text-left px-5 py-3 font-medium">Visits</th>
+                    <th className="text-left px-5 py-3 font-medium">Signups</th>
+                    <th className="text-left px-5 py-3 font-medium">Conv. Rate</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-[hsl(0,0%,95%)]">
+                    {utmSourceStats.map((row) => (
+                      <tr key={row.source} className="hover:bg-[hsl(0,0%,98%)] transition-colors">
+                        <td className="px-5 py-3 font-medium text-[hsl(0,0%,10%)]">{row.source}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.visits}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.signups}</td>
+                        <td className="px-5 py-3">
+                          <span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {utmSourceStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No visit data yet.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* By Campaign */}
+              <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)] flex items-center gap-2">
+                  <TrendingUp size={18} className="text-[hsl(0,0%,40%)]" />
+                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Campaign</h3>
+                </div>
+                <table className="w-full text-sm">
+                  <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
+                    <th className="text-left px-5 py-3 font-medium">Campaign</th>
+                    <th className="text-left px-5 py-3 font-medium">Visits</th>
+                    <th className="text-left px-5 py-3 font-medium">Signups</th>
+                    <th className="text-left px-5 py-3 font-medium">Conv. Rate</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-[hsl(0,0%,95%)]">
+                    {utmCampaignStats.map((row) => (
+                      <tr key={row.campaign} className="hover:bg-[hsl(0,0%,98%)] transition-colors">
+                        <td className="px-5 py-3 font-medium text-[hsl(0,0%,10%)]">{row.campaign}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.visits}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.signups}</td>
+                        <td className="px-5 py-3">
+                          <span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {utmCampaignStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No campaign data yet.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Recent visits */}
+              <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)]">
+                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Recent Visits</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
+                      <th className="text-left px-5 py-3 font-medium">Date</th>
+                      <th className="text-left px-5 py-3 font-medium">Page</th>
+                      <th className="text-left px-5 py-3 font-medium">Source</th>
+                      <th className="text-left px-5 py-3 font-medium">Medium</th>
+                      <th className="text-left px-5 py-3 font-medium">Campaign</th>
+                      <th className="text-left px-5 py-3 font-medium">Referrer</th>
+                    </tr></thead>
+                    <tbody className="divide-y divide-[hsl(0,0%,95%)]">
+                      {pageVisits.slice(0, 50).map((v: any) => (
+                        <tr key={v.id} className="hover:bg-[hsl(0,0%,98%)] transition-colors">
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)] whitespace-nowrap">{new Date(v.created_at).toLocaleString()}</td>
+                          <td className="px-5 py-3 font-mono text-xs text-[hsl(0,0%,30%)]">{v.page_url}</td>
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{v.utm_source || "—"}</td>
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{v.utm_medium || "—"}</td>
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{v.utm_campaign || "—"}</td>
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)] text-xs max-w-[200px] truncate">{v.referrer || "—"}</td>
+                        </tr>
+                      ))}
+                      {pageVisits.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No visits recorded yet.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
 
       {/* ===== Challenge Dialog ===== */}
