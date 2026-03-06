@@ -16,7 +16,7 @@ import {
 import {
   Users, Trophy, Link2, Shield, Plus, Pencil, Trash2,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
-  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe,
+  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -479,6 +479,7 @@ const Admin = () => {
                       <th className="px-5 py-3 font-medium">Referral Code</th>
                       <th className="px-5 py-3 font-medium">Invited By</th>
                       <th className="px-5 py-3 font-medium">Joined</th>
+                      <th className="px-5 py-3 font-medium">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -489,9 +490,41 @@ const Admin = () => {
                         <td className="px-5 py-3.5"><code className="text-xs bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,88%)] px-2 py-0.5 rounded font-mono text-[hsl(0,0%,30%)]">{p.referral_code || "—"}</code></td>
                         <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,45%)]">{p.referred_by ? getProfileName(p.referred_by) : <span className="text-[hsl(0,0%,75%)]">Direct</span>}</td>
                         <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,50%)]">{new Date(p.created_at).toLocaleDateString()}</td>
+                        <td className="px-5 py-3.5">
+                          <button
+                            onClick={async () => {
+                              const toastId = toast.loading("Generating login link...");
+                              try {
+                                const { data: { session } } = await supabase.auth.getSession();
+                                const res = await fetch(
+                                  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-impersonate`,
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                      Authorization: `Bearer ${session?.access_token}`,
+                                    },
+                                    body: JSON.stringify({ user_id: p.user_id }),
+                                  }
+                                );
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.error);
+                                toast.dismiss(toastId);
+                                window.open(data.url + `&redirect_to=${window.location.origin}`, "_blank");
+                              } catch (err: any) {
+                                toast.dismiss(toastId);
+                                toast.error(err.message || "Failed to impersonate");
+                              }
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] text-xs font-medium hover:bg-[hsl(0,0%,15%)] transition-colors"
+                          >
+                            <LogIn size={12} />
+                            Login
+                          </button>
+                        </td>
                       </tr>
                     ))}
-                    {profiles.length === 0 && <tr><td colSpan={5} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No users yet.</td></tr>}
+                    {profiles.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No users yet.</td></tr>}
                   </tbody>
                 </table>
               </div>
