@@ -24,10 +24,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Send password-changed security alert when user updates their password
+      if (event === 'USER_UPDATED' && session?.user) {
+        try {
+          await supabase.functions.invoke('send-transactional-email', {
+            body: { type: 'password_changed', data: {} },
+          });
+        } catch (err) {
+          console.error('Failed to send password changed email:', err);
+        }
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
