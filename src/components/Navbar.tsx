@@ -69,14 +69,6 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
           >
             Affiliate Dashboard
           </a>
-          <a
-            href="https://help.fundingpulze.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300 flex items-center gap-1"
-          >
-            <HelpCircle size={14} /> Help Center
-          </a>
           {isAdmin && (
             <a
               href="/admin"
