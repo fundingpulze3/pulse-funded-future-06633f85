@@ -15,6 +15,9 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Capture referral code from URL
+  const refCode = new URLSearchParams(window.location.search).get("ref");
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -28,7 +31,10 @@ const Auth = () => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: refCode ? { referred_by_code: refCode } : undefined,
+          },
         });
         if (error) throw error;
         toast.success("Check your email for the confirmation link!");
