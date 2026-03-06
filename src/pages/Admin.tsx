@@ -16,7 +16,7 @@ import {
 import {
   Users, Trophy, Link2, Shield, Plus, Pencil, Trash2,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
-  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3,
+  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -25,7 +25,7 @@ import {
 } from "recharts";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons";
+type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm";
 
 interface ChallengeForm {
   name: string;
@@ -81,6 +81,7 @@ const Admin = () => {
   const [referrals, setReferrals] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
+  const [pageVisits, setPageVisits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
@@ -102,18 +103,20 @@ const Admin = () => {
   }, [user, authLoading, isAdmin, adminLoading]);
 
   const fetchAll = async () => {
-    const [p, c, r, cp, pu] = await Promise.all([
+    const [p, c, r, cp, pu, pv] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("challenges").select("*").order("account_size", { ascending: true }),
       supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
       supabase.from("coupons").select("*").order("created_at", { ascending: false }),
       supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
+      supabase.from("page_visits").select("*").order("created_at", { ascending: false }),
     ]);
     if (p.data) setProfiles(p.data);
     if (c.data) setChallenges(c.data);
     if (r.data) setReferrals(r.data);
     if (cp.data) setCoupons(cp.data);
     if (pu.data) setPurchases(pu.data);
+    if (pv.data) setPageVisits(pv.data);
     setLoading(false);
   };
 
@@ -231,12 +234,48 @@ const Admin = () => {
     );
   }
 
+  // UTM analytics
+  const utmSourceStats = useMemo(() => {
+    const sources: Record<string, { visits: number; signups: number }> = {};
+    pageVisits.forEach((v) => {
+      const src = v.utm_source || "(direct)";
+      if (!sources[src]) sources[src] = { visits: 0, signups: 0 };
+      sources[src].visits++;
+    });
+    profiles.forEach((p: any) => {
+      const src = p.utm_source || "(direct)";
+      if (!sources[src]) sources[src] = { visits: 0, signups: 0 };
+      sources[src].signups++;
+    });
+    return Object.entries(sources)
+      .map(([source, data]) => ({ source, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
+      .sort((a, b) => b.visits - a.visits);
+  }, [pageVisits, profiles]);
+
+  const utmCampaignStats = useMemo(() => {
+    const campaigns: Record<string, { visits: number; signups: number }> = {};
+    pageVisits.filter(v => v.utm_campaign).forEach((v) => {
+      const c = v.utm_campaign!;
+      if (!campaigns[c]) campaigns[c] = { visits: 0, signups: 0 };
+      campaigns[c].visits++;
+    });
+    profiles.filter((p: any) => p.utm_campaign).forEach((p: any) => {
+      const c = p.utm_campaign;
+      if (!campaigns[c]) campaigns[c] = { visits: 0, signups: 0 };
+      campaigns[c].signups++;
+    });
+    return Object.entries(campaigns)
+      .map(([campaign, data]) => ({ campaign, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
+      .sort((a, b) => b.visits - a.visits);
+  }, [pageVisits, profiles]);
+
   const sidebarItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
     { id: "users", label: "Users", icon: <Users size={18} /> },
     { id: "challenges", label: "Challenges", icon: <Trophy size={18} /> },
     { id: "referrals", label: "Referrals", icon: <Link2 size={18} /> },
     { id: "coupons", label: "Coupons", icon: <Ticket size={18} /> },
+    { id: "utm", label: "UTM Tracker", icon: <Globe size={18} /> },
   ];
 
   const statCards = [
