@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,6 +21,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
+  useUtmTracking();
   const refCode = new URLSearchParams(window.location.search).get("ref");
 
   useEffect(() => {
@@ -37,6 +39,7 @@ const Auth = () => {
         if (error) { toast.error(error.message); }
         else { toast.success("Welcome back!"); navigate("/"); }
       } else {
+        const utm = getStoredUtm();
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -45,6 +48,11 @@ const Auth = () => {
             data: {
               ...(username ? { display_name: username } : {}),
               ...(refCode ? { referred_by_code: refCode } : {}),
+              ...(utm.utm_source ? { utm_source: utm.utm_source } : {}),
+              ...(utm.utm_medium ? { utm_medium: utm.utm_medium } : {}),
+              ...(utm.utm_campaign ? { utm_campaign: utm.utm_campaign } : {}),
+              ...(utm.utm_term ? { utm_term: utm.utm_term } : {}),
+              ...(utm.utm_content ? { utm_content: utm.utm_content } : {}),
             },
           },
         });

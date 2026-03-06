@@ -16,7 +16,7 @@ import {
 import {
   Users, Trophy, Link2, Shield, Plus, Pencil, Trash2,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
-  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3,
+  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -25,7 +25,7 @@ import {
 } from "recharts";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons";
+type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm";
 
 interface ChallengeForm {
   name: string;
@@ -81,6 +81,7 @@ const Admin = () => {
   const [referrals, setReferrals] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
+  const [pageVisits, setPageVisits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
@@ -102,18 +103,20 @@ const Admin = () => {
   }, [user, authLoading, isAdmin, adminLoading]);
 
   const fetchAll = async () => {
-    const [p, c, r, cp, pu] = await Promise.all([
+    const [p, c, r, cp, pu, pv] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("challenges").select("*").order("account_size", { ascending: true }),
       supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
       supabase.from("coupons").select("*").order("created_at", { ascending: false }),
       supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
+      supabase.from("page_visits").select("*").order("created_at", { ascending: false }),
     ]);
     if (p.data) setProfiles(p.data);
     if (c.data) setChallenges(c.data);
     if (r.data) setReferrals(r.data);
     if (cp.data) setCoupons(cp.data);
     if (pu.data) setPurchases(pu.data);
+    if (pv.data) setPageVisits(pv.data);
     setLoading(false);
   };
 
@@ -231,12 +234,48 @@ const Admin = () => {
     );
   }
 
+  // UTM analytics
+  const utmSourceStats = useMemo(() => {
+    const sources: Record<string, { visits: number; signups: number }> = {};
+    pageVisits.forEach((v) => {
+      const src = v.utm_source || "(direct)";
+      if (!sources[src]) sources[src] = { visits: 0, signups: 0 };
+      sources[src].visits++;
+    });
+    profiles.forEach((p: any) => {
+      const src = p.utm_source || "(direct)";
+      if (!sources[src]) sources[src] = { visits: 0, signups: 0 };
+      sources[src].signups++;
+    });
+    return Object.entries(sources)
+      .map(([source, data]) => ({ source, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
+      .sort((a, b) => b.visits - a.visits);
+  }, [pageVisits, profiles]);
+
+  const utmCampaignStats = useMemo(() => {
+    const campaigns: Record<string, { visits: number; signups: number }> = {};
+    pageVisits.filter(v => v.utm_campaign).forEach((v) => {
+      const c = v.utm_campaign!;
+      if (!campaigns[c]) campaigns[c] = { visits: 0, signups: 0 };
+      campaigns[c].visits++;
+    });
+    profiles.filter((p: any) => p.utm_campaign).forEach((p: any) => {
+      const c = p.utm_campaign;
+      if (!campaigns[c]) campaigns[c] = { visits: 0, signups: 0 };
+      campaigns[c].signups++;
+    });
+    return Object.entries(campaigns)
+      .map(([campaign, data]) => ({ campaign, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
+      .sort((a, b) => b.visits - a.visits);
+  }, [pageVisits, profiles]);
+
   const sidebarItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
     { id: "users", label: "Users", icon: <Users size={18} /> },
     { id: "challenges", label: "Challenges", icon: <Trophy size={18} /> },
     { id: "referrals", label: "Referrals", icon: <Link2 size={18} /> },
     { id: "coupons", label: "Coupons", icon: <Ticket size={18} /> },
+    { id: "utm", label: "UTM Tracker", icon: <Globe size={18} /> },
   ];
 
   const statCards = [
@@ -589,6 +628,117 @@ const Admin = () => {
                     {coupons.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No coupons yet.</td></tr>}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* ===== UTM Tracker Tab ===== */}
+          {tab === "utm" && (
+            <div className="space-y-6">
+              {/* Summary cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
+                  <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">Total Page Visits</span>
+                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{pageVisits.length.toLocaleString()}</p>
+                </div>
+                <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
+                  <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">UTM-Tagged Visits</span>
+                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{pageVisits.filter(v => v.utm_source).length.toLocaleString()}</p>
+                </div>
+                <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
+                  <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">Unique Sources</span>
+                  <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)] mt-2">{new Set(pageVisits.filter(v => v.utm_source).map(v => v.utm_source)).size}</p>
+                </div>
+              </div>
+
+              {/* By Source */}
+              <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)] flex items-center gap-2">
+                  <Globe size={18} className="text-[hsl(0,0%,40%)]" />
+                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Source</h3>
+                </div>
+                <table className="w-full text-sm">
+                  <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
+                    <th className="text-left px-5 py-3 font-medium">Source</th>
+                    <th className="text-left px-5 py-3 font-medium">Visits</th>
+                    <th className="text-left px-5 py-3 font-medium">Signups</th>
+                    <th className="text-left px-5 py-3 font-medium">Conv. Rate</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-[hsl(0,0%,95%)]">
+                    {utmSourceStats.map((row) => (
+                      <tr key={row.source} className="hover:bg-[hsl(0,0%,98%)] transition-colors">
+                        <td className="px-5 py-3 font-medium text-[hsl(0,0%,10%)]">{row.source}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.visits}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.signups}</td>
+                        <td className="px-5 py-3">
+                          <span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {utmSourceStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No visit data yet.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* By Campaign */}
+              <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)] flex items-center gap-2">
+                  <TrendingUp size={18} className="text-[hsl(0,0%,40%)]" />
+                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Campaign</h3>
+                </div>
+                <table className="w-full text-sm">
+                  <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
+                    <th className="text-left px-5 py-3 font-medium">Campaign</th>
+                    <th className="text-left px-5 py-3 font-medium">Visits</th>
+                    <th className="text-left px-5 py-3 font-medium">Signups</th>
+                    <th className="text-left px-5 py-3 font-medium">Conv. Rate</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-[hsl(0,0%,95%)]">
+                    {utmCampaignStats.map((row) => (
+                      <tr key={row.campaign} className="hover:bg-[hsl(0,0%,98%)] transition-colors">
+                        <td className="px-5 py-3 font-medium text-[hsl(0,0%,10%)]">{row.campaign}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.visits}</td>
+                        <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.signups}</td>
+                        <td className="px-5 py-3">
+                          <span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {utmCampaignStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No campaign data yet.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Recent visits */}
+              <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)]">
+                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Recent Visits</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
+                      <th className="text-left px-5 py-3 font-medium">Date</th>
+                      <th className="text-left px-5 py-3 font-medium">Page</th>
+                      <th className="text-left px-5 py-3 font-medium">Source</th>
+                      <th className="text-left px-5 py-3 font-medium">Medium</th>
+                      <th className="text-left px-5 py-3 font-medium">Campaign</th>
+                      <th className="text-left px-5 py-3 font-medium">Referrer</th>
+                    </tr></thead>
+                    <tbody className="divide-y divide-[hsl(0,0%,95%)]">
+                      {pageVisits.slice(0, 50).map((v: any) => (
+                        <tr key={v.id} className="hover:bg-[hsl(0,0%,98%)] transition-colors">
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)] whitespace-nowrap">{new Date(v.created_at).toLocaleString()}</td>
+                          <td className="px-5 py-3 font-mono text-xs text-[hsl(0,0%,30%)]">{v.page_url}</td>
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{v.utm_source || "—"}</td>
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{v.utm_medium || "—"}</td>
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{v.utm_campaign || "—"}</td>
+                          <td className="px-5 py-3 text-[hsl(0,0%,40%)] text-xs max-w-[200px] truncate">{v.referrer || "—"}</td>
+                        </tr>
+                      ))}
+                      {pageVisits.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No visits recorded yet.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
