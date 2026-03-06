@@ -15,7 +15,7 @@
     --popover: 228 60% 8%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 217 91% 53%;
+    --primary: 193 92% 51%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 228 40% 14%;
@@ -24,7 +24,7 @@
     --muted: 228 30% 15%;
     --muted-foreground: 215 20% 60%;
 
-    --accent: 217 91% 60%;
+    --accent: 193 92% 58%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -46,10 +46,10 @@
     --sidebar-ring: 217 91% 53%;
 
     /* Custom tokens */
-    --glow-primary: 217 91% 53%;
-    --glow-accent: 217 91% 60%;
+    --glow-primary: 193 92% 51%;
+    --glow-accent: 193 92% 58%;
     --surface-elevated: 228 50% 10%;
-    --gradient-start: 217 91% 53%;
+    --gradient-start: 193 92% 51%;
     --gradient-end: 217 91% 40%;
   }
 
