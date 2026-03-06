@@ -19,6 +19,7 @@ import {
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 
 const Checkout = () => {
+  useUtmTracking();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
