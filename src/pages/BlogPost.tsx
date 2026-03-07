@@ -1,0 +1,282 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { ArrowLeft, Clock, Eye, Calendar, Printer, Download, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
+
+interface Post {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string | null;
+  thumbnail_url: string | null;
+  thumbnail_alt: string | null;
+  is_featured: boolean;
+  published_at: string | null;
+  created_at: string;
+  views_count: number;
+  reading_time: number;
+  meta_title: string | null;
+  meta_description: string | null;
+  meta_keywords: string[] | null;
+  og_title: string | null;
+  og_description: string | null;
+  og_image_url: string | null;
+  canonical_url: string | null;
+  focus_keyword: string | null;
+}
+
+const renderMarkdown = (md: string) => {
+  return md
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold mt-6 mb-3 font-display">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 class="text-xl font-semibold mt-8 mb-3 font-display">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mt-8 mb-4 font-display">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/`(.+?)`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-sm">$1</code>')
+    .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-border pl-4 italic text-muted-foreground my-4">$1</blockquote>')
+    .replace(/^---$/gm, '<hr class="my-6 border-border" />')
+    .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" class="rounded-xl max-w-full my-4" />')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="text-foreground underline hover:no-underline">$1</a>')
+    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+    .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
+    .replace(/\n\n/g, '<br/><br/>');
+};
+
+const BlogPost = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const [isDark, setIsDark] = useState(false);
+  const [post, setPost] = useState<Post | null>(null);
+  const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
+
+  useEffect(() => {
+    if (!slug) return;
+    const fetchPost = async () => {
+      const { data } = await supabase
+        .from("blog_posts")
+        .select("*")
+        .eq("slug", slug)
+        .eq("is_published", true)
+        .single();
+
+      if (data) {
+        setPost(data as Post);
+        // Increment views
+        supabase.from("blog_posts").update({ views_count: (data.views_count || 0) + 1 }).eq("id", data.id).then(() => {});
+
+        // Set page title & meta
+        document.title = data.meta_title || `${data.title} — FP Blog`;
+
+        // Fetch related posts
+        const { data: related } = await supabase
+          .from("blog_posts")
+          .select("id, title, slug, excerpt, thumbnail_url, thumbnail_alt, published_at, created_at, views_count, reading_time, meta_keywords, focus_keyword, thumbnail_ratio, is_featured")
+          .eq("is_published", true)
+          .neq("id", data.id)
+          .order("published_at", { ascending: false })
+          .limit(3);
+        if (related) setRelatedPosts(related as Post[]);
+      }
+      setLoading(false);
+    };
+    fetchPost();
+  }, [slug]);
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  };
+
+  const exportMarkdown = () => {
+    if (!post) return;
+    const blob = new Blob([`# ${post.title}\n\n${post.content}`], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${post.slug}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  // JSON-LD for article
+  const jsonLd = post ? {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.og_title || post.title,
+    description: post.og_description || post.meta_description || post.excerpt || "",
+    image: post.og_image_url || post.thumbnail_url || "",
+    datePublished: post.published_at || post.created_at,
+    keywords: post.meta_keywords?.join(", ") || post.focus_keyword || "",
+    url: post.canonical_url || `${window.location.origin}/blog/${post.slug}`,
+    publisher: { "@type": "Organization", name: "Funding Pulze" },
+  } : null;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
+        <div className="flex items-center justify-center py-32">
+          <div className="animate-spin h-8 w-8 border-2 border-foreground border-t-transparent rounded-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
+        <div className="text-center py-32">
+          <p className="text-xl text-muted-foreground">Article not found</p>
+          <Button variant="outline" className="mt-4" onClick={() => navigate("/blog")}>
+            <ArrowLeft size={16} className="mr-2" /> Back to Blog
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
+
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      )}
+
+      {/* Hero Image */}
+      {post.thumbnail_url && (
+        <div className="w-full max-h-[480px] overflow-hidden">
+          <img
+            src={post.thumbnail_url}
+            alt={post.thumbnail_alt || post.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
+      <article className="max-w-3xl mx-auto px-6 pt-12 pb-20">
+        {/* Back */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-6 text-muted-foreground hover:text-foreground"
+          onClick={() => navigate("/blog")}
+        >
+          <ArrowLeft size={16} className="mr-1" /> Back to Blog
+        </Button>
+
+        {/* Meta */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+            <span className="flex items-center gap-1">
+              <Calendar size={14} />
+              {formatDate(post.published_at || post.created_at)}
+            </span>
+            {post.reading_time > 0 && (
+              <span className="flex items-center gap-1">
+                <Clock size={14} />
+                {post.reading_time} min read
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Eye size={14} />
+              {post.views_count} views
+            </span>
+          </div>
+
+          <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
+
+          {post.excerpt && (
+            <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{post.excerpt}</p>
+          )}
+
+          {/* Keywords */}
+          {post.meta_keywords && post.meta_keywords.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {post.meta_keywords.map((kw) => (
+                <Badge key={kw} variant="secondary" className="text-xs">{kw}</Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="mt-6 flex items-center gap-2 border-b border-border pb-6">
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer size={14} className="mr-1" /> Print
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportMarkdown}>
+              <Download size={14} className="mr-1" /> Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+              }}
+            >
+              <Share2 size={14} className="mr-1" /> Share
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Content */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mt-8 prose prose-neutral dark:prose-invert max-w-none leading-relaxed text-foreground"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+        />
+
+        {/* Related Articles */}
+        {relatedPosts.length > 0 && (
+          <div className="mt-16 pt-8 border-t border-border">
+            <h2 className="font-display text-xl font-bold mb-6">More from FP Blog</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {relatedPosts.map((rp) => (
+                <div
+                  key={rp.id}
+                  className="group cursor-pointer rounded-xl border border-border bg-card hover:shadow-md transition-shadow overflow-hidden"
+                  onClick={() => navigate(`/blog/${rp.slug}`)}
+                >
+                  {rp.thumbnail_url && (
+                    <div className="aspect-video overflow-hidden">
+                      <img
+                        src={rp.thumbnail_url}
+                        alt={rp.thumbnail_alt || rp.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <h3 className="font-display text-sm font-bold line-clamp-2 group-hover:underline">{rp.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatDate(rp.published_at || rp.created_at)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </article>
+
+      <Footer />
+    </div>
+  );
+};
+
+export default BlogPost;
