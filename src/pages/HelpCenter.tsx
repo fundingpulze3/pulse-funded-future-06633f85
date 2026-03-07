@@ -28,16 +28,16 @@ const iconMap: Record<string, React.ReactNode> = {
 const renderMarkdown = (md: string) => {
   return md
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/^### (.+)$/gm, '<h3 id="$1" class="text-lg font-semibold mt-8 mb-3 scroll-mt-24" style="color:hsl(220,20%,10%)">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 id="$1" class="text-xl font-bold mt-10 mb-4 scroll-mt-24" style="color:hsl(220,20%,8%)">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 id="$1" class="text-2xl font-bold mt-10 mb-4 scroll-mt-24" style="color:hsl(220,20%,5%)">$1</h1>')
+    .replace(/^### (.+)$/gm, '<h3 id="$1" class="text-lg font-semibold mt-8 mb-3 scroll-mt-24">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 id="$1" class="text-xl font-bold mt-10 mb-4 scroll-mt-24">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 id="$1" class="text-2xl font-bold mt-10 mb-4 scroll-mt-24">$1</h1>')
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, '<code style="background:hsl(220,10%,93%);padding:2px 6px;border-radius:4px;font-size:13px;font-family:monospace">$1</code>')
-    .replace(/^> (.+)$/gm, '<blockquote style="border-left:3px solid hsl(220,10%,82%);padding-left:16px;font-style:italic;color:hsl(220,10%,40%);margin:16px 0">$1</blockquote>')
-    .replace(/^---$/gm, '<hr style="margin:32px 0;border-color:hsl(220,10%,92%)" />')
+    .replace(/`(.+?)`/g, '<code style="background:hsl(0,0%,94%);padding:2px 6px;border-radius:4px;font-size:13px;font-family:monospace">$1</code>')
+    .replace(/^> (.+)$/gm, '<blockquote style="border-left:3px solid hsl(0,0%,82%);padding-left:16px;font-style:italic;color:hsl(0,0%,40%);margin:16px 0">$1</blockquote>')
+    .replace(/^---$/gm, '<hr style="margin:32px 0;border-color:hsl(0,0%,90%)" />')
     .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="border-radius:12px;max-width:100%;margin:24px 0" />')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:hsl(220,50%,40%);text-decoration:underline" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:hsl(0,0%,20%);text-decoration:underline" target="_blank" rel="noopener">$1</a>')
     .replace(/^- (.+)$/gm, '<li style="margin-left:20px;list-style:disc;line-height:1.8">$1</li>')
     .replace(/^\d+\. (.+)$/gm, '<li style="margin-left:20px;list-style:decimal;line-height:1.8">$1</li>')
     .replace(/\n\n/g, '<div style="height:16px"></div>');
