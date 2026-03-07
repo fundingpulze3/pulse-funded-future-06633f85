@@ -845,6 +845,11 @@ const Admin = () => {
           {tab === "blog" && (
             <BlogCMS />
           )}
+
+          {/* ===== Certificates Tab ===== */}
+          {tab === "certificates" && (
+            <CertificatesCMS />
+          )}
         </div>
       </div>
 
