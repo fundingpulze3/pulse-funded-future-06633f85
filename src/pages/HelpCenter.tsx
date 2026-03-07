@@ -308,7 +308,7 @@ const HelpCenter = () => {
     setFeedbackComment("");
   };
 
-  const selectArticle = (a: Article) => {
+  const selectArticle = useCallback((a: Article) => {
     setSelectedArticle(a);
     setFeedbackSent(null);
     setShowCommentBox(false);
@@ -316,10 +316,54 @@ const HelpCenter = () => {
     setFeedbackType(null);
     setShowSuggestions(false);
     setSearch("");
+    window.history.pushState({ view: "article", id: a.id }, "", `?article=${a.slug}`);
     window.scrollTo(0, 0);
-  };
+  }, []);
 
-  const goHome = () => { setSelectedArticle(null); setSelectedCollection(null); setSearch(""); };
+  const selectCollection = useCallback((id: string) => {
+    setSelectedArticle(null);
+    setSelectedCollection(id);
+    const col = collections.find(c => c.id === id);
+    window.history.pushState({ view: "collection", id }, "", `?collection=${col?.slug || id}`);
+  }, [collections]);
+
+  const goHome = useCallback(() => {
+    setSelectedArticle(null);
+    setSelectedCollection(null);
+    setSearch("");
+    window.history.pushState({ view: "home" }, "", window.location.pathname);
+  }, []);
+
+  // Handle browser back/forward
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      const state = e.state;
+      if (!state || state.view === "home") {
+        setSelectedArticle(null);
+        setSelectedCollection(null);
+        setSearch("");
+      } else if (state.view === "article") {
+        const article = articles.find(a => a.id === state.id);
+        if (article) {
+          setSelectedArticle(article);
+          setFeedbackSent(null);
+          setShowCommentBox(false);
+          setFeedbackComment("");
+          setFeedbackType(null);
+        }
+      } else if (state.view === "collection") {
+        setSelectedArticle(null);
+        setSelectedCollection(state.id);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [articles]);
+
+  // Initialize history state on mount
+  useEffect(() => {
+    window.history.replaceState({ view: "home" }, "", window.location.pathname + window.location.search);
+  }, []);
 
   const relatedArticles = useMemo(() => {
     if (!selectedArticle) return [];
