@@ -436,7 +436,7 @@ const HelpCenter = () => {
                   )}
                   <span className="text-foreground/70 truncate max-w-[180px]">{selectedArticle.title}</span>
                 </nav>
-                <ArticleToolbar title={selectedArticle.title} url={`https://help.fundingpulze.com/${collection?.slug || "general"}/${selectedArticle.slug}`} />
+                <ArticleToolbar title={selectedArticle.title} url={`https://help.fundingpulze.com/${collection?.slug || "general"}/${selectedArticle.slug}`} content={selectedArticle.content} />
               </div>
 
               <div className="bg-card rounded-2xl border border-border p-8 lg:p-10 shadow-sm">
