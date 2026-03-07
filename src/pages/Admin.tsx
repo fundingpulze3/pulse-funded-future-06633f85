@@ -852,6 +852,11 @@ const Admin = () => {
           {tab === "certificates" && (
             <CertificatesCMS />
           )}
+
+          {/* ===== Pages CMS Tab ===== */}
+          {tab === "pages" && (
+            <PagesCMS />
+          )}
         </div>
       </div>
 
