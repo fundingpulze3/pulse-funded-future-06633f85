@@ -1,18 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { Moon, Sun, User, LogOut, Shield } from "lucide-react";
+import { Moon, Sun, User, LogOut, Shield, Menu, X } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface NavbarProps {
   isDark: boolean;
   onToggleTheme: () => void;
 }
 
+const navLinks = [
+  { label: "Home", href: "/#home", route: "/" },
+  { label: "Challenges", href: "/#rules" },
+  { label: "Blog", href: "/blog", route: "/blog" },
+  { label: "Help Center", href: "/help", route: "/help" },
+  { label: "FAQ", href: "/faq", route: "/faq" },
+  { label: "About", href: "/about", route: "/about" },
+  { label: "Affiliate", href: "/affiliate", route: "/affiliate" },
+];
+
 const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdminCheck();
@@ -34,99 +46,182 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
     loadGsap();
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+    setMobileOpen(false);
+  };
+
+  const handleNav = (e: React.MouseEvent, link: typeof navLinks[0]) => {
+    e.preventDefault();
+    if (link.route) {
+      navigate(link.route);
+    } else if (link.href.startsWith("/#")) {
+      // Hash link on same page
+      if (window.location.pathname === "/") {
+        const el = document.querySelector(link.href.replace("/", ""));
+        el?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        navigate("/");
+        setTimeout(() => {
+          const el = document.querySelector(link.href.replace("/", ""));
+          el?.scrollIntoView({ behavior: "smooth" });
+        }, 300);
+      }
+    }
+    setMobileOpen(false);
   };
 
   return (
-    <nav
-      ref={navRef}
-      className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 rounded-2xl glow-border ${
-        scrolled ? "glass py-2 px-6 w-[90%] max-w-5xl" : "glass py-3 px-8 w-[92%] max-w-6xl"
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="flex items-center gap-2">
-          <img src={logo} alt="Funding Pulze" className="h-8 w-8 rounded" />
-          <span className="font-display text-xl font-bold text-foreground tracking-tight">Funding<span className="text-gradient"> Pulze</span></span>
-        </a>
+    <>
+      <nav
+        ref={navRef}
+        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 rounded-2xl glow-border ${
+          scrolled ? "glass py-2 px-4 sm:px-6 w-[94%] max-w-5xl" : "glass py-3 px-4 sm:px-8 w-[96%] sm:w-[92%] max-w-6xl"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); setMobileOpen(false); }} className="flex items-center gap-2">
+            <img src={logo} alt="Funding Pulze" className="h-8 w-8 rounded" />
+            <span className="font-display text-xl font-bold text-foreground tracking-tight">Funding<span className="text-gradient"> Pulze</span></span>
+          </a>
 
-        <div className="hidden md:flex items-center gap-5">
-          <a href="/#home" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300">Home</a>
-          <a href="/#rules" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300">Challenges</a>
-          <a
-            href="/blog"
-            onClick={(e) => { e.preventDefault(); navigate("/blog"); }}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
-          >
-            Blog
-          </a>
-          <a
-            href="/help"
-            onClick={(e) => { e.preventDefault(); navigate("/help"); }}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
-          >
-            Help Center
-          </a>
-          <a
-            href="/faq"
-            onClick={(e) => { e.preventDefault(); navigate("/faq"); }}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
-          >
-            FAQ
-          </a>
-          <a
-            href="/about"
-            onClick={(e) => { e.preventDefault(); navigate("/about"); }}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
-          >
-            About
-          </a>
-          <a
-            href="/affiliate"
-            onClick={(e) => { e.preventDefault(); navigate("/affiliate"); }}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
-          >
-            Affiliate
-          </a>
-          {isAdmin && (
-            <a
-              href="/admin"
-              onClick={(e) => { e.preventDefault(); navigate("/admin"); }}
-              className="text-sm font-medium text-primary hover:text-accent transition-colors duration-300 flex items-center gap-1"
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-5">
+            {navLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                onClick={(e) => handleNav(e, link)}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
+              >
+                {link.label}
+              </a>
+            ))}
+            {isAdmin && (
+              <a
+                href="/admin"
+                onClick={(e) => { e.preventDefault(); navigate("/admin"); }}
+                className="text-sm font-medium text-primary hover:text-accent transition-colors duration-300 flex items-center gap-1"
+              >
+                <Shield size={14} /> Admin
+              </a>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={onToggleTheme}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Toggle theme"
             >
-              <Shield size={14} /> Admin
-            </a>
-          )}
-        </div>
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onToggleTheme}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Toggle theme"
-          >
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-
-          {user ? (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <User size={16} className="text-primary-foreground" />
+            {user ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                  <User size={16} className="text-primary-foreground" />
+                </div>
+                <button onClick={handleSignOut} className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors" title="Sign out">
+                  <LogOut size={16} />
+                </button>
               </div>
-              <button onClick={handleSignOut} className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors" title="Sign out">
-                <LogOut size={16} />
-              </button>
-            </div>
-          ) : (
-            <Button size="sm" className="rounded-xl font-medium" onClick={() => navigate("/auth")}>
-              Login
-            </Button>
-          )}
+            ) : (
+              <Button size="sm" className="hidden sm:inline-flex rounded-xl font-medium" onClick={() => navigate("/auth")}>
+                Login
+              </Button>
+            )}
+
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Mobile drawer overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+            onClick={() => setMobileOpen(false)}
+          >
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="absolute right-0 top-0 h-full w-[280px] bg-background border-l border-border shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col h-full pt-20 pb-8 px-6">
+                <nav className="flex-1 space-y-1">
+                  {navLinks.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={(e) => handleNav(e, link)}
+                      className="block py-3 px-4 rounded-xl text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                  {isAdmin && (
+                    <a
+                      href="/admin"
+                      onClick={(e) => { e.preventDefault(); navigate("/admin"); setMobileOpen(false); }}
+                      className="flex items-center gap-2 py-3 px-4 rounded-xl text-base font-medium text-primary hover:bg-accent/50 transition-all"
+                    >
+                      <Shield size={16} /> Admin
+                    </a>
+                  )}
+                </nav>
+
+                {/* Bottom section */}
+                <div className="border-t border-border pt-4 space-y-3">
+                  {user ? (
+                    <>
+                      <div className="flex items-center gap-3 px-4 py-2">
+                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                          <User size={16} className="text-primary-foreground" />
+                        </div>
+                        <span className="text-sm text-muted-foreground truncate">Logged in</span>
+                      </div>
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 w-full py-3 px-4 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+                      >
+                        <LogOut size={16} /> Sign Out
+                      </button>
+                    </>
+                  ) : (
+                    <Button className="w-full rounded-xl" onClick={() => { navigate("/auth"); setMobileOpen(false); }}>
+                      Login
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
