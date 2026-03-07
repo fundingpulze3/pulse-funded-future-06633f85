@@ -9,10 +9,11 @@ interface PageSection {
 
 export const usePageContent = (pageSlug: string) => {
   const [sections, setSections] = useState<Record<string, PageSection>>({});
+  const [orderedSections, setOrderedSections] = useState<PageSection[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data } = await supabase
         .from("page_content")
         .select("section_key, title, content")
@@ -23,10 +24,11 @@ export const usePageContent = (pageSlug: string) => {
         const map: Record<string, PageSection> = {};
         data.forEach((s) => { map[s.section_key] = s; });
         setSections(map);
+        setOrderedSections(data);
       }
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, [pageSlug]);
 
   const get = (key: string, fallback: { title?: string; content: string }) => {
@@ -37,5 +39,5 @@ export const usePageContent = (pageSlug: string) => {
     };
   };
 
-  return { get, loading, hasCmsContent: Object.keys(sections).length > 0 };
+  return { get, loading, hasCmsContent: orderedSections.length > 0, orderedSections };
 };

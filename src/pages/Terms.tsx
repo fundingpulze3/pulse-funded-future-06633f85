@@ -53,13 +53,10 @@ const defaultSections = sections;
 const Terms = () => {
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
   const heroRef = useRef<HTMLDivElement>(null);
-  const { get, hasCmsContent } = usePageContent("terms");
+  const { hasCmsContent, orderedSections } = usePageContent("terms");
 
   const displaySections = hasCmsContent
-    ? defaultSections.map((s, i) => ({
-        title: get(`section-${i}`, { title: s.title, content: s.content }).title,
-        content: get(`section-${i}`, { title: s.title, content: s.content }).content,
-      }))
+    ? orderedSections.map((s) => ({ title: s.title || "", content: s.content }))
     : defaultSections;
 
   useEffect(() => {
