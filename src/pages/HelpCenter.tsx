@@ -112,8 +112,8 @@ const ReadingProgressBar = () => {
 };
 
 // ---- SHARE / PRINT TOOLBAR ----
-const ArticleToolbar = ({ title, slug }: { title: string; slug: string }) => {
-  const articleUrl = `https://help.fundingpulze.com/${slug}`;
+const ArticleToolbar = ({ title, url }: { title: string; url: string }) => {
+  const articleUrl = url;
   const copyLink = () => {
     navigator.clipboard.writeText(articleUrl);
     toast.success("Link copied!");
