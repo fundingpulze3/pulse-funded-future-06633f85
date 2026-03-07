@@ -408,7 +408,7 @@ const HelpCenter = () => {
                   <ChevronRight size={10} />
                   {collection && (
                     <>
-                      <button onClick={() => { setSelectedArticle(null); setSelectedCollection(collection.id); }}
+                      <button onClick={() => selectCollection(collection.id)}
                         className="hover:text-foreground transition-colors">{collection.name}</button>
                       <ChevronRight size={10} />
                     </>
@@ -576,7 +576,7 @@ const HelpCenter = () => {
                 {selectedCollection ? collections.find(c => c.id === selectedCollection)?.name : `Results for "${search}"`}
               </h2>
               {selectedCollection && (
-                <button onClick={() => setSelectedCollection(null)}
+                <button onClick={goHome}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                   <ArrowLeft size={12} /> All categories
                 </button>
@@ -629,7 +629,7 @@ const HelpCenter = () => {
                 const count = articles.filter(a => a.collection_id === c.id).length;
                 const icon = iconMap[c.icon || "folder"] || iconMap.folder;
                 return (
-                  <button key={c.id} onClick={() => setSelectedCollection(c.id)}
+                  <button key={c.id} onClick={() => selectCollection(c.id)}
                     className="text-left bg-card rounded-2xl border border-border p-6 hover:shadow-lg hover:border-border/70 transition-all group">
                     <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center mb-4 text-foreground/60 group-hover:border-muted-foreground transition-colors">
                       {icon}
