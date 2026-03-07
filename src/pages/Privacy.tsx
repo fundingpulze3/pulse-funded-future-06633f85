@@ -45,14 +45,10 @@ const defaultSections = sections;
 const Privacy = () => {
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
   const heroRef = useRef<HTMLDivElement>(null);
-  const { get, hasCmsContent } = usePageContent("privacy");
+  const { hasCmsContent, orderedSections } = usePageContent("privacy");
 
-  // Build sections from CMS or use defaults
   const displaySections = hasCmsContent
-    ? defaultSections.map((s, i) => ({
-        title: get(`section-${i}`, { title: s.title, content: s.content }).title,
-        content: get(`section-${i}`, { title: s.title, content: s.content }).content,
-      }))
+    ? orderedSections.map((s) => ({ title: s.title || "", content: s.content }))
     : defaultSections;
 
   useEffect(() => {
