@@ -4,8 +4,8 @@ const footerLinks = {
   Company: ["About", "Careers"],
   Resources: [
     { label: "FAQ", href: "/faq" },
-    { label: "Help Center", href: "https://help.fundingpulze.com", external: true },
-    { label: "Blog", href: "#" },
+    { label: "Help Center", href: "/help" },
+    { label: "Blog", href: "/blog" },
   ],
   Legal: ["Terms", "Privacy Policy"],
 };

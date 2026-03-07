@@ -56,6 +56,20 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
           <a href="/#home" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300">Home</a>
           <a href="/#rules" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300">Challenges</a>
           <a
+            href="/blog"
+            onClick={(e) => { e.preventDefault(); navigate("/blog"); }}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
+          >
+            Blog
+          </a>
+          <a
+            href="/help"
+            onClick={(e) => { e.preventDefault(); navigate("/help"); }}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
+          >
+            Help Center
+          </a>
+          <a
             href="/faq"
             onClick={(e) => { e.preventDefault(); navigate("/faq"); }}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
@@ -67,7 +81,7 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
             onClick={(e) => { e.preventDefault(); navigate("/affiliate"); }}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
           >
-            Affiliate Dashboard
+            Affiliate
           </a>
           {isAdmin && (
             <a
