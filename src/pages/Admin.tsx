@@ -19,6 +19,7 @@ import {
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
+import BlogCMS from "@/components/admin/BlogCMS";
 import { toast } from "sonner";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -26,7 +27,7 @@ import {
 } from "recharts";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter";
+type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "blog";
 
 interface ChallengeForm {
   name: string;

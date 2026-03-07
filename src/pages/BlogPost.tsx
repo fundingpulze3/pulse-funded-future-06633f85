@@ -82,12 +82,12 @@ const BlogPost = () => {
         // Fetch related posts
         const { data: related } = await supabase
           .from("blog_posts")
-          .select("id, title, slug, excerpt, thumbnail_url, thumbnail_alt, published_at, created_at, views_count, reading_time, meta_keywords, focus_keyword, thumbnail_ratio, is_featured")
+          .select("*")
           .eq("is_published", true)
           .neq("id", data.id)
           .order("published_at", { ascending: false })
           .limit(3);
-        if (related) setRelatedPosts(related as Post[]);
+        if (related) setRelatedPosts(related as unknown as Post[]);
       }
       setLoading(false);
     };
