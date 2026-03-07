@@ -2,6 +2,37 @@ import { useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap } from "lucide-react";
 
+const MagneticButton = ({ children, className }: { children: React.ReactNode; className?: string }) => {
+  const btnRef = useRef<HTMLDivElement>(null);
+
+  const onMove = (e: React.MouseEvent) => {
+    const el = btnRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = (e.clientX - cx) * 0.25;
+    const dy = (e.clientY - cy) * 0.25;
+    el.style.transform = `translate(${dx}px, ${dy}px)`;
+  };
+
+  const onLeave = () => {
+    const el = btnRef.current;
+    if (el) el.style.transform = "translate(0, 0)";
+  };
+
+  return (
+    <div
+      ref={btnRef}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className={`transition-transform duration-300 ease-out ${className || ""}`}
+    >
+      {children}
+    </div>
+  );
+};
+
 const GRID_SIZE = 28;
 
 const Hero = () => {
@@ -216,12 +247,16 @@ const Hero = () => {
         </p>
 
         <div className="hero-buttons flex flex-col sm:flex-row items-center justify-center gap-4 opacity-0">
-          <Button size="lg" className="rounded-xl text-base px-8 py-6 glow-box">
-            Start Challenge <ArrowRight size={18} className="ml-2" />
-          </Button>
-          <Button variant="outline" size="lg" className="rounded-xl text-base px-8 py-6">
-            View Rules
-          </Button>
+          <MagneticButton>
+            <Button size="lg" className="rounded-xl text-base px-8 py-6 glow-box">
+              Start Challenge <ArrowRight size={18} className="ml-2" />
+            </Button>
+          </MagneticButton>
+          <MagneticButton>
+            <Button variant="outline" size="lg" className="rounded-xl text-base px-8 py-6">
+              View Rules
+            </Button>
+          </MagneticButton>
         </div>
       </div>
     </section>
