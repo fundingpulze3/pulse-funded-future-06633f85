@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import WhyChoose from "@/components/WhyChoose";
 import Shop from "@/components/Shop";
+import CertificateShowcase from "@/components/CertificateShowcase";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useUtmTracking } from "@/hooks/useUtmTracking";
@@ -25,6 +26,7 @@ const Index = () => {
       <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
       <Hero />
       <WhyChoose />
+      <CertificateShowcase />
       <Shop />
       <Footer />
     </div>
