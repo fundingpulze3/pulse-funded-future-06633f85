@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ArrowLeft, Clock, Eye, Calendar, Printer, Download, Share2 } from "lucide-react";
+import { ArrowLeft, Clock, Eye, Calendar, Printer, Download, Share2, List, ArrowRight, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
@@ -31,12 +31,41 @@ interface Post {
   focus_keyword: string | null;
 }
 
+interface TocItem {
+  id: string;
+  text: string;
+  level: number;
+}
+
+// Extract TOC headings from markdown
+const extractToc = (md: string): TocItem[] => {
+  const items: TocItem[] = [];
+  const regex = /^(#{1,3}) (.+)$/gm;
+  let match;
+  while ((match = regex.exec(md)) !== null) {
+    const level = match[1].length;
+    const text = match[2].trim();
+    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    items.push({ id, text, level });
+  }
+  return items;
+};
+
 const renderMarkdown = (md: string) => {
   return md
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold mt-6 mb-3 font-display">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="text-xl font-semibold mt-8 mb-3 font-display">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mt-8 mb-4 font-display">$1</h1>')
+    .replace(/^### (.+)$/gm, (_m, t) => {
+      const id = t.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      return `<h3 id="${id}" class="text-lg font-semibold mt-6 mb-3 font-display scroll-mt-24">${t}</h3>`;
+    })
+    .replace(/^## (.+)$/gm, (_m: string, t: string) => {
+      const id = t.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      return `<h2 id="${id}" class="text-xl font-semibold mt-8 mb-3 font-display scroll-mt-24">${t}</h2>`;
+    })
+    .replace(/^# (.+)$/gm, (_m: string, t: string) => {
+      const id = t.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      return `<h1 id="${id}" class="text-2xl font-bold mt-8 mb-4 font-display scroll-mt-24">${t}</h1>`;
+    })
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-sm">$1</code>')
@@ -56,6 +85,8 @@ const BlogPost = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tocOpen, setTocOpen] = useState(true);
+  const [activeHeading, setActiveHeading] = useState("");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -73,13 +104,9 @@ const BlogPost = () => {
 
       if (data) {
         setPost(data as Post);
-        // Increment views
         supabase.from("blog_posts").update({ views_count: (data.views_count || 0) + 1 }).eq("id", data.id).then(() => {});
-
-        // Set page title & meta
         document.title = data.meta_title || `${data.title} — FP Blog`;
 
-        // Fetch related posts
         const { data: related } = await supabase
           .from("blog_posts")
           .select("*")
@@ -94,9 +121,36 @@ const BlogPost = () => {
     fetchPost();
   }, [slug]);
 
+  const toc = useMemo(() => (post ? extractToc(post.content) : []), [post]);
+
+  // Intersection observer for active heading tracking
+  useEffect(() => {
+    if (!toc.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveHeading(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: "-80px 0px -70% 0px", threshold: 0.1 }
+    );
+    toc.forEach((item) => {
+      const el = document.getElementById(item.id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [toc, post]);
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "";
     return new Date(dateStr).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  };
+
+  const formatDateShort = (dateStr: string | null) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
   const exportMarkdown = () => {
@@ -109,7 +163,6 @@ const BlogPost = () => {
     URL.revokeObjectURL(a.href);
   };
 
-  // JSON-LD for article
   const jsonLd = post ? {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -166,113 +219,247 @@ const BlogPost = () => {
         </div>
       )}
 
-      <article className="max-w-3xl mx-auto px-6 pt-12 pb-20">
-        {/* Back */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-6 text-muted-foreground hover:text-foreground"
-          onClick={() => navigate("/blog")}
-        >
-          <ArrowLeft size={16} className="mr-1" /> Back to Blog
-        </Button>
-
-        {/* Meta */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-            <span className="flex items-center gap-1">
-              <Calendar size={14} />
-              {formatDate(post.published_at || post.created_at)}
-            </span>
-            {post.reading_time > 0 && (
-              <span className="flex items-center gap-1">
-                <Clock size={14} />
-                {post.reading_time} min read
-              </span>
-            )}
-            <span className="flex items-center gap-1">
-              <Eye size={14} />
-              {post.views_count} views
-            </span>
-          </div>
-
-          <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
-
-          {post.excerpt && (
-            <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{post.excerpt}</p>
-          )}
-
-          {/* Keywords */}
-          {post.meta_keywords && post.meta_keywords.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {post.meta_keywords.map((kw) => (
-                <Badge key={kw} variant="secondary" className="text-xs">{kw}</Badge>
-              ))}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="mt-6 flex items-center gap-2 border-b border-border pb-6">
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer size={14} className="mr-1" /> Print
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportMarkdown}>
-              <Download size={14} className="mr-1" /> Export
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-              }}
-            >
-              <Share2 size={14} className="mr-1" /> Share
-            </Button>
-          </div>
-        </motion.div>
-
-        {/* Content */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mt-8 prose prose-neutral dark:prose-invert max-w-none leading-relaxed text-foreground"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
-        />
-
-        {/* Related Articles */}
-        {relatedPosts.length > 0 && (
-          <div className="mt-16 pt-8 border-t border-border">
-            <h2 className="font-display text-xl font-bold mb-6">More from FP Blog</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {relatedPosts.map((rp) => (
-                <div
-                  key={rp.id}
-                  className="group cursor-pointer rounded-xl border border-border bg-card hover:shadow-md transition-shadow overflow-hidden"
-                  onClick={() => navigate(`/blog/${rp.slug}`)}
+      <div className="max-w-7xl mx-auto px-6 pt-12 pb-20 flex gap-10">
+        {/* ── Table of Contents — Desktop Sidebar ── */}
+        {toc.length > 2 && (
+          <aside className="hidden xl:block w-56 shrink-0">
+            <div className="sticky top-28">
+              <button
+                onClick={() => setTocOpen(!tocOpen)}
+                className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4 hover:text-foreground transition-colors"
+              >
+                <List size={14} />
+                Contents
+              </button>
+              {tocOpen && (
+                <motion.nav
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col gap-0.5"
                 >
-                  {rp.thumbnail_url && (
-                    <div className="aspect-video overflow-hidden">
-                      <img
-                        src={rp.thumbnail_url}
-                        alt={rp.thumbnail_alt || rp.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-display text-sm font-bold line-clamp-2 group-hover:underline">{rp.title}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDate(rp.published_at || rp.created_at)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                  {toc.map((item) => (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className={`text-[13px] leading-snug py-1.5 border-l-2 transition-all duration-200 ${
+                        activeHeading === item.id
+                          ? "border-foreground text-foreground font-medium"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/40"
+                      } ${item.level === 1 ? "pl-3" : item.level === 2 ? "pl-5" : "pl-7"}`}
+                    >
+                      {item.text}
+                    </a>
+                  ))}
+                </motion.nav>
+              )}
             </div>
-          </div>
+          </aside>
         )}
-      </article>
+
+        {/* ── Main Article Content ── */}
+        <article className="max-w-3xl w-full mx-auto min-w-0">
+          {/* Back */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mb-6 text-muted-foreground hover:text-foreground"
+            onClick={() => navigate("/blog")}
+          >
+            <ArrowLeft size={16} className="mr-1" /> Back to Blog
+          </Button>
+
+          {/* Meta */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+              <span className="flex items-center gap-1">
+                <Calendar size={14} />
+                {formatDate(post.published_at || post.created_at)}
+              </span>
+              {post.reading_time > 0 && (
+                <span className="flex items-center gap-1">
+                  <Clock size={14} />
+                  {post.reading_time} min read
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <Eye size={14} />
+                {post.views_count} views
+              </span>
+            </div>
+
+            <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
+
+            {post.excerpt && (
+              <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{post.excerpt}</p>
+            )}
+
+            {post.meta_keywords && post.meta_keywords.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {post.meta_keywords.map((kw) => (
+                  <Badge key={kw} variant="secondary" className="text-xs">{kw}</Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="mt-6 flex items-center gap-2 border-b border-border pb-6">
+              <Button variant="outline" size="sm" onClick={() => window.print()}>
+                <Printer size={14} className="mr-1" /> Print
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportMarkdown}>
+                <Download size={14} className="mr-1" /> Export
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigator.clipboard.writeText(window.location.href)}
+              >
+                <Share2 size={14} className="mr-1" /> Share
+              </Button>
+            </div>
+          </motion.div>
+
+          {/* ── Mobile TOC (collapsible) ── */}
+          {toc.length > 2 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="xl:hidden mt-6 rounded-xl border border-border bg-card p-4"
+            >
+              <button
+                onClick={() => setTocOpen(!tocOpen)}
+                className="flex items-center justify-between w-full text-sm font-semibold"
+              >
+                <span className="flex items-center gap-2">
+                  <List size={15} /> Table of Contents
+                </span>
+                <span className="text-muted-foreground text-xs">{tocOpen ? "Hide" : "Show"}</span>
+              </button>
+              {tocOpen && (
+                <nav className="mt-3 flex flex-col gap-1 border-t border-border pt-3">
+                  {toc.map((item) => (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className={`text-sm py-1 text-muted-foreground hover:text-foreground transition-colors ${
+                        item.level === 1 ? "" : item.level === 2 ? "pl-4" : "pl-8"
+                      }`}
+                    >
+                      {item.text}
+                    </a>
+                  ))}
+                </nav>
+              )}
+            </motion.div>
+          )}
+
+          {/* Content */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mt-8 prose prose-neutral dark:prose-invert max-w-none leading-relaxed text-foreground"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+          />
+
+          {/* ── Glassmorphic CTA → /challenges ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mt-16 relative overflow-hidden rounded-2xl border border-border/50"
+          >
+            {/* Glass background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.03] via-foreground/[0.06] to-foreground/[0.02] backdrop-blur-xl" />
+            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-foreground/[0.04] blur-3xl" />
+            <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-foreground/[0.03] blur-3xl" />
+
+            <div className="relative px-8 py-10 md:px-12 md:py-14 flex flex-col md:flex-row items-center gap-6">
+              <div className="flex-1 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-foreground/[0.06] border border-border/50 text-xs font-medium text-muted-foreground mb-4">
+                  <Rocket size={12} />
+                  Start Trading Today
+                </div>
+                <h3 className="font-display text-2xl md:text-3xl font-bold leading-tight">
+                  Ready to get funded?
+                </h3>
+                <p className="mt-2 text-muted-foreground text-sm md:text-base max-w-md">
+                  Choose your challenge size, prove your skills, and trade with our capital. No risk to your own funds.
+                </p>
+              </div>
+              <Button
+                size="lg"
+                className="rounded-xl px-8 h-12 font-semibold bg-foreground text-background hover:bg-foreground/90 shrink-0"
+                onClick={() => navigate("/#challenges")}
+              >
+                View Challenges
+                <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </div>
+          </motion.div>
+
+          {/* ── Recommended Articles ── */}
+          {relatedPosts.length > 0 && (
+            <div className="mt-16 pt-8 border-t border-border">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-display text-xl font-bold">Recommended for you</h2>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => navigate("/blog")}>
+                  All articles <ArrowRight size={14} className="ml-1" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {relatedPosts.map((rp, i) => (
+                  <motion.div
+                    key={rp.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08 }}
+                    className="group cursor-pointer rounded-xl border border-border bg-card hover:shadow-lg transition-all duration-300 overflow-hidden"
+                    onClick={() => navigate(`/blog/${rp.slug}`)}
+                  >
+                    {rp.thumbnail_url && (
+                      <div className="aspect-[4/5] overflow-hidden">
+                        <img
+                          src={rp.thumbnail_url}
+                          alt={rp.thumbnail_alt || rp.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-display text-sm font-bold line-clamp-2 group-hover:underline decoration-1 underline-offset-2">
+                        {rp.title}
+                      </h3>
+                      {rp.excerpt && (
+                        <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{rp.excerpt}</p>
+                      )}
+                      <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
+                        <span>{formatDateShort(rp.published_at || rp.created_at)}</span>
+                        {rp.reading_time > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Clock size={10} /> {rp.reading_time} min
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+        </article>
+      </div>
 
       <Footer />
     </div>
