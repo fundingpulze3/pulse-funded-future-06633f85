@@ -52,7 +52,7 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
           <span className="font-display text-xl font-bold text-foreground tracking-tight">Funding<span className="text-gradient"> Pulze</span></span>
         </a>
 
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-5">
           <a href="/#home" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300">Home</a>
           <a href="/#rules" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300">Challenges</a>
           <a
