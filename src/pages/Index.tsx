@@ -27,6 +27,7 @@ const Index = () => {
       <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
       <Hero />
       <WhyChoose />
+      <Roadmap />
       <CertificateShowcase />
       <Shop />
       <Footer />
