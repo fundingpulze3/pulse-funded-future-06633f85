@@ -24,7 +24,6 @@ const AppRoutes = () => {
   if (isHelpDomain) {
     return (
       <Routes>
-        <Route path="/help" element={<HelpCenter />} />
         <Route path="*" element={<HelpCenter />} />
       </Routes>
     );

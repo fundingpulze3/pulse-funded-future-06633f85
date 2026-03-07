@@ -15,10 +15,7 @@ export const useAdminSubdomain = () => {
     if (isAdminDomain && location.pathname !== "/admin" && location.pathname !== "/auth") {
       navigate("/admin", { replace: true });
     }
-    if (isHelpDomain && location.pathname !== "/help") {
-      navigate("/help", { replace: true });
-    }
-  }, [isAdminDomain, isHelpDomain, location.pathname, navigate]);
+  }, [isAdminDomain, location.pathname, navigate]);
 
   return { isAdminDomain, isHelpDomain };
 };
