@@ -50,11 +50,7 @@ const slugify = (text: string) =>
   text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 const THUMBNAIL_RATIOS = [
-  { value: "16:9", label: "16:9 (Landscape)", aspect: "aspect-video" },
   { value: "4:5", label: "4:5 (Portrait)", aspect: "aspect-[4/5]" },
-  { value: "1:1", label: "1:1 (Square)", aspect: "aspect-square" },
-  { value: "4:3", label: "4:3 (Standard)", aspect: "aspect-[4/3]" },
-  { value: "21:9", label: "21:9 (Ultrawide)", aspect: "aspect-[21/9]" },
 ];
 
 type CMSView = "dashboard" | "editor";
@@ -72,7 +68,7 @@ const BlogCMS = () => {
   const [form, setForm] = useState({
     title: "", slug: "", content: "", excerpt: "",
     is_published: false, is_featured: false,
-    thumbnail_url: "", thumbnail_alt: "", thumbnail_ratio: "16:9",
+    thumbnail_url: "", thumbnail_alt: "", thumbnail_ratio: "4:5",
     meta_title: "", meta_description: "", meta_keywords: "",
     canonical_url: "", og_title: "", og_description: "", og_image_url: "",
     focus_keyword: "", published_at: "",
@@ -121,7 +117,7 @@ const BlogCMS = () => {
     setForm({
       title: "", slug: "", content: "", excerpt: "",
       is_published: false, is_featured: false,
-      thumbnail_url: "", thumbnail_alt: "", thumbnail_ratio: "16:9",
+      thumbnail_url: "", thumbnail_alt: "", thumbnail_ratio: "4:5",
       meta_title: "", meta_description: "", meta_keywords: "",
       canonical_url: "", og_title: "", og_description: "", og_image_url: "",
       focus_keyword: "", published_at: "",
@@ -137,7 +133,7 @@ const BlogCMS = () => {
       title: p.title, slug: p.slug, content: p.content, excerpt: p.excerpt || "",
       is_published: p.is_published, is_featured: p.is_featured,
       thumbnail_url: p.thumbnail_url || "", thumbnail_alt: p.thumbnail_alt || "",
-      thumbnail_ratio: p.thumbnail_ratio || "16:9",
+      thumbnail_ratio: p.thumbnail_ratio || "4:5",
       meta_title: p.meta_title || "", meta_description: p.meta_description || "",
       meta_keywords: (p.meta_keywords || []).join(", "),
       canonical_url: p.canonical_url || "", og_title: p.og_title || "",
