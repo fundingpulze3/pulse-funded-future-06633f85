@@ -5,6 +5,9 @@ import {
   Search, ChevronRight, ArrowLeft, ThumbsUp, ThumbsDown, Star, Clock, Eye,
   FolderOpen, FileText, HelpCircle, TrendingUp, BookOpen, Settings, Shield,
   CreditCard, Users, Printer, Link2, Share2, Mail, Send, BookMarked, X,
+  Zap, MessageCircle, Award, Target, Layers, Gift, LifeBuoy, Briefcase,
+  DollarSign, BarChart2, PieChart, Activity, Wallet, Lock, Unlock, Bell,
+  Flag, Heart, Bookmark, Compass, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
@@ -24,6 +27,16 @@ const iconMap: Record<string, React.ReactNode> = {
   trending: <TrendingUp size={22} />, book: <BookOpen size={22} />,
   settings: <Settings size={22} />, shield: <Shield size={22} />,
   credit: <CreditCard size={22} />, users: <Users size={22} />, star: <Star size={22} />,
+  zap: <Zap size={22} />, message: <MessageCircle size={22} />,
+  award: <Award size={22} />, target: <Target size={22} />,
+  layers: <Layers size={22} />, gift: <Gift size={22} />,
+  lifebuoy: <LifeBuoy size={22} />, briefcase: <Briefcase size={22} />,
+  dollar: <DollarSign size={22} />, chart: <BarChart2 size={22} />,
+  pie: <PieChart size={22} />, activity: <Activity size={22} />,
+  wallet: <Wallet size={22} />, lock: <Lock size={22} />,
+  unlock: <Unlock size={22} />, bell: <Bell size={22} />,
+  flag: <Flag size={22} />, heart: <Heart size={22} />,
+  bookmark: <Bookmark size={22} />, compass: <Compass size={22} />,
 };
 
 const renderMarkdown = (md: string) => {
@@ -112,7 +125,7 @@ const ReadingProgressBar = () => {
 };
 
 // ---- SHARE / PRINT TOOLBAR ----
-const ArticleToolbar = ({ title, url }: { title: string; url: string }) => {
+const ArticleToolbar = ({ title, url, content }: { title: string; url: string; content?: string }) => {
   const articleUrl = url;
   const copyLink = () => {
     navigator.clipboard.writeText(articleUrl);
@@ -121,6 +134,16 @@ const ArticleToolbar = ({ title, url }: { title: string; url: string }) => {
   const shareTwitter = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(articleUrl)}`, "_blank");
   const shareFacebook = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`, "_blank");
   const printArticle = () => window.print();
+  const exportArticle = () => {
+    if (!content) return;
+    const blob = new Blob([`# ${title}\n\n${content}`], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast.success("Article exported!");
+  };
 
   return (
     <div className="flex items-center gap-1">
@@ -129,6 +152,9 @@ const ArticleToolbar = ({ title, url }: { title: string; url: string }) => {
       </button>
       <button onClick={shareTwitter} title="Share on X" className="p-2 hover:bg-muted rounded-lg transition-colors">
         <Share2 size={15} className="text-muted-foreground" />
+      </button>
+      <button onClick={exportArticle} title="Export as Markdown" className="p-2 hover:bg-muted rounded-lg transition-colors">
+        <Download size={15} className="text-muted-foreground" />
       </button>
       <button onClick={printArticle} title="Print article" className="p-2 hover:bg-muted rounded-lg transition-colors">
         <Printer size={15} className="text-muted-foreground" />
@@ -410,7 +436,7 @@ const HelpCenter = () => {
                   )}
                   <span className="text-foreground/70 truncate max-w-[180px]">{selectedArticle.title}</span>
                 </nav>
-                <ArticleToolbar title={selectedArticle.title} url={`https://help.fundingpulze.com/${collection?.slug || "general"}/${selectedArticle.slug}`} />
+                <ArticleToolbar title={selectedArticle.title} url={`https://help.fundingpulze.com/${collection?.slug || "general"}/${selectedArticle.slug}`} content={selectedArticle.content} />
               </div>
 
               <div className="bg-card rounded-2xl border border-border p-8 lg:p-10 shadow-sm">
