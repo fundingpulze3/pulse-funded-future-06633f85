@@ -161,12 +161,12 @@ const ContactSupportForm = ({ articleId, articleTitle }: { articleId?: string; a
 
   if (!open) {
     return (
-      <div className="bg-[hsl(220,25%,14%)] rounded-2xl p-8 text-center">
-        <Mail size={28} className="text-[hsl(220,60%,60%)] mx-auto mb-3" />
-        <p className="font-display font-bold text-white text-lg mb-1">Still need help?</p>
-        <p className="text-sm text-[hsl(220,10%,60%)] mb-5">Our support team is ready to assist you</p>
+      <div className="backdrop-blur-xl bg-background/60 border border-border/50 rounded-2xl p-8 text-center shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.08)]">
+        <Mail size={28} className="text-muted-foreground mx-auto mb-3" />
+        <p className="font-display font-semibold text-foreground text-lg mb-1">Still need help?</p>
+        <p className="text-sm text-muted-foreground mb-5">Our support team is ready to assist you</p>
         <button onClick={() => setOpen(true)}
-          className="px-6 py-2.5 bg-[hsl(220,60%,55%)] text-white rounded-lg text-sm font-medium hover:bg-[hsl(220,60%,50%)] transition-colors">
+          className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
           Contact Support
         </button>
       </div>
@@ -175,53 +175,53 @@ const ContactSupportForm = ({ articleId, articleTitle }: { articleId?: string; a
 
   if (submitted) {
     return (
-      <div className="bg-white rounded-2xl border border-[hsl(220,15%,90%)] p-8 text-center shadow-sm">
-        <div className="w-12 h-12 bg-[hsl(142,50%,92%)] rounded-full flex items-center justify-center mx-auto mb-3">
-          <Send size={20} className="text-[hsl(142,50%,35%)]" />
+      <div className="backdrop-blur-xl bg-background/60 border border-border/50 rounded-2xl p-8 text-center shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.08)]">
+        <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+          <Send size={20} className="text-foreground" />
         </div>
-        <p className="font-display font-semibold text-[hsl(220,20%,15%)]">Message sent!</p>
-        <p className="text-sm text-[hsl(220,10%,55%)] mt-1">We'll get back to you as soon as possible.</p>
+        <p className="font-display font-semibold text-foreground">Message sent!</p>
+        <p className="text-sm text-muted-foreground mt-1">We'll get back to you as soon as possible.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-[hsl(220,15%,90%)] p-6 lg:p-8 shadow-sm">
+    <div className="backdrop-blur-xl bg-background/60 border border-border/50 rounded-2xl p-6 lg:p-8 shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.08)]">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-display font-bold text-[hsl(220,20%,12%)]">Contact Support</h3>
-        <button onClick={() => setOpen(false)} className="p-1 hover:bg-[hsl(220,15%,93%)] rounded-lg">
-          <X size={16} className="text-[hsl(220,10%,50%)]" />
+        <h3 className="font-display font-semibold text-foreground">Contact Support</h3>
+        <button onClick={() => setOpen(false)} className="p-1 hover:bg-muted rounded-lg transition-colors">
+          <X size={16} className="text-muted-foreground" />
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-medium text-[hsl(220,10%,40%)] mb-1 block">Name *</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Name *</label>
             <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-              className="w-full h-10 px-3 bg-[hsl(220,15%,97%)] border border-[hsl(220,15%,88%)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,55%)]"
+              className="w-full h-10 px-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Your name" required />
           </div>
           <div>
-            <label className="text-xs font-medium text-[hsl(220,10%,40%)] mb-1 block">Email *</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Email *</label>
             <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} type="email"
-              className="w-full h-10 px-3 bg-[hsl(220,15%,97%)] border border-[hsl(220,15%,88%)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,55%)]"
+              className="w-full h-10 px-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="your@email.com" required />
           </div>
         </div>
         <div>
-          <label className="text-xs font-medium text-[hsl(220,10%,40%)] mb-1 block">Subject</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Subject</label>
           <input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
-            className="w-full h-10 px-3 bg-[hsl(220,15%,97%)] border border-[hsl(220,15%,88%)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,55%)]"
+            className="w-full h-10 px-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="What do you need help with?" />
         </div>
         <div>
-          <label className="text-xs font-medium text-[hsl(220,10%,40%)] mb-1 block">Message *</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Message *</label>
           <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
-            className="w-full min-h-[120px] p-3 bg-[hsl(220,15%,97%)] border border-[hsl(220,15%,88%)] rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,55%)]"
+            className="w-full min-h-[120px] p-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Describe your issue in detail..." required />
         </div>
         <button type="submit" disabled={submitting}
-          className="w-full py-2.5 bg-[hsl(220,25%,14%)] text-white rounded-lg text-sm font-medium hover:bg-[hsl(220,25%,20%)] disabled:opacity-50 transition-colors">
+          className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
           {submitting ? "Sending..." : "Send Message"}
         </button>
       </form>
