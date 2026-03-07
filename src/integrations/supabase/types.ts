@@ -480,6 +480,39 @@ export type Database = {
           },
         ]
       }
+      page_content: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          page_slug: string
+          section_key: string
+          sort_order: number | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          page_slug: string
+          section_key: string
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          page_slug?: string
+          section_key?: string
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_visits: {
         Row: {
           created_at: string
