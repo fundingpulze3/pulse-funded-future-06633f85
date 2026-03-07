@@ -343,7 +343,7 @@ const SupportTicketsCMS = () => {
             </Button>
           </div>
           
-          <div className="max-h-[500px] overflow-y-auto divide-y divide-[hsl(0,0%,95%)]">
+          <div className="divide-y divide-[hsl(0,0%,95%)]">
             {/* Original ticket message */}
             <div className="p-5 bg-[hsl(45,50%,97%)]">
               <div className="flex items-center justify-between mb-2">
