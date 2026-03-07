@@ -28,16 +28,16 @@ const iconMap: Record<string, React.ReactNode> = {
 const renderMarkdown = (md: string) => {
   return md
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/^### (.+)$/gm, '<h3 id="$1" class="text-lg font-semibold mt-8 mb-3 scroll-mt-24" style="color:hsl(220,20%,10%)">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 id="$1" class="text-xl font-bold mt-10 mb-4 scroll-mt-24" style="color:hsl(220,20%,8%)">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 id="$1" class="text-2xl font-bold mt-10 mb-4 scroll-mt-24" style="color:hsl(220,20%,5%)">$1</h1>')
+    .replace(/^### (.+)$/gm, '<h3 id="$1" class="text-lg font-semibold mt-8 mb-3 scroll-mt-24">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 id="$1" class="text-xl font-bold mt-10 mb-4 scroll-mt-24">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 id="$1" class="text-2xl font-bold mt-10 mb-4 scroll-mt-24">$1</h1>')
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, '<code style="background:hsl(220,10%,93%);padding:2px 6px;border-radius:4px;font-size:13px;font-family:monospace">$1</code>')
-    .replace(/^> (.+)$/gm, '<blockquote style="border-left:3px solid hsl(220,10%,82%);padding-left:16px;font-style:italic;color:hsl(220,10%,40%);margin:16px 0">$1</blockquote>')
-    .replace(/^---$/gm, '<hr style="margin:32px 0;border-color:hsl(220,10%,92%)" />')
+    .replace(/`(.+?)`/g, '<code style="background:hsl(0,0%,94%);padding:2px 6px;border-radius:4px;font-size:13px;font-family:monospace">$1</code>')
+    .replace(/^> (.+)$/gm, '<blockquote style="border-left:3px solid hsl(0,0%,82%);padding-left:16px;font-style:italic;color:hsl(0,0%,40%);margin:16px 0">$1</blockquote>')
+    .replace(/^---$/gm, '<hr style="margin:32px 0;border-color:hsl(0,0%,90%)" />')
     .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="border-radius:12px;max-width:100%;margin:24px 0" />')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:hsl(220,50%,40%);text-decoration:underline" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:hsl(0,0%,20%);text-decoration:underline" target="_blank" rel="noopener">$1</a>')
     .replace(/^- (.+)$/gm, '<li style="margin-left:20px;list-style:disc;line-height:1.8">$1</li>')
     .replace(/^\d+\. (.+)$/gm, '<li style="margin-left:20px;list-style:decimal;line-height:1.8">$1</li>')
     .replace(/\n\n/g, '<div style="height:16px"></div>');
@@ -71,19 +71,19 @@ const SearchSuggestions = ({ articles, query, onSelect, isDark }: {
 
   return (
     <div className={`absolute left-0 right-0 top-full mt-1 rounded-xl border shadow-xl z-50 overflow-hidden ${
-      isDark ? "bg-[hsl(220,20%,18%)] border-[hsl(220,15%,28%)]" : "bg-white border-[hsl(220,15%,88%)]"
+      isDark ? "bg-primary border-border" : "bg-card border-border"
     }`}>
       {matches.map(a => (
         <button key={a.id} onClick={() => onSelect(a)}
           className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors ${
             isDark
-              ? "hover:bg-[hsl(220,20%,22%)] text-[hsl(220,10%,80%)]"
-              : "hover:bg-[hsl(220,15%,97%)] text-[hsl(220,20%,15%)]"
+              ? "hover:bg-accent text-primary-foreground"
+              : "hover:bg-muted text-foreground"
           }`}>
-          <FileText size={14} className={isDark ? "text-[hsl(220,10%,50%)]" : "text-[hsl(220,10%,55%)]"} />
+          <FileText size={14} className="text-muted-foreground" />
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{a.title}</p>
-            {a.excerpt && <p className={`text-xs truncate mt-0.5 ${isDark ? "text-[hsl(220,10%,45%)]" : "text-[hsl(220,10%,55%)]"}`}>{a.excerpt}</p>}
+            {a.excerpt && <p className="text-xs truncate mt-0.5 text-muted-foreground">{a.excerpt}</p>}
           </div>
         </button>
       ))}
@@ -104,8 +104,8 @@ const ReadingProgressBar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
   return (
-    <div className="fixed top-14 left-0 right-0 z-40 h-[3px] bg-[hsl(220,15%,90%)]">
-      <div className="h-full bg-[hsl(220,60%,50%)] transition-[width] duration-100" style={{ width: `${progress}%` }} />
+    <div className="fixed top-14 left-0 right-0 z-40 h-[3px] bg-border">
+      <div className="h-full bg-foreground transition-[width] duration-100" style={{ width: `${progress}%` }} />
     </div>
   );
 };
@@ -123,14 +123,14 @@ const ArticleToolbar = ({ title, slug }: { title: string; slug: string }) => {
 
   return (
     <div className="flex items-center gap-1">
-      <button onClick={copyLink} title="Copy link" className="p-2 hover:bg-[hsl(220,15%,93%)] rounded-lg transition-colors">
-        <Link2 size={15} className="text-[hsl(220,10%,50%)]" />
+      <button onClick={copyLink} title="Copy link" className="p-2 hover:bg-muted rounded-lg transition-colors">
+        <Link2 size={15} className="text-muted-foreground" />
       </button>
-      <button onClick={shareTwitter} title="Share on X" className="p-2 hover:bg-[hsl(220,15%,93%)] rounded-lg transition-colors">
-        <Share2 size={15} className="text-[hsl(220,10%,50%)]" />
+      <button onClick={shareTwitter} title="Share on X" className="p-2 hover:bg-muted rounded-lg transition-colors">
+        <Share2 size={15} className="text-muted-foreground" />
       </button>
-      <button onClick={printArticle} title="Print article" className="p-2 hover:bg-[hsl(220,15%,93%)] rounded-lg transition-colors">
-        <Printer size={15} className="text-[hsl(220,10%,50%)]" />
+      <button onClick={printArticle} title="Print article" className="p-2 hover:bg-muted rounded-lg transition-colors">
+        <Printer size={15} className="text-muted-foreground" />
       </button>
     </div>
   );
@@ -161,12 +161,12 @@ const ContactSupportForm = ({ articleId, articleTitle }: { articleId?: string; a
 
   if (!open) {
     return (
-      <div className="bg-[hsl(220,25%,14%)] rounded-2xl p-8 text-center">
-        <Mail size={28} className="text-[hsl(220,60%,60%)] mx-auto mb-3" />
-        <p className="font-display font-bold text-white text-lg mb-1">Still need help?</p>
-        <p className="text-sm text-[hsl(220,10%,60%)] mb-5">Our support team is ready to assist you</p>
+      <div className="backdrop-blur-xl bg-background/60 border border-border/50 rounded-2xl p-8 text-center shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.08)]">
+        <Mail size={28} className="text-muted-foreground mx-auto mb-3" />
+        <p className="font-display font-semibold text-foreground text-lg mb-1">Still need help?</p>
+        <p className="text-sm text-muted-foreground mb-5">Our support team is ready to assist you</p>
         <button onClick={() => setOpen(true)}
-          className="px-6 py-2.5 bg-[hsl(220,60%,55%)] text-white rounded-lg text-sm font-medium hover:bg-[hsl(220,60%,50%)] transition-colors">
+          className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
           Contact Support
         </button>
       </div>
@@ -175,53 +175,53 @@ const ContactSupportForm = ({ articleId, articleTitle }: { articleId?: string; a
 
   if (submitted) {
     return (
-      <div className="bg-white rounded-2xl border border-[hsl(220,15%,90%)] p-8 text-center shadow-sm">
-        <div className="w-12 h-12 bg-[hsl(142,50%,92%)] rounded-full flex items-center justify-center mx-auto mb-3">
-          <Send size={20} className="text-[hsl(142,50%,35%)]" />
+      <div className="backdrop-blur-xl bg-background/60 border border-border/50 rounded-2xl p-8 text-center shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.08)]">
+        <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+          <Send size={20} className="text-foreground" />
         </div>
-        <p className="font-display font-semibold text-[hsl(220,20%,15%)]">Message sent!</p>
-        <p className="text-sm text-[hsl(220,10%,55%)] mt-1">We'll get back to you as soon as possible.</p>
+        <p className="font-display font-semibold text-foreground">Message sent!</p>
+        <p className="text-sm text-muted-foreground mt-1">We'll get back to you as soon as possible.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-[hsl(220,15%,90%)] p-6 lg:p-8 shadow-sm">
+    <div className="backdrop-blur-xl bg-background/60 border border-border/50 rounded-2xl p-6 lg:p-8 shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.08)]">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-display font-bold text-[hsl(220,20%,12%)]">Contact Support</h3>
-        <button onClick={() => setOpen(false)} className="p-1 hover:bg-[hsl(220,15%,93%)] rounded-lg">
-          <X size={16} className="text-[hsl(220,10%,50%)]" />
+        <h3 className="font-display font-semibold text-foreground">Contact Support</h3>
+        <button onClick={() => setOpen(false)} className="p-1 hover:bg-muted rounded-lg transition-colors">
+          <X size={16} className="text-muted-foreground" />
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-medium text-[hsl(220,10%,40%)] mb-1 block">Name *</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Name *</label>
             <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-              className="w-full h-10 px-3 bg-[hsl(220,15%,97%)] border border-[hsl(220,15%,88%)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,55%)]"
+              className="w-full h-10 px-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Your name" required />
           </div>
           <div>
-            <label className="text-xs font-medium text-[hsl(220,10%,40%)] mb-1 block">Email *</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Email *</label>
             <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} type="email"
-              className="w-full h-10 px-3 bg-[hsl(220,15%,97%)] border border-[hsl(220,15%,88%)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,55%)]"
+              className="w-full h-10 px-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="your@email.com" required />
           </div>
         </div>
         <div>
-          <label className="text-xs font-medium text-[hsl(220,10%,40%)] mb-1 block">Subject</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Subject</label>
           <input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
-            className="w-full h-10 px-3 bg-[hsl(220,15%,97%)] border border-[hsl(220,15%,88%)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,55%)]"
+            className="w-full h-10 px-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="What do you need help with?" />
         </div>
         <div>
-          <label className="text-xs font-medium text-[hsl(220,10%,40%)] mb-1 block">Message *</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Message *</label>
           <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
-            className="w-full min-h-[120px] p-3 bg-[hsl(220,15%,97%)] border border-[hsl(220,15%,88%)] rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,55%)]"
+            className="w-full min-h-[120px] p-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Describe your issue in detail..." required />
         </div>
         <button type="submit" disabled={submitting}
-          className="w-full py-2.5 bg-[hsl(220,25%,14%)] text-white rounded-lg text-sm font-medium hover:bg-[hsl(220,25%,20%)] disabled:opacity-50 transition-colors">
+          className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
           {submitting ? "Sending..." : "Send Message"}
         </button>
       </form>
@@ -334,20 +334,20 @@ const HelpCenter = () => {
     const readingTime = getReadingTime(selectedArticle.content);
 
     return (
-      <div className="min-h-screen bg-[hsl(220,15%,97%)]">
-        <header className="sticky top-0 z-50 bg-[hsl(220,25%,14%)] text-white">
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-50 bg-primary text-primary-foreground">
           <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
             <button onClick={goHome} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
               <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg" />
               <span className="font-display font-bold text-sm">Funding Pulze Help Center</span>
             </button>
             <div className="relative w-56 hidden sm:block" ref={searchRef}>
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(220,10%,50%)]" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input value={search}
                 onChange={e => { setSearch(e.target.value); setShowSuggestions(true); }}
                 onFocus={() => setShowSuggestions(true)}
                 placeholder="Search..."
-                className="w-full h-8 pl-9 pr-3 bg-[hsl(220,20%,20%)] border border-[hsl(220,15%,28%)] rounded-lg text-sm text-white placeholder:text-[hsl(220,10%,45%)] focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,55%)]" />
+                className="w-full h-8 pl-9 pr-3 bg-foreground/10 border border-foreground/15 rounded-lg text-sm text-primary-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
               {showSuggestions && <SearchSuggestions articles={articles} query={search} onSelect={selectArticle} isDark />}
             </div>
           </div>
@@ -359,79 +359,79 @@ const HelpCenter = () => {
             <main>
               {/* Breadcrumbs + Toolbar */}
               <div className="flex items-center justify-between mb-6">
-                <nav className="flex items-center gap-1.5 text-xs text-[hsl(220,10%,55%)]">
-                  <button onClick={goHome} className="hover:text-[hsl(220,10%,25%)] transition-colors">Help Center</button>
+              <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <button onClick={goHome} className="hover:text-foreground transition-colors">Help Center</button>
                   <ChevronRight size={10} />
                   {collection && (
                     <>
                       <button onClick={() => { setSelectedArticle(null); setSelectedCollection(collection.id); }}
-                        className="hover:text-[hsl(220,10%,25%)] transition-colors">{collection.name}</button>
+                        className="hover:text-foreground transition-colors">{collection.name}</button>
                       <ChevronRight size={10} />
                     </>
                   )}
-                  <span className="text-[hsl(220,10%,35%)] truncate max-w-[180px]">{selectedArticle.title}</span>
+                  <span className="text-foreground/70 truncate max-w-[180px]">{selectedArticle.title}</span>
                 </nav>
                 <ArticleToolbar title={selectedArticle.title} slug={selectedArticle.slug} />
               </div>
 
-              <div className="bg-white rounded-2xl border border-[hsl(220,15%,90%)] p-8 lg:p-10 shadow-sm">
+              <div className="bg-card rounded-2xl border border-border p-8 lg:p-10 shadow-sm">
                 {selectedArticle.featured_image_url && (
                   <img src={selectedArticle.featured_image_url} alt={selectedArticle.title}
                     className="w-full h-48 object-cover rounded-xl mb-6" />
                 )}
-                <h1 className="font-display text-3xl lg:text-[34px] font-bold text-[hsl(220,20%,10%)] mb-3 leading-tight">
+                <h1 className="font-display text-3xl lg:text-[34px] font-bold text-foreground mb-3 leading-tight">
                   {selectedArticle.title}
                 </h1>
-                <div className="flex items-center flex-wrap gap-3 text-xs text-[hsl(220,10%,55%)] mb-8 pb-6 border-b border-[hsl(220,15%,92%)]">
+                <div className="flex items-center flex-wrap gap-3 text-xs text-muted-foreground mb-8 pb-6 border-b border-border">
                   <span className="flex items-center gap-1"><Clock size={11} /> {new Date(selectedArticle.updated_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
                   <span className="flex items-center gap-1"><BookMarked size={11} /> {readingTime} min read</span>
                   <span className="flex items-center gap-1"><Eye size={11} /> {selectedArticle.views_count || 0} views</span>
                   {collection && (
-                    <span className="inline-flex items-center gap-1 bg-[hsl(220,15%,95%)] px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
                       <FolderOpen size={10} /> {collection.name}
                     </span>
                   )}
                 </div>
-                <article className="text-[15px] leading-[1.85] text-[hsl(220,10%,22%)] max-w-none"
+                <article className="text-[15px] leading-[1.85] text-foreground/85 max-w-none"
                   dangerouslySetInnerHTML={{ __html: renderMarkdown(selectedArticle.content) }} />
               </div>
 
               {/* Feedback */}
               <div className="mt-8">
-                <div className="bg-white rounded-2xl border border-[hsl(220,15%,90%)] p-8 shadow-sm">
+                <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
                   {feedbackSent === selectedArticle.id ? (
                     <div className="text-center py-4">
-                      <div className="w-12 h-12 bg-[hsl(142,50%,92%)] rounded-full flex items-center justify-center mx-auto mb-3">
-                        <ThumbsUp size={20} className="text-[hsl(142,50%,35%)]" />
+                      <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                        <ThumbsUp size={20} className="text-foreground" />
                       </div>
-                      <p className="font-display font-semibold text-[hsl(220,20%,15%)]">Thanks for your feedback!</p>
-                      <p className="text-sm text-[hsl(220,10%,55%)] mt-1">Your input helps us improve.</p>
+                      <p className="font-display font-semibold text-foreground">Thanks for your feedback!</p>
+                      <p className="text-sm text-muted-foreground mt-1">Your input helps us improve.</p>
                     </div>
                   ) : showCommentBox ? (
                     <div>
-                      <p className="font-display font-semibold text-[hsl(220,20%,15%)] mb-3">What could be improved?</p>
+                      <p className="font-display font-semibold text-foreground mb-3">What could be improved?</p>
                       <textarea value={feedbackComment} onChange={e => setFeedbackComment(e.target.value)}
                         placeholder="Tell us how we can make this article better..."
-                        className="w-full min-h-[100px] p-3 bg-[hsl(220,15%,97%)] border border-[hsl(220,15%,88%)] rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(220,25%,30%)]" />
+                        className="w-full min-h-[100px] p-3 bg-muted/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring" />
                       <div className="flex gap-2 mt-3">
                         <button onClick={submitFeedbackWithComment}
-                          className="px-5 py-2.5 bg-[hsl(220,25%,14%)] text-white rounded-lg text-sm font-medium hover:bg-[hsl(220,25%,20%)] transition-colors">Submit</button>
+                          className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">Submit</button>
                         <button onClick={() => { setShowCommentBox(false); setFeedbackComment(""); }}
-                          className="px-4 py-2.5 text-[hsl(220,10%,50%)] text-sm hover:text-[hsl(220,10%,25%)]">Skip</button>
+                          className="px-4 py-2.5 text-muted-foreground text-sm hover:text-foreground">Skip</button>
                       </div>
                     </div>
                   ) : (
                     <div className="text-center py-2">
-                      <p className="font-display font-semibold text-lg text-[hsl(220,20%,15%)] mb-1">Was this article helpful?</p>
-                      <p className="text-sm text-[hsl(220,10%,55%)] mb-5">Let us know if you found what you were looking for</p>
+                      <p className="font-display font-semibold text-lg text-foreground mb-1">Was this article helpful?</p>
+                      <p className="text-sm text-muted-foreground mb-5">Let us know if you found what you were looking for</p>
                       <div className="flex items-center justify-center gap-3">
                         <button onClick={() => sendFeedback(true)}
-                          className="flex items-center gap-2 px-6 py-3 bg-white border border-[hsl(220,15%,88%)] rounded-xl text-sm font-medium text-[hsl(220,10%,25%)] hover:border-[hsl(142,50%,50%)] hover:bg-[hsl(142,50%,97%)] transition-all group">
-                          <ThumbsUp size={16} className="text-[hsl(220,10%,50%)] group-hover:text-[hsl(142,50%,40%)]" /> Yes, it helped
+                          className="flex items-center gap-2 px-6 py-3 bg-card border border-border rounded-xl text-sm font-medium text-foreground hover:bg-muted transition-all group">
+                          <ThumbsUp size={16} className="text-muted-foreground group-hover:text-foreground" /> Yes, it helped
                         </button>
                         <button onClick={() => sendFeedback(false)}
-                          className="flex items-center gap-2 px-6 py-3 bg-white border border-[hsl(220,15%,88%)] rounded-xl text-sm font-medium text-[hsl(220,10%,25%)] hover:border-[hsl(0,70%,60%)] hover:bg-[hsl(0,70%,98%)] transition-all group">
-                          <ThumbsDown size={16} className="text-[hsl(220,10%,50%)] group-hover:text-[hsl(0,70%,55%)]" /> Not really
+                          className="flex items-center gap-2 px-6 py-3 bg-card border border-border rounded-xl text-sm font-medium text-foreground hover:bg-muted transition-all group">
+                          <ThumbsDown size={16} className="text-muted-foreground group-hover:text-foreground" /> Not really
                         </button>
                       </div>
                     </div>
@@ -447,13 +447,13 @@ const HelpCenter = () => {
               {/* Related */}
               {relatedArticles.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="font-display text-lg font-semibold text-[hsl(220,20%,15%)] mb-4">Related Articles</h3>
+                  <h3 className="font-display text-lg font-semibold text-foreground mb-4">Related Articles</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {relatedArticles.map(a => (
                       <button key={a.id} onClick={() => selectArticle(a)}
-                        className="text-left p-4 bg-white border border-[hsl(220,15%,90%)] rounded-xl hover:shadow-md transition-all group">
-                        <p className="text-sm font-medium text-[hsl(220,20%,15%)] group-hover:text-[hsl(220,25%,10%)]">{a.title}</p>
-                        {a.excerpt && <p className="text-xs text-[hsl(220,10%,55%)] mt-1 line-clamp-2">{a.excerpt}</p>}
+                        className="text-left p-4 bg-card border border-border rounded-xl hover:shadow-md transition-all group">
+                        <p className="text-sm font-medium text-foreground">{a.title}</p>
+                        {a.excerpt && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{a.excerpt}</p>}
                       </button>
                     ))}
                   </div>
@@ -465,11 +465,11 @@ const HelpCenter = () => {
             {headings.length > 1 && (
               <aside className="hidden lg:block">
                 <div className="sticky top-20">
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-[hsl(220,10%,50%)] mb-3">On this page</p>
+                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-3">On this page</p>
                   <nav className="space-y-1.5">
                     {headings.map((h, i) => (
                       <a key={i} href={`#${h.id}`}
-                        className={`block text-xs text-[hsl(220,10%,50%)] hover:text-[hsl(220,20%,15%)] transition-colors truncate ${
+                        className={`block text-xs text-muted-foreground hover:text-foreground transition-colors truncate ${
                           h.level === 1 ? "font-medium" : h.level === 2 ? "pl-3" : "pl-6"
                         }`}>
                         {h.text}
@@ -495,8 +495,8 @@ const HelpCenter = () => {
 
   // ---- LANDING PAGE ----
   return (
-    <div className="min-h-screen bg-[hsl(220,15%,97%)]">
-      <header className="bg-[hsl(220,25%,14%)] text-white">
+    <div className="min-h-screen bg-background">
+      <header className="bg-primary text-primary-foreground">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <button onClick={goHome} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg" />
@@ -505,16 +505,16 @@ const HelpCenter = () => {
         </div>
       </header>
 
-      <section className="bg-[hsl(220,25%,14%)] pb-16 pt-10">
+      <section className="bg-primary pb-16 pt-10">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h1 className="font-display text-3xl lg:text-4xl font-bold text-white mb-8">Funding Pulze Help Centre</h1>
+          <h1 className="font-display text-3xl lg:text-4xl font-bold text-primary-foreground mb-8">Funding Pulze Help Centre</h1>
           <div className="relative max-w-2xl mx-auto" ref={searchRef}>
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[hsl(220,10%,50%)]" />
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={search}
               onChange={e => { setSearch(e.target.value); setSelectedCollection(null); setShowSuggestions(true); }}
               onFocus={() => setShowSuggestions(true)}
               placeholder="Search for articles..."
-              className="w-full h-13 pl-12 pr-4 py-3.5 bg-[hsl(220,20%,22%)] border border-[hsl(220,15%,30%)] rounded-xl text-white text-sm placeholder:text-[hsl(220,10%,50%)] focus:outline-none focus:ring-2 focus:ring-[hsl(220,60%,60%)] focus:border-transparent transition-all" />
+              className="w-full h-13 pl-12 pr-4 py-3.5 bg-foreground/10 border border-foreground/15 rounded-xl text-primary-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all" />
             {showSuggestions && <SearchSuggestions articles={articles} query={search} onSelect={selectArticle} isDark />}
           </div>
         </div>
@@ -523,41 +523,41 @@ const HelpCenter = () => {
       <main className="max-w-5xl mx-auto px-6 -mt-2 pb-10">
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="animate-spin h-6 w-6 border-2 border-[hsl(220,25%,14%)] border-t-transparent rounded-full" />
+            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
           </div>
         ) : search.trim() || selectedCollection ? (
           <div className="pt-8">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-xl font-bold text-[hsl(220,20%,12%)]">
+              <h2 className="font-display text-xl font-bold text-foreground">
                 {selectedCollection ? collections.find(c => c.id === selectedCollection)?.name : `Results for "${search}"`}
               </h2>
               {selectedCollection && (
                 <button onClick={() => setSelectedCollection(null)}
-                  className="flex items-center gap-1 text-xs text-[hsl(220,10%,50%)] hover:text-[hsl(220,10%,25%)] transition-colors">
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                   <ArrowLeft size={12} /> All categories
                 </button>
               )}
             </div>
             {selectedCollection && (() => {
               const col = collections.find(c => c.id === selectedCollection);
-              return col?.description ? <p className="text-sm text-[hsl(220,10%,50%)] mb-6 -mt-2">{col.description}</p> : null;
+              return col?.description ? <p className="text-sm text-muted-foreground mb-6 -mt-2">{col.description}</p> : null;
             })()}
             {filteredArticles.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-[hsl(220,15%,90%)]">
-                <Search size={32} className="text-[hsl(220,10%,80%)] mx-auto mb-3" />
-                <p className="text-[hsl(220,10%,40%)]">No articles found</p>
-                <p className="text-xs text-[hsl(220,10%,55%)] mt-1">Try a different search term</p>
+              <div className="text-center py-16 bg-card rounded-2xl border border-border">
+                <Search size={32} className="text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-muted-foreground">No articles found</p>
+                <p className="text-xs text-muted-foreground mt-1">Try a different search term</p>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-[hsl(220,15%,90%)] shadow-sm overflow-hidden divide-y divide-[hsl(220,15%,93%)]">
+              <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden divide-y divide-border">
                 {filteredArticles.map(a => (
                   <button key={a.id} onClick={() => selectArticle(a)}
-                    className="w-full text-left px-6 py-4 hover:bg-[hsl(220,15%,98%)] transition-colors flex items-center justify-between group">
+                    className="w-full text-left px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between group">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-[hsl(220,20%,12%)]">{a.title}</p>
-                      {a.excerpt && <p className="text-xs text-[hsl(220,10%,55%)] mt-0.5 line-clamp-1">{a.excerpt}</p>}
+                      <p className="text-sm font-medium text-foreground">{a.title}</p>
+                      {a.excerpt && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{a.excerpt}</p>}
                     </div>
-                    <ChevronRight size={14} className="text-[hsl(220,10%,75%)] group-hover:text-[hsl(220,10%,40%)] shrink-0 ml-3" />
+                    <ChevronRight size={14} className="text-muted-foreground/50 group-hover:text-muted-foreground shrink-0 ml-3" />
                   </button>
                 ))}
               </div>
@@ -566,14 +566,14 @@ const HelpCenter = () => {
         ) : (
           <div className="space-y-8 pt-8">
             {mostViewed.length > 0 && (
-              <div className="bg-white rounded-2xl border border-[hsl(220,15%,90%)] shadow-sm p-6 lg:p-8">
-                <h2 className="font-display text-xl font-bold text-[hsl(220,20%,12%)] mb-5">Most Viewed Articles</h2>
+              <div className="bg-card rounded-2xl border border-border shadow-sm p-6 lg:p-8">
+                <h2 className="font-display text-xl font-bold text-foreground mb-5">Most Viewed Articles</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
                   {mostViewed.map(a => (
                     <button key={a.id} onClick={() => selectArticle(a)}
-                      className="text-left py-3 flex items-center justify-between border-b border-[hsl(220,15%,94%)] last:border-0 hover:text-[hsl(220,25%,14%)] transition-colors group">
-                      <span className="text-sm text-[hsl(220,10%,25%)] group-hover:text-[hsl(220,25%,14%)]">{a.title}</span>
-                      <ChevronRight size={14} className="text-[hsl(220,10%,75%)] group-hover:text-[hsl(220,10%,35%)] shrink-0 ml-2" />
+                      className="text-left py-3 flex items-center justify-between border-b border-border last:border-0 hover:text-foreground transition-colors group">
+                      <span className="text-sm text-foreground/80 group-hover:text-foreground">{a.title}</span>
+                      <ChevronRight size={14} className="text-muted-foreground/50 group-hover:text-muted-foreground shrink-0 ml-2" />
                     </button>
                   ))}
                 </div>
@@ -586,28 +586,28 @@ const HelpCenter = () => {
                 const icon = iconMap[c.icon || "folder"] || iconMap.folder;
                 return (
                   <button key={c.id} onClick={() => setSelectedCollection(c.id)}
-                    className="text-left bg-white rounded-2xl border border-[hsl(220,15%,90%)] p-6 hover:shadow-lg hover:border-[hsl(220,15%,82%)] transition-all group">
-                    <div className="w-10 h-10 rounded-full border border-[hsl(220,15%,88%)] flex items-center justify-center mb-4 text-[hsl(220,10%,35%)] group-hover:border-[hsl(220,15%,70%)] transition-colors">
+                    className="text-left bg-card rounded-2xl border border-border p-6 hover:shadow-lg hover:border-border/70 transition-all group">
+                    <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center mb-4 text-foreground/60 group-hover:border-muted-foreground transition-colors">
                       {icon}
                     </div>
-                    <h3 className="font-display text-base font-bold text-[hsl(220,20%,12%)] mb-1">{c.name}</h3>
-                    {c.description && <p className="text-sm text-[hsl(220,10%,50%)] mb-3 line-clamp-2">{c.description}</p>}
-                    <p className="text-xs text-[hsl(220,10%,55%)]">{count} article{count !== 1 ? "s" : ""}</p>
+                    <h3 className="font-display text-base font-bold text-foreground mb-1">{c.name}</h3>
+                    {c.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{c.description}</p>}
+                    <p className="text-xs text-muted-foreground">{count} article{count !== 1 ? "s" : ""}</p>
                   </button>
                 );
               })}
             </div>
 
             {collections.length === 0 && articles.length > 0 && (
-              <div className="bg-white rounded-2xl border border-[hsl(220,15%,90%)] shadow-sm overflow-hidden divide-y divide-[hsl(220,15%,93%)]">
+              <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden divide-y divide-border">
                 {articles.map(a => (
                   <button key={a.id} onClick={() => selectArticle(a)}
-                    className="w-full text-left px-6 py-4 hover:bg-[hsl(220,15%,98%)] transition-colors flex items-center justify-between group">
+                    className="w-full text-left px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between group">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-[hsl(220,20%,12%)]">{a.title}</p>
-                      {a.excerpt && <p className="text-xs text-[hsl(220,10%,55%)] mt-0.5 line-clamp-1">{a.excerpt}</p>}
+                      <p className="text-sm font-medium text-foreground">{a.title}</p>
+                      {a.excerpt && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{a.excerpt}</p>}
                     </div>
-                    <ChevronRight size={14} className="text-[hsl(220,10%,75%)] group-hover:text-[hsl(220,10%,40%)] shrink-0 ml-3" />
+                    <ChevronRight size={14} className="text-muted-foreground/50 group-hover:text-muted-foreground shrink-0 ml-3" />
                   </button>
                 ))}
               </div>
@@ -619,15 +619,15 @@ const HelpCenter = () => {
         )}
       </main>
 
-      <footer className="border-t border-[hsl(220,15%,90%)] bg-white py-8 mt-4">
+      <footer className="border-t border-border bg-card py-8 mt-4">
         <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <img src={logo} alt="Funding Pulze" className="h-5 w-5 rounded" />
-            <span className="text-xs text-[hsl(220,10%,55%)]">© {new Date().getFullYear()} Funding Pulze. All rights reserved.</span>
+            <span className="text-xs text-muted-foreground">© {new Date().getFullYear()} Funding Pulze. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://fundingpulze.com" className="text-xs text-[hsl(220,10%,55%)] hover:text-[hsl(220,10%,25%)] transition-colors">Main Site</a>
-            <a href="https://fundingpulze.com/faq" className="text-xs text-[hsl(220,10%,55%)] hover:text-[hsl(220,10%,25%)] transition-colors">FAQ</a>
+            <a href="https://fundingpulze.com" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Main Site</a>
+            <a href="https://fundingpulze.com/faq" className="text-xs text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
           </div>
         </div>
       </footer>
