@@ -192,6 +192,38 @@ export type Database = {
         }
         Relationships: []
       }
+      help_article_feedback: {
+        Row: {
+          article_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          is_helpful: boolean
+        }
+        Insert: {
+          article_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_helpful: boolean
+        }
+        Update: {
+          article_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_helpful?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_article_feedback_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       help_articles: {
         Row: {
           author_id: string
@@ -199,12 +231,17 @@ export type Database = {
           content: string
           created_at: string
           excerpt: string | null
+          featured_image_url: string | null
           id: string
+          is_featured: boolean
           is_published: boolean
+          meta_description: string | null
+          meta_title: string | null
           slug: string
           sort_order: number | null
           title: string
           updated_at: string
+          views_count: number
         }
         Insert: {
           author_id: string
@@ -212,12 +249,17 @@ export type Database = {
           content?: string
           created_at?: string
           excerpt?: string | null
+          featured_image_url?: string | null
           id?: string
+          is_featured?: boolean
           is_published?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           slug: string
           sort_order?: number | null
           title: string
           updated_at?: string
+          views_count?: number
         }
         Update: {
           author_id?: string
@@ -225,12 +267,17 @@ export type Database = {
           content?: string
           created_at?: string
           excerpt?: string | null
+          featured_image_url?: string | null
           id?: string
+          is_featured?: boolean
           is_published?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           slug?: string
           sort_order?: number | null
           title?: string
           updated_at?: string
+          views_count?: number
         }
         Relationships: [
           {
