@@ -16,6 +16,9 @@ import Checkout from "./pages/Checkout";
 import FAQ from "./pages/FAQ";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
+import About from "./pages/About";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +54,9 @@ const AppRoutes = () => {
       <Route path="/affiliate" element={<AffiliateDashboard />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/faq" element={<FAQ />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/help/*" element={<HelpCenter />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="*" element={<NotFound />} />
