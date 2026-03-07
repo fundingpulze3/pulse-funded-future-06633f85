@@ -308,7 +308,7 @@ const HelpCenter = () => {
     setFeedbackComment("");
   };
 
-  const selectArticle = (a: Article) => {
+  const selectArticle = useCallback((a: Article) => {
     setSelectedArticle(a);
     setFeedbackSent(null);
     setShowCommentBox(false);
@@ -316,10 +316,54 @@ const HelpCenter = () => {
     setFeedbackType(null);
     setShowSuggestions(false);
     setSearch("");
+    window.history.pushState({ view: "article", id: a.id }, "", `?article=${a.slug}`);
     window.scrollTo(0, 0);
-  };
+  }, []);
 
-  const goHome = () => { setSelectedArticle(null); setSelectedCollection(null); setSearch(""); };
+  const selectCollection = useCallback((id: string) => {
+    setSelectedArticle(null);
+    setSelectedCollection(id);
+    const col = collections.find(c => c.id === id);
+    window.history.pushState({ view: "collection", id }, "", `?collection=${col?.slug || id}`);
+  }, [collections]);
+
+  const goHome = useCallback(() => {
+    setSelectedArticle(null);
+    setSelectedCollection(null);
+    setSearch("");
+    window.history.pushState({ view: "home" }, "", window.location.pathname);
+  }, []);
+
+  // Handle browser back/forward
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      const state = e.state;
+      if (!state || state.view === "home") {
+        setSelectedArticle(null);
+        setSelectedCollection(null);
+        setSearch("");
+      } else if (state.view === "article") {
+        const article = articles.find(a => a.id === state.id);
+        if (article) {
+          setSelectedArticle(article);
+          setFeedbackSent(null);
+          setShowCommentBox(false);
+          setFeedbackComment("");
+          setFeedbackType(null);
+        }
+      } else if (state.view === "collection") {
+        setSelectedArticle(null);
+        setSelectedCollection(state.id);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [articles]);
+
+  // Initialize history state on mount
+  useEffect(() => {
+    window.history.replaceState({ view: "home" }, "", window.location.pathname + window.location.search);
+  }, []);
 
   const relatedArticles = useMemo(() => {
     if (!selectedArticle) return [];
@@ -364,7 +408,7 @@ const HelpCenter = () => {
                   <ChevronRight size={10} />
                   {collection && (
                     <>
-                      <button onClick={() => { setSelectedArticle(null); setSelectedCollection(collection.id); }}
+                      <button onClick={() => selectCollection(collection.id)}
                         className="hover:text-foreground transition-colors">{collection.name}</button>
                       <ChevronRight size={10} />
                     </>
@@ -532,7 +576,7 @@ const HelpCenter = () => {
                 {selectedCollection ? collections.find(c => c.id === selectedCollection)?.name : `Results for "${search}"`}
               </h2>
               {selectedCollection && (
-                <button onClick={() => setSelectedCollection(null)}
+                <button onClick={goHome}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                   <ArrowLeft size={12} /> All categories
                 </button>
@@ -585,7 +629,7 @@ const HelpCenter = () => {
                 const count = articles.filter(a => a.collection_id === c.id).length;
                 const icon = iconMap[c.icon || "folder"] || iconMap.folder;
                 return (
-                  <button key={c.id} onClick={() => setSelectedCollection(c.id)}
+                  <button key={c.id} onClick={() => selectCollection(c.id)}
                     className="text-left bg-card rounded-2xl border border-border p-6 hover:shadow-lg hover:border-border/70 transition-all group">
                     <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center mb-4 text-foreground/60 group-hover:border-muted-foreground transition-colors">
                       {icon}
