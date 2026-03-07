@@ -125,7 +125,7 @@ const ReadingProgressBar = () => {
 };
 
 // ---- SHARE / PRINT TOOLBAR ----
-const ArticleToolbar = ({ title, url }: { title: string; url: string }) => {
+const ArticleToolbar = ({ title, url, content }: { title: string; url: string; content?: string }) => {
   const articleUrl = url;
   const copyLink = () => {
     navigator.clipboard.writeText(articleUrl);
@@ -134,6 +134,16 @@ const ArticleToolbar = ({ title, url }: { title: string; url: string }) => {
   const shareTwitter = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(articleUrl)}`, "_blank");
   const shareFacebook = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`, "_blank");
   const printArticle = () => window.print();
+  const exportArticle = () => {
+    if (!content) return;
+    const blob = new Blob([`# ${title}\n\n${content}`], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast.success("Article exported!");
+  };
 
   return (
     <div className="flex items-center gap-1">
@@ -142,6 +152,9 @@ const ArticleToolbar = ({ title, url }: { title: string; url: string }) => {
       </button>
       <button onClick={shareTwitter} title="Share on X" className="p-2 hover:bg-muted rounded-lg transition-colors">
         <Share2 size={15} className="text-muted-foreground" />
+      </button>
+      <button onClick={exportArticle} title="Export as Markdown" className="p-2 hover:bg-muted rounded-lg transition-colors">
+        <Download size={15} className="text-muted-foreground" />
       </button>
       <button onClick={printArticle} title="Print article" className="p-2 hover:bg-muted rounded-lg transition-colors">
         <Printer size={15} className="text-muted-foreground" />
