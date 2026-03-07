@@ -3,13 +3,19 @@ import { useRef } from "react";
 import logo from "@/assets/logo.png";
 
 const footerLinks = {
-  Company: ["About", "Careers"],
+  Company: [
+    { label: "About", href: "/about" },
+    { label: "Careers", href: "#" },
+  ],
   Resources: [
     { label: "FAQ", href: "/faq" },
     { label: "Help Center", href: "/help" },
     { label: "Blog", href: "/blog" },
   ],
-  Legal: ["Terms", "Privacy Policy"],
+  Legal: [
+    { label: "Terms", href: "/terms" },
+    { label: "Privacy Policy", href: "/privacy" },
+  ],
 };
 
 const Footer = () => {
