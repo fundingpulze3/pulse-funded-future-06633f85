@@ -27,6 +27,7 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground">
       <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
       <Hero />
+      <StatsBar />
       <WhyChoose />
       <Roadmap />
       <CertificateShowcase />
