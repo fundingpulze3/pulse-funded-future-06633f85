@@ -8,6 +8,7 @@ import Roadmap from "@/components/Roadmap";
 import StatsBar from "@/components/StatsBar";
 import Testimonials from "@/components/Testimonials";
 import Community from "@/components/Community";
+import GlobeCTA from "@/components/GlobeCTA";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useUtmTracking } from "@/hooks/useUtmTracking";
@@ -36,6 +37,7 @@ const Index = () => {
       <CertificateShowcase />
       <Testimonials />
       <Community />
+      <GlobeCTA />
       <Footer />
     </div>
   );
