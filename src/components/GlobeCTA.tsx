@@ -127,30 +127,6 @@ const GlobeCTA = () => {
     <section ref={sectionRef} className="relative overflow-hidden">
       {/* Content area */}
       <div className="relative z-10 text-center pt-24 sm:pt-32 pb-0">
-        {/* Floating logo */}
-        <motion.div
-          className="mx-auto mb-8"
-          initial={{ opacity: 0, y: 30, scale: 0.9 }}
-          animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className="relative inline-block">
-            {/* Outer glow ring */}
-            <div className="absolute -inset-4 rounded-full opacity-30 animate-pulse-glow"
-              style={{
-                background: `radial-gradient(circle, hsl(var(--glow-primary) / 0.15), transparent 70%)`,
-              }}
-            />
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full glass-card flex items-center justify-center p-1">
-              <img
-                src={logoCircle}
-                alt="Funding Pulze"
-                className="w-full h-full rounded-full object-cover"
-              />
-            </div>
-          </div>
-        </motion.div>
-
         {/* Headline */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
@@ -184,16 +160,81 @@ const GlobeCTA = () => {
         </motion.div>
       </div>
 
-      {/* Globe canvas — half sphere at bottom */}
-      <div className="relative w-full h-[280px] sm:h-[360px]">
+      {/* Globe + Logo horizon area */}
+      <div className="relative w-full h-[340px] sm:h-[420px]">
+        {/* Globe canvas */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 pointer-events-none"
           aria-hidden="true"
         />
+
+        {/* Horizon glow — layered radial glows at the globe's equator line */}
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[200px] pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse 70% 50% at 50% 100%, hsl(var(--glow-primary) / 0.07), transparent)`,
+          }}
+        />
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-xl h-[120px] pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse 60% 60% at 50% 100%, hsl(var(--glow-primary) / 0.05), transparent)`,
+          }}
+        />
+        {/* Sharp horizon line */}
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 h-px w-3/4 max-w-2xl pointer-events-none"
+          style={{
+            background: `linear-gradient(90deg, transparent, hsl(var(--glow-primary) / 0.2), hsl(var(--glow-primary) / 0.35), hsl(var(--glow-primary) / 0.2), transparent)`,
+          }}
+        />
+
+        {/* Logo rising from horizon */}
+        <motion.div
+          className="absolute left-1/2 -translate-x-1/2 z-20"
+          style={{ bottom: -2 }}
+          initial={{ y: 40, opacity: 0 }}
+          animate={isInView ? { y: 0, opacity: 1 } : {}}
+          transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="relative">
+            {/* Glow behind logo */}
+            <div
+              className="absolute -inset-8 sm:-inset-12 rounded-full animate-pulse-glow pointer-events-none"
+              style={{
+                background: `radial-gradient(circle, hsl(var(--glow-primary) / 0.12), hsl(var(--glow-primary) / 0.04) 40%, transparent 70%)`,
+              }}
+            />
+            {/* Secondary soft ring */}
+            <div
+              className="absolute -inset-4 sm:-inset-6 rounded-full pointer-events-none"
+              style={{
+                background: `radial-gradient(circle, hsl(var(--glow-primary) / 0.06), transparent 60%)`,
+              }}
+            />
+            {/* Logo container — bottom half clipped to simulate rising */}
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+              {/* The logo itself, translated up so bottom half sits at horizon */}
+              <div
+                className="w-full h-full rounded-full overflow-hidden"
+                style={{
+                  boxShadow: `0 0 30px hsl(var(--glow-primary) / 0.1), 0 0 60px hsl(var(--glow-primary) / 0.05)`,
+                }}
+              >
+                <img
+                  src={logoCircle}
+                  alt="Funding Pulze"
+                  className="w-full h-full rounded-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Fade-to-background at very bottom */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-16"
+          className="absolute bottom-0 left-0 right-0 h-12"
           style={{
             background: `linear-gradient(to top, hsl(var(--background)), transparent)`,
           }}
