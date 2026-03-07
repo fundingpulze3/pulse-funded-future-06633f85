@@ -624,7 +624,7 @@ const HelpCenterCMS = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                      <FolderOpen size={14} className="text-muted-foreground" />
+                      {(() => { const found = ICON_OPTIONS.find(o => o.key === c.icon); return found ? React.cloneElement(found.icon as React.ReactElement, { size: 14, className: "text-muted-foreground" }) : <FolderOpen size={14} className="text-muted-foreground" />; })()}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">{c.name}</p>
