@@ -16,9 +16,10 @@ import {
 import {
   Users, Trophy, Link2, Shield, Plus, Pencil, Trash2,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
-  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen,
+  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
+import BlogCMS from "@/components/admin/BlogCMS";
 import { toast } from "sonner";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -26,7 +27,7 @@ import {
 } from "recharts";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter";
+type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "blog";
 
 interface ChallengeForm {
   name: string;
@@ -304,6 +305,7 @@ const Admin = () => {
     { id: "coupons", label: "Coupons", icon: <Ticket size={18} /> },
     { id: "utm", label: "UTM Tracker", icon: <Globe size={18} /> },
     { id: "helpcenter", label: "Help Center", icon: <BookOpen size={18} /> },
+    { id: "blog", label: "Blog", icon: <FileText size={18} /> },
   ];
 
   const statCards = [
@@ -835,6 +837,11 @@ const Admin = () => {
           {/* ===== Help Center Tab ===== */}
           {tab === "helpcenter" && (
             <HelpCenterCMS />
+          )}
+
+          {/* ===== Blog Tab ===== */}
+          {tab === "blog" && (
+            <BlogCMS />
           )}
         </div>
       </div>
