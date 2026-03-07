@@ -5,6 +5,7 @@ import WhyChoose from "@/components/WhyChoose";
 import Shop from "@/components/Shop";
 import CertificateShowcase from "@/components/CertificateShowcase";
 import Roadmap from "@/components/Roadmap";
+import StatsBar from "@/components/StatsBar";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useUtmTracking } from "@/hooks/useUtmTracking";
@@ -26,6 +27,7 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground">
       <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
       <Hero />
+      <StatsBar />
       <WhyChoose />
       <Roadmap />
       <CertificateShowcase />
