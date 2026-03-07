@@ -232,18 +232,29 @@ const ContactSupportForm = ({ articleId, articleTitle }: { articleId?: string; a
 
 // ---- MAIN COMPONENT ----
 const HelpCenter = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-  const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [feedbackSent, setFeedbackSent] = useState<string | null>(null);
   const [feedbackComment, setFeedbackComment] = useState("");
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [feedbackType, setFeedbackType] = useState<boolean | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Determine base path (either /help or / for help subdomain)
+  const isHelpDomain = window.location.hostname.startsWith("help.");
+  const basePath = isHelpDomain ? "" : "/help";
+
+  // Parse the current path to determine view
+  const pathSegments = useMemo(() => {
+    const fullPath = location.pathname;
+    const relative = isHelpDomain ? fullPath : fullPath.replace(/^\/help\/?/, "/");
+    return relative.split("/").filter(Boolean);
+  }, [location.pathname, isHelpDomain]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -257,6 +268,21 @@ const HelpCenter = () => {
     };
     fetchData();
   }, []);
+
+  // Derive selected article and collection from URL path
+  const selectedCollection = useMemo(() => {
+    if (pathSegments.length >= 1) {
+      return collections.find(c => c.slug === pathSegments[0]) || null;
+    }
+    return null;
+  }, [pathSegments, collections]);
+
+  const selectedArticle = useMemo(() => {
+    if (pathSegments.length >= 2) {
+      return articles.find(a => a.slug === pathSegments[1]) || null;
+    }
+    return null;
+  }, [pathSegments, articles]);
 
   useEffect(() => {
     document.title = selectedArticle
@@ -281,13 +307,13 @@ const HelpCenter = () => {
 
   const filteredArticles = useMemo(() => {
     let result = articles;
-    if (selectedCollection) result = result.filter(a => a.collection_id === selectedCollection);
+    if (selectedCollection && !selectedArticle) result = result.filter(a => a.collection_id === selectedCollection.id);
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(a => a.title.toLowerCase().includes(q) || a.excerpt?.toLowerCase().includes(q) || a.content.toLowerCase().includes(q));
     }
     return result;
-  }, [articles, search, selectedCollection]);
+  }, [articles, search, selectedCollection, selectedArticle]);
 
   const mostViewed = useMemo(() => [...articles].sort((a, b) => (b.views_count || 0) - (a.views_count || 0)).slice(0, 6), [articles]);
 
@@ -310,61 +336,29 @@ const HelpCenter = () => {
   };
 
   const selectArticle = useCallback((a: Article) => {
-    setSelectedArticle(a);
+    const col = collections.find(c => c.id === a.collection_id);
+    const colSlug = col?.slug || "general";
     setFeedbackSent(null);
     setShowCommentBox(false);
     setFeedbackComment("");
     setFeedbackType(null);
     setShowSuggestions(false);
     setSearch("");
-    window.history.pushState({ view: "article", id: a.id }, "", `?article=${a.slug}`);
+    navigate(`${basePath}/${colSlug}/${a.slug}`);
     window.scrollTo(0, 0);
-  }, []);
+  }, [collections, navigate, basePath]);
 
   const selectCollection = useCallback((id: string) => {
-    setSelectedArticle(null);
-    setSelectedCollection(id);
     const col = collections.find(c => c.id === id);
-    window.history.pushState({ view: "collection", id }, "", `?collection=${col?.slug || id}`);
-  }, [collections]);
+    if (col) {
+      navigate(`${basePath}/${col.slug}`);
+    }
+  }, [collections, navigate, basePath]);
 
   const goHome = useCallback(() => {
-    setSelectedArticle(null);
-    setSelectedCollection(null);
     setSearch("");
-    window.history.pushState({ view: "home" }, "", window.location.pathname);
-  }, []);
-
-  // Handle browser back/forward
-  useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      const state = e.state;
-      if (!state || state.view === "home") {
-        setSelectedArticle(null);
-        setSelectedCollection(null);
-        setSearch("");
-      } else if (state.view === "article") {
-        const article = articles.find(a => a.id === state.id);
-        if (article) {
-          setSelectedArticle(article);
-          setFeedbackSent(null);
-          setShowCommentBox(false);
-          setFeedbackComment("");
-          setFeedbackType(null);
-        }
-      } else if (state.view === "collection") {
-        setSelectedArticle(null);
-        setSelectedCollection(state.id);
-      }
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [articles]);
-
-  // Initialize history state on mount
-  useEffect(() => {
-    window.history.replaceState({ view: "home" }, "", window.location.pathname + window.location.search);
-  }, []);
+    navigate(basePath || "/");
+  }, [navigate, basePath]);
 
   const relatedArticles = useMemo(() => {
     if (!selectedArticle) return [];
