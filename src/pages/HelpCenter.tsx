@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronRight, ArrowLeft, ThumbsUp, ThumbsDown, Star, Clock, Eye,
@@ -111,8 +112,8 @@ const ReadingProgressBar = () => {
 };
 
 // ---- SHARE / PRINT TOOLBAR ----
-const ArticleToolbar = ({ title, slug }: { title: string; slug: string }) => {
-  const articleUrl = `https://help.fundingpulze.com/${slug}`;
+const ArticleToolbar = ({ title, url }: { title: string; url: string }) => {
+  const articleUrl = url;
   const copyLink = () => {
     navigator.clipboard.writeText(articleUrl);
     toast.success("Link copied!");
@@ -231,18 +232,29 @@ const ContactSupportForm = ({ articleId, articleTitle }: { articleId?: string; a
 
 // ---- MAIN COMPONENT ----
 const HelpCenter = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-  const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [feedbackSent, setFeedbackSent] = useState<string | null>(null);
   const [feedbackComment, setFeedbackComment] = useState("");
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [feedbackType, setFeedbackType] = useState<boolean | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Determine base path (either /help or / for help subdomain)
+  const isHelpDomain = window.location.hostname.startsWith("help.");
+  const basePath = isHelpDomain ? "" : "/help";
+
+  // Parse the current path to determine view
+  const pathSegments = useMemo(() => {
+    const fullPath = location.pathname;
+    const relative = isHelpDomain ? fullPath : fullPath.replace(/^\/help\/?/, "/");
+    return relative.split("/").filter(Boolean);
+  }, [location.pathname, isHelpDomain]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -256,6 +268,21 @@ const HelpCenter = () => {
     };
     fetchData();
   }, []);
+
+  // Derive selected article and collection from URL path
+  const selectedCollection = useMemo(() => {
+    if (pathSegments.length >= 1) {
+      return collections.find(c => c.slug === pathSegments[0]) || null;
+    }
+    return null;
+  }, [pathSegments, collections]);
+
+  const selectedArticle = useMemo(() => {
+    if (pathSegments.length >= 2) {
+      return articles.find(a => a.slug === pathSegments[1]) || null;
+    }
+    return null;
+  }, [pathSegments, articles]);
 
   useEffect(() => {
     document.title = selectedArticle
@@ -280,13 +307,13 @@ const HelpCenter = () => {
 
   const filteredArticles = useMemo(() => {
     let result = articles;
-    if (selectedCollection) result = result.filter(a => a.collection_id === selectedCollection);
+    if (selectedCollection && !selectedArticle) result = result.filter(a => a.collection_id === selectedCollection.id);
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(a => a.title.toLowerCase().includes(q) || a.excerpt?.toLowerCase().includes(q) || a.content.toLowerCase().includes(q));
     }
     return result;
-  }, [articles, search, selectedCollection]);
+  }, [articles, search, selectedCollection, selectedArticle]);
 
   const mostViewed = useMemo(() => [...articles].sort((a, b) => (b.views_count || 0) - (a.views_count || 0)).slice(0, 6), [articles]);
 
@@ -309,61 +336,29 @@ const HelpCenter = () => {
   };
 
   const selectArticle = useCallback((a: Article) => {
-    setSelectedArticle(a);
+    const col = collections.find(c => c.id === a.collection_id);
+    const colSlug = col?.slug || "general";
     setFeedbackSent(null);
     setShowCommentBox(false);
     setFeedbackComment("");
     setFeedbackType(null);
     setShowSuggestions(false);
     setSearch("");
-    window.history.pushState({ view: "article", id: a.id }, "", `?article=${a.slug}`);
+    navigate(`${basePath}/${colSlug}/${a.slug}`);
     window.scrollTo(0, 0);
-  }, []);
+  }, [collections, navigate, basePath]);
 
   const selectCollection = useCallback((id: string) => {
-    setSelectedArticle(null);
-    setSelectedCollection(id);
     const col = collections.find(c => c.id === id);
-    window.history.pushState({ view: "collection", id }, "", `?collection=${col?.slug || id}`);
-  }, [collections]);
+    if (col) {
+      navigate(`${basePath}/${col.slug}`);
+    }
+  }, [collections, navigate, basePath]);
 
   const goHome = useCallback(() => {
-    setSelectedArticle(null);
-    setSelectedCollection(null);
     setSearch("");
-    window.history.pushState({ view: "home" }, "", window.location.pathname);
-  }, []);
-
-  // Handle browser back/forward
-  useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      const state = e.state;
-      if (!state || state.view === "home") {
-        setSelectedArticle(null);
-        setSelectedCollection(null);
-        setSearch("");
-      } else if (state.view === "article") {
-        const article = articles.find(a => a.id === state.id);
-        if (article) {
-          setSelectedArticle(article);
-          setFeedbackSent(null);
-          setShowCommentBox(false);
-          setFeedbackComment("");
-          setFeedbackType(null);
-        }
-      } else if (state.view === "collection") {
-        setSelectedArticle(null);
-        setSelectedCollection(state.id);
-      }
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [articles]);
-
-  // Initialize history state on mount
-  useEffect(() => {
-    window.history.replaceState({ view: "home" }, "", window.location.pathname + window.location.search);
-  }, []);
+    navigate(basePath || "/");
+  }, [navigate, basePath]);
 
   const relatedArticles = useMemo(() => {
     if (!selectedArticle) return [];
@@ -415,7 +410,7 @@ const HelpCenter = () => {
                   )}
                   <span className="text-foreground/70 truncate max-w-[180px]">{selectedArticle.title}</span>
                 </nav>
-                <ArticleToolbar title={selectedArticle.title} slug={selectedArticle.slug} />
+                <ArticleToolbar title={selectedArticle.title} url={`https://help.fundingpulze.com/${collection?.slug || "general"}/${selectedArticle.slug}`} />
               </div>
 
               <div className="bg-card rounded-2xl border border-border p-8 lg:p-10 shadow-sm">
@@ -555,7 +550,7 @@ const HelpCenter = () => {
           <div className="relative max-w-2xl mx-auto" ref={searchRef}>
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={search}
-              onChange={e => { setSearch(e.target.value); setSelectedCollection(null); setShowSuggestions(true); }}
+              onChange={e => { setSearch(e.target.value); if (selectedCollection) goHome(); setShowSuggestions(true); }}
               onFocus={() => setShowSuggestions(true)}
               placeholder="Search for articles..."
               className="w-full h-13 pl-12 pr-4 py-3.5 bg-foreground/10 border border-foreground/15 rounded-xl text-primary-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all" />
@@ -569,11 +564,11 @@ const HelpCenter = () => {
           <div className="flex justify-center py-20">
             <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
           </div>
-        ) : search.trim() || selectedCollection ? (
+        ) : search.trim() || (selectedCollection && !selectedArticle) ? (
           <div className="pt-8">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-display text-xl font-bold text-foreground">
-                {selectedCollection ? collections.find(c => c.id === selectedCollection)?.name : `Results for "${search}"`}
+                {selectedCollection ? selectedCollection.name : `Results for "${search}"`}
               </h2>
               {selectedCollection && (
                 <button onClick={goHome}
@@ -583,8 +578,7 @@ const HelpCenter = () => {
               )}
             </div>
             {selectedCollection && (() => {
-              const col = collections.find(c => c.id === selectedCollection);
-              return col?.description ? <p className="text-sm text-muted-foreground mb-6 -mt-2">{col.description}</p> : null;
+              return selectedCollection.description ? <p className="text-sm text-muted-foreground mb-6 -mt-2">{selectedCollection.description}</p> : null;
             })()}
             {filteredArticles.length === 0 ? (
               <div className="text-center py-16 bg-card rounded-2xl border border-border">
