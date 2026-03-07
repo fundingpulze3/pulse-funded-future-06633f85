@@ -550,7 +550,7 @@ const HelpCenter = () => {
           <div className="relative max-w-2xl mx-auto" ref={searchRef}>
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={search}
-              onChange={e => { setSearch(e.target.value); setSelectedCollection(null); setShowSuggestions(true); }}
+              onChange={e => { setSearch(e.target.value); if (selectedCollection) goHome(); setShowSuggestions(true); }}
               onFocus={() => setShowSuggestions(true)}
               placeholder="Search for articles..."
               className="w-full h-13 pl-12 pr-4 py-3.5 bg-foreground/10 border border-foreground/15 rounded-xl text-primary-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all" />
@@ -564,11 +564,11 @@ const HelpCenter = () => {
           <div className="flex justify-center py-20">
             <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
           </div>
-        ) : search.trim() || selectedCollection ? (
+        ) : search.trim() || (selectedCollection && !selectedArticle) ? (
           <div className="pt-8">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-display text-xl font-bold text-foreground">
-                {selectedCollection ? collections.find(c => c.id === selectedCollection)?.name : `Results for "${search}"`}
+                {selectedCollection ? selectedCollection.name : `Results for "${search}"`}
               </h2>
               {selectedCollection && (
                 <button onClick={goHome}
@@ -578,8 +578,7 @@ const HelpCenter = () => {
               )}
             </div>
             {selectedCollection && (() => {
-              const col = collections.find(c => c.id === selectedCollection);
-              return col?.description ? <p className="text-sm text-muted-foreground mb-6 -mt-2">{col.description}</p> : null;
+              return selectedCollection.description ? <p className="text-sm text-muted-foreground mb-6 -mt-2">{selectedCollection.description}</p> : null;
             })()}
             {filteredArticles.length === 0 ? (
               <div className="text-center py-16 bg-card rounded-2xl border border-border">
