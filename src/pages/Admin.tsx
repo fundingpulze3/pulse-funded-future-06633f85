@@ -16,10 +16,11 @@ import {
 import {
   Users, Trophy, Link2, Shield, Plus, Pencil, Trash2,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
-  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText,
+  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
+import CertificatesCMS from "@/components/admin/CertificatesCMS";
 import { toast } from "sonner";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -27,7 +28,7 @@ import {
 } from "recharts";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "blog";
+type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "blog" | "certificates";
 
 interface ChallengeForm {
   name: string;
@@ -306,6 +307,7 @@ const Admin = () => {
     { id: "utm", label: "UTM Tracker", icon: <Globe size={18} /> },
     { id: "helpcenter", label: "Help Center", icon: <BookOpen size={18} /> },
     { id: "blog", label: "Blog", icon: <FileText size={18} /> },
+    { id: "certificates", label: "Certificates", icon: <Award size={18} /> },
   ];
 
   const statCards = [
