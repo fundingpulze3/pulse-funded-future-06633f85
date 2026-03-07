@@ -47,7 +47,7 @@ const AppRoutes = () => {
       <Route path="/affiliate" element={<AffiliateDashboard />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/faq" element={<FAQ />} />
-      <Route path="/help" element={<HelpCenter />} />
+      <Route path="/help/*" element={<HelpCenter />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
