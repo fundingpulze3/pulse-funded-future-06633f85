@@ -7,6 +7,7 @@ import CertificateShowcase from "@/components/CertificateShowcase";
 import Roadmap from "@/components/Roadmap";
 import StatsBar from "@/components/StatsBar";
 import Testimonials from "@/components/Testimonials";
+import Community from "@/components/Community";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useUtmTracking } from "@/hooks/useUtmTracking";
@@ -30,10 +31,11 @@ const Index = () => {
       <Hero />
       <StatsBar />
       <WhyChoose />
+      <Shop />
       <Roadmap />
       <CertificateShowcase />
       <Testimonials />
-      <Shop />
+      <Community />
       <Footer />
     </div>
   );
