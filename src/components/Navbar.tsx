@@ -77,6 +77,13 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
             FAQ
           </a>
           <a
+            href="/about"
+            onClick={(e) => { e.preventDefault(); navigate("/about"); }}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
+          >
+            About
+          </a>
+          <a
             href="/affiliate"
             onClick={(e) => { e.preventDefault(); navigate("/affiliate"); }}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"

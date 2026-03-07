@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import logo from "@/assets/logo.png";
 import { Target, Eye, Sparkles, Users, Globe, TrendingUp } from "lucide-react";
+import { usePageContent } from "@/hooks/usePageContent";
 
 const GRID = 32;
 const RADIUS = 160;
@@ -115,6 +116,12 @@ const About = () => {
   const missionInView = useInView(missionRef, { once: true, margin: "-60px" });
   const valuesInView = useInView(valuesRef, { once: true, margin: "-60px" });
   const founderInView = useInView(founderRef, { once: true, margin: "-60px" });
+  const { get } = usePageContent("about");
+
+  const hero = get("hero", { title: "Built by Traders, for Traders.", content: "Funding Pulze was founded on a simple belief — skilled traders deserve access to capital, not gatekeeping." });
+  const mission = get("mission", { title: "Our Mission", content: "To democratize access to trading capital by providing a transparent, fair, and technology-driven evaluation process. We remove financial barriers so talented traders can focus on what they do best — trading." });
+  const vision = get("vision", { title: "Our Vision", content: "To become the world's most trusted prop trading firm — where every trader, regardless of background or capital, has a fair shot at building generational wealth through the financial markets." });
+  const founder = get("founder", { title: "Funding Pulze", content: "\"I started Funding Pulze because I believe every skilled trader deserves a chance to prove themselves — without risking their own capital. We're building the most transparent, trader-first prop firm in the world.\"" });
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -148,11 +155,10 @@ const About = () => {
             <span>Our Story</span>
           </div>
           <h1 className="about-title font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-6 opacity-0">
-            Built by Traders,{" "}
-            <span className="text-gradient">for Traders.</span>
+            {hero.title}
           </h1>
           <p className="about-sub text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed opacity-0">
-            Funding Pulze was founded on a simple belief — skilled traders deserve access to capital, not gatekeeping.
+            {hero.content}
           </p>
         </div>
       </section>
@@ -170,9 +176,9 @@ const About = () => {
             <div className="w-12 h-12 rounded-xl surface-elevated glow-border flex items-center justify-center mb-6">
               <Target size={22} className="text-foreground" />
             </div>
-            <h2 className="font-display text-2xl font-bold mb-4">Our Mission</h2>
+            <h2 className="font-display text-2xl font-bold mb-4">{mission.title}</h2>
             <p className="text-muted-foreground leading-relaxed">
-              To democratize access to trading capital by providing a transparent, fair, and technology-driven evaluation process. We remove financial barriers so talented traders can focus on what they do best — trading.
+              {mission.content}
             </p>
           </motion.div>
 
@@ -186,9 +192,9 @@ const About = () => {
             <div className="w-12 h-12 rounded-xl surface-elevated glow-border flex items-center justify-center mb-6">
               <Eye size={22} className="text-foreground" />
             </div>
-            <h2 className="font-display text-2xl font-bold mb-4">Our Vision</h2>
+            <h2 className="font-display text-2xl font-bold mb-4">{vision.title}</h2>
             <p className="text-muted-foreground leading-relaxed">
-              To become the world's most trusted prop trading firm — where every trader, regardless of background or capital, has a fair shot at building generational wealth through the financial markets.
+              {vision.content}
             </p>
           </motion.div>
         </div>
@@ -249,11 +255,11 @@ const About = () => {
             </div>
 
             <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] mb-3">Founder & CEO</p>
-            <h2 className="font-display text-3xl font-bold mb-2">Funding Pulze</h2>
+            <h2 className="font-display text-3xl font-bold mb-2">{founder.title}</h2>
             <p className="text-sm text-muted-foreground mb-8">Visionary Trader & Entrepreneur</p>
 
             <blockquote className="text-muted-foreground leading-relaxed text-lg italic max-w-xl mx-auto">
-              "I started Funding Pulze because I believe every skilled trader deserves a chance to prove themselves — without risking their own capital. We're building the most transparent, trader-first prop firm in the world."
+              {founder.content}
             </blockquote>
           </motion.div>
         </div>
