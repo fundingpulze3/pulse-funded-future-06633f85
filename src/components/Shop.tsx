@@ -103,12 +103,12 @@ const Shop = () => {
               ))}
             </div>
 
-            <div className="inline-flex surface-elevated rounded-full p-1 glow-border">
+            <div className="inline-flex surface-elevated rounded-full p-1 glow-border flex-wrap justify-center">
               {accountSizes.map((a) => (
                 <button
                   key={a}
                   onClick={() => setAccount(a)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${
                     account === a ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -146,23 +146,31 @@ const Shop = () => {
           </div>
 
           {/* Column Headers */}
-          <div className="grid grid-cols-4 gap-4 mb-2">
+          <div className="hidden sm:grid grid-cols-4 gap-4 mb-2">
             <div />
             <p className="text-center font-display font-bold text-lg text-foreground">Student</p>
             <p className="text-center font-display font-bold text-lg text-foreground">Practitioner</p>
             <p className="text-center font-display font-bold text-lg text-foreground">Master</p>
           </div>
 
+          {/* Mobile column headers */}
+          <div className="sm:hidden grid grid-cols-4 gap-2 mb-2">
+            <div />
+            <p className="text-center font-display font-bold text-xs text-foreground">Student</p>
+            <p className="text-center font-display font-bold text-xs text-foreground">Practitioner</p>
+            <p className="text-center font-display font-bold text-xs text-foreground">Master</p>
+          </div>
+
           {/* Rules Table */}
           <div ref={tableRef} className="divide-y divide-border">
             {ruleLabels.map((label) => (
-              <div key={label} className="rule-row grid grid-cols-4 gap-4 py-4 items-center">
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  {label}
+              <div key={label} className="rule-row grid grid-cols-4 gap-2 sm:gap-4 py-3 sm:py-4 items-center">
+                <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
+                  <span className="truncate">{label}</span>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-                        <Info size={13} />
+                      <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0">
+                        <Info size={12} />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-[240px] text-xs">
@@ -170,23 +178,23 @@ const Shop = () => {
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <p className="text-center text-sm font-medium text-foreground">{rules.student[label]}</p>
-                <p className="text-center text-sm font-medium text-foreground">{rules.practitioner[label]}</p>
-                <p className="text-center text-sm font-medium text-foreground">{rules.master[label]}</p>
+                <p className="text-center text-xs sm:text-sm font-medium text-foreground">{rules.student[label]}</p>
+                <p className="text-center text-xs sm:text-sm font-medium text-foreground">{rules.practitioner[label]}</p>
+                <p className="text-center text-xs sm:text-sm font-medium text-foreground">{rules.master[label]}</p>
               </div>
             ))}
           </div>
 
           {/* Bottom Bar */}
           <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-6 sm:gap-8">
               <div>
-                <span className="text-sm text-muted-foreground">Account size: </span>
-                <span className="font-display text-3xl font-bold text-foreground">{sizeNum}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">Account size: </span>
+                <span className="font-display text-2xl sm:text-3xl font-bold text-foreground">{sizeNum}</span>
               </div>
               <div>
-                <span className="text-sm text-muted-foreground">Price: </span>
-                <span className="font-display text-4xl font-bold text-foreground">{price}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">Price: </span>
+                <span className="font-display text-3xl sm:text-4xl font-bold text-foreground">{price}</span>
               </div>
             </div>
             <Button
