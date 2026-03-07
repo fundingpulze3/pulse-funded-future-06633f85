@@ -2,12 +2,13 @@ import { useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap } from "lucide-react";
 
-const GRID_SIZE = 48;
+const GRID_SIZE = 28;
 
 const Hero = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -1000, y: -1000 });
+  const smoothMouse = useRef({ x: -1000, y: -1000 });
   const rafRef = useRef<number>(0);
 
   const draw = useCallback(() => {
@@ -17,6 +18,10 @@ const Hero = () => {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // Smooth lerp toward actual mouse
+    smoothMouse.current.x += (mouseRef.current.x - smoothMouse.current.x) * 0.08;
+    smoothMouse.current.y += (mouseRef.current.y - smoothMouse.current.y) * 0.08;
 
     const rect = section.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -33,63 +38,105 @@ const Hero = () => {
 
     ctx.clearRect(0, 0, w, h);
 
-    const mx = mouseRef.current.x;
-    const my = mouseRef.current.y;
-    const radius = 220;
+    const mx = smoothMouse.current.x;
+    const my = smoothMouse.current.y;
+    const radius = 180;
     const isDark = document.documentElement.classList.contains("dark");
     const lineColor = isDark ? "255,255,255" : "0,0,0";
 
-    // Draw grid lines
+    // Draw base grid — ultra faint
+    ctx.strokeStyle = `rgba(${lineColor},0.018)`;
+    ctx.lineWidth = 0.5;
     for (let x = 0; x <= w; x += GRID_SIZE) {
-      const dist = Math.abs(x - mx);
-      const yDist = Math.min(Math.abs(my), Math.abs(my - h));
-      const closeness = Math.max(0, 1 - Math.sqrt(dist * dist + yDist * yDist * 0.1) / radius);
-      const alpha = 0.03 + closeness * 0.12;
-
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.strokeStyle = `rgba(${lineColor},${alpha})`;
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
     }
-
     for (let y = 0; y <= h; y += GRID_SIZE) {
-      const dist = Math.abs(y - my);
-      const xDist = Math.min(Math.abs(mx), Math.abs(mx - w));
-      const closeness = Math.max(0, 1 - Math.sqrt(dist * dist + xDist * xDist * 0.1) / radius);
-      const alpha = 0.03 + closeness * 0.12;
-
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.strokeStyle = `rgba(${lineColor},${alpha})`;
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
-    // Draw intersection dots near cursor
-    for (let x = 0; x <= w; x += GRID_SIZE) {
+    // Warp + reveal grid near cursor
+    if (mx > -500) {
+      const bulgeStrength = 6;
+
+      // Vertical lines — warped
+      for (let x = 0; x <= w; x += GRID_SIZE) {
+        ctx.beginPath();
+        for (let y = 0; y <= h; y += 4) {
+          const dx = x - mx;
+          const dy = y - my;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          const falloff = Math.max(0, 1 - d / radius);
+          const ease = falloff * falloff * falloff; // cubic falloff for liquid feel
+
+          // Bulge: push points outward from cursor
+          const angle = Math.atan2(dy, dx);
+          const pushX = Math.cos(angle) * ease * bulgeStrength;
+          const drawX = x + pushX;
+
+          if (y === 0) ctx.moveTo(drawX, y);
+          else ctx.lineTo(drawX, y);
+        }
+        // Alpha based on proximity to cursor center column
+        const colDist = Math.abs(x - mx);
+        const colFalloff = Math.max(0, 1 - colDist / radius);
+        const alpha = 0.018 + colFalloff * colFalloff * 0.18;
+        ctx.strokeStyle = `rgba(${lineColor},${alpha})`;
+        ctx.lineWidth = 0.5 + colFalloff * 0.5;
+        ctx.stroke();
+      }
+
+      // Horizontal lines — warped
       for (let y = 0; y <= h; y += GRID_SIZE) {
-        const dx = x - mx;
-        const dy = y - my;
-        const d = Math.sqrt(dx * dx + dy * dy);
-        if (d < radius) {
-          const intensity = 1 - d / radius;
-          const dotAlpha = intensity * 0.35;
-          const dotSize = 1 + intensity * 1.5;
-          ctx.beginPath();
-          ctx.arc(x, y, dotSize, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${lineColor},${dotAlpha})`;
-          ctx.fill();
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 4) {
+          const dx = x - mx;
+          const dy = y - my;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          const falloff = Math.max(0, 1 - d / radius);
+          const ease = falloff * falloff * falloff;
+
+          const angle = Math.atan2(dy, dx);
+          const pushY = Math.sin(angle) * ease * bulgeStrength;
+          const drawY = y + pushY;
+
+          if (x === 0) ctx.moveTo(x, drawY);
+          else ctx.lineTo(x, drawY);
+        }
+        const rowDist = Math.abs(y - my);
+        const rowFalloff = Math.max(0, 1 - rowDist / radius);
+        const alpha = 0.018 + rowFalloff * rowFalloff * 0.18;
+        ctx.strokeStyle = `rgba(${lineColor},${alpha})`;
+        ctx.lineWidth = 0.5 + rowFalloff * 0.5;
+        ctx.stroke();
+      }
+
+      // Intersection dots — reveal
+      for (let x = 0; x <= w; x += GRID_SIZE) {
+        for (let y = 0; y <= h; y += GRID_SIZE) {
+          const dx = x - mx;
+          const dy = y - my;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < radius) {
+            const falloff = 1 - d / radius;
+            const ease = falloff * falloff * falloff;
+            const angle = Math.atan2(dy, dx);
+            const bx = x + Math.cos(angle) * ease * bulgeStrength;
+            const by = y + Math.sin(angle) * ease * bulgeStrength;
+            const dotAlpha = ease * 0.5;
+            const dotSize = 0.8 + ease * 2;
+
+            ctx.beginPath();
+            ctx.arc(bx, by, dotSize, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${lineColor},${dotAlpha})`;
+            ctx.fill();
+          }
         }
       }
-    }
 
-    // Radial glow around cursor
-    if (mx > -500) {
-      const grad = ctx.createRadialGradient(mx, my, 0, mx, my, radius);
-      grad.addColorStop(0, `rgba(${lineColor},0.04)`);
+      // Soft radial glow
+      const grad = ctx.createRadialGradient(mx, my, 0, mx, my, radius * 1.2);
+      grad.addColorStop(0, `rgba(${lineColor},0.03)`);
+      grad.addColorStop(0.5, `rgba(${lineColor},0.01)`);
       grad.addColorStop(1, `rgba(${lineColor},0)`);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
