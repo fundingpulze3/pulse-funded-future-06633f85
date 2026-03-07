@@ -52,6 +52,90 @@ export type Database = {
           },
         ]
       }
+      blog_posts: {
+        Row: {
+          author_id: string
+          canonical_url: string | null
+          content: string
+          created_at: string
+          excerpt: string | null
+          focus_keyword: string | null
+          id: string
+          is_featured: boolean
+          is_published: boolean
+          meta_description: string | null
+          meta_keywords: string[] | null
+          meta_title: string | null
+          og_description: string | null
+          og_image_url: string | null
+          og_title: string | null
+          published_at: string | null
+          reading_time: number | null
+          slug: string
+          sort_order: number | null
+          thumbnail_alt: string | null
+          thumbnail_ratio: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          author_id: string
+          canonical_url?: string | null
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          focus_keyword?: string | null
+          id?: string
+          is_featured?: boolean
+          is_published?: boolean
+          meta_description?: string | null
+          meta_keywords?: string[] | null
+          meta_title?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          published_at?: string | null
+          reading_time?: number | null
+          slug: string
+          sort_order?: number | null
+          thumbnail_alt?: string | null
+          thumbnail_ratio?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          author_id?: string
+          canonical_url?: string | null
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          focus_keyword?: string | null
+          id?: string
+          is_featured?: boolean
+          is_published?: boolean
+          meta_description?: string | null
+          meta_keywords?: string[] | null
+          meta_title?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          published_at?: string | null
+          reading_time?: number | null
+          slug?: string
+          sort_order?: number | null
+          thumbnail_alt?: string | null
+          thumbnail_ratio?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
       challenge_purchases: {
         Row: {
           amount_paid: number
