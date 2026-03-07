@@ -5,6 +5,9 @@ import {
   Search, ChevronRight, ArrowLeft, ThumbsUp, ThumbsDown, Star, Clock, Eye,
   FolderOpen, FileText, HelpCircle, TrendingUp, BookOpen, Settings, Shield,
   CreditCard, Users, Printer, Link2, Share2, Mail, Send, BookMarked, X,
+  Zap, MessageCircle, Award, Target, Layers, Gift, LifeBuoy, Briefcase,
+  DollarSign, BarChart2, PieChart, Activity, Wallet, Lock, Unlock, Bell,
+  Flag, Heart, Bookmark, Compass, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
@@ -24,6 +27,16 @@ const iconMap: Record<string, React.ReactNode> = {
   trending: <TrendingUp size={22} />, book: <BookOpen size={22} />,
   settings: <Settings size={22} />, shield: <Shield size={22} />,
   credit: <CreditCard size={22} />, users: <Users size={22} />, star: <Star size={22} />,
+  zap: <Zap size={22} />, message: <MessageCircle size={22} />,
+  award: <Award size={22} />, target: <Target size={22} />,
+  layers: <Layers size={22} />, gift: <Gift size={22} />,
+  lifebuoy: <LifeBuoy size={22} />, briefcase: <Briefcase size={22} />,
+  dollar: <DollarSign size={22} />, chart: <BarChart2 size={22} />,
+  pie: <PieChart size={22} />, activity: <Activity size={22} />,
+  wallet: <Wallet size={22} />, lock: <Lock size={22} />,
+  unlock: <Unlock size={22} />, bell: <Bell size={22} />,
+  flag: <Flag size={22} />, heart: <Heart size={22} />,
+  bookmark: <Bookmark size={22} />, compass: <Compass size={22} />,
 };
 
 const renderMarkdown = (md: string) => {
