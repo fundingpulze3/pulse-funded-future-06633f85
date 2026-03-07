@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.98.0'
+import nodemailer from 'npm:nodemailer@6.9.16'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,7 +7,6 @@ const corsHeaders = {
 }
 
 const SITE_NAME = 'Funding Pulze'
-const SENDER_DOMAIN = 'notify.fundingpulze.com'
 const FROM_ADDRESS = 'Funding Pulze Support <support@fundingpulze.com>'
 
 // ─── Minimal IMAP client using Deno.connectTls ───
@@ -240,13 +240,20 @@ Deno.serve(async (req) => {
   const gmailAppPassword = Deno.env.get('GMAIL_APP_PASSWORD')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')
 
   if (!gmailEmail || !gmailAppPassword) {
     return new Response(JSON.stringify({ error: 'Gmail credentials not configured' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
+
+  // SMTP transporter for sending replies
+  const smtpTransport = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user: gmailEmail, pass: gmailAppPassword },
+  })
 
   const supabase = createClient(supabaseUrl, serviceRoleKey)
   const imap = new SimpleIMAP()
@@ -294,9 +301,13 @@ Deno.serve(async (req) => {
 
         console.log(`Processing email from ${email.from}: ${email.subject}`)
 
-        // Skip system/noreply emails
-        if (email.from.includes('noreply') || email.from.includes('no-reply') || 
-            email.from.includes('mailer-daemon') || email.from === gmailEmail) {
+        // Skip system/noreply/automated emails
+        const skipPatterns = ['noreply', 'no-reply', 'no_reply', 'donotreply', 'do-not-reply',
+          'mailer-daemon', 'postmaster', 'bounce', 'automated', 'notification',
+          'alerts@', 'alert@', 'news@', 'newsletter@', 'marketing@', 'welcome@',
+          'updates@', 'info@mongodb', 'team@mongodb']
+        const fromLower = email.from.toLowerCase()
+        if (skipPatterns.some(p => fromLower.includes(p)) || email.from === gmailEmail) {
           await imap.markSeen(seq)
           await supabase.from('processed_gmail_ids').insert({ gmail_uid: uid })
           continue
@@ -413,73 +424,62 @@ Deno.serve(async (req) => {
             gmail_message_id: cleanMessageId,
           })
 
-          // Send auto-reply
-          if (lovableApiKey) {
-            try {
-              const { sendLovableEmail } = await import('npm:@lovable.dev/email-js')
-              
-              const autoReplyHtml = `
-                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #ffffff;">
-                  <div style="text-align: center; margin-bottom: 30px;">
-                    <img src="https://rpshiyvndmnogbhbgmfm.supabase.co/storage/v1/object/public/email-assets/logo.png" alt="Funding Pulze" style="height: 40px;" />
-                  </div>
-                  <div style="background: #f8f9fa; border-radius: 12px; padding: 30px; border: 1px solid #e9ecef;">
-                    <h2 style="margin: 0 0 16px; color: #1a1a1a; font-size: 20px;">We've received your message</h2>
-                    <p style="color: #495057; line-height: 1.6; margin: 0 0 12px;">
-                      Hi ${email.fromName},
-                    </p>
-                    <p style="color: #495057; line-height: 1.6; margin: 0 0 12px;">
-                      Thank you for reaching out to Funding Pulze support. We've received your message regarding "<strong>${cleanSubject}</strong>" and our team will get back to you within <strong>4 hours</strong>.
-                    </p>
-                    <p style="color: #495057; line-height: 1.6; margin: 0 0 12px;">
-                      Please reply to this email if you have any additional information to share. Your ticket has been created and all replies will be tracked.
-                    </p>
-                    <div style="background: #ffffff; border-radius: 8px; padding: 16px; margin-top: 20px; border: 1px solid #e9ecef;">
-                      <p style="color: #868e96; font-size: 13px; margin: 0;">
-                        <strong>Ticket Reference:</strong> #${newTicket.id.slice(0, 8).toUpperCase()}<br/>
-                        <strong>Subject:</strong> ${cleanSubject}
-                      </p>
-                    </div>
-                  </div>
-                  <p style="text-align: center; color: #adb5bd; font-size: 12px; margin-top: 30px;">
-                    © ${new Date().getFullYear()} Funding Pulze. All rights reserved.
-                  </p>
+          // Send auto-reply via SMTP
+          try {
+            const autoReplyHtml = `
+              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #ffffff;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <img src="https://rpshiyvndmnogbhbgmfm.supabase.co/storage/v1/object/public/email-assets/logo.png" alt="Funding Pulze" style="height: 40px;" />
                 </div>
-              `
+                <div style="background: #f8f9fa; border-radius: 12px; padding: 30px; border: 1px solid #e9ecef;">
+                  <h2 style="margin: 0 0 16px; color: #1a1a1a; font-size: 20px;">We've received your message</h2>
+                  <p style="color: #495057; line-height: 1.6; margin: 0 0 12px;">Hi ${email.fromName},</p>
+                  <p style="color: #495057; line-height: 1.6; margin: 0 0 12px;">
+                    Thank you for reaching out to Funding Pulze support. We've received your message regarding "<strong>${cleanSubject}</strong>" and our team will get back to you within <strong>4 hours</strong>.
+                  </p>
+                  <p style="color: #495057; line-height: 1.6; margin: 0 0 12px;">
+                    Please reply to this email if you have any additional information to share.
+                  </p>
+                  <div style="background: #ffffff; border-radius: 8px; padding: 16px; margin-top: 20px; border: 1px solid #e9ecef;">
+                    <p style="color: #868e96; font-size: 13px; margin: 0;">
+                      <strong>Ticket Reference:</strong> #${newTicket.id.slice(0, 8).toUpperCase()}<br/>
+                      <strong>Subject:</strong> ${cleanSubject}
+                    </p>
+                  </div>
+                </div>
+                <p style="text-align: center; color: #adb5bd; font-size: 12px; margin-top: 30px;">
+                  © ${new Date().getFullYear()} Funding Pulze. All rights reserved.
+                </p>
+              </div>
+            `
 
-              await sendLovableEmail(
-                {
-                  to: email.from,
-                  from: FROM_ADDRESS,
-                  sender_domain: SENDER_DOMAIN,
-                  subject: `Re: ${cleanSubject}`,
-                  html: autoReplyHtml,
-                  text: `Hi ${email.fromName},\n\nThank you for reaching out. We've received your message regarding "${cleanSubject}" and our team will get back to you within 4 hours.\n\nTicket Reference: #${newTicket.id.slice(0, 8).toUpperCase()}\n\n© ${new Date().getFullYear()} Funding Pulze`,
-                  purpose: 'transactional',
-                },
-                { apiKey: lovableApiKey }
-              )
+            await smtpTransport.sendMail({
+              from: FROM_ADDRESS,
+              to: email.from,
+              subject: `Re: ${cleanSubject}`,
+              html: autoReplyHtml,
+              text: `Hi ${email.fromName},\n\nThank you for reaching out. We've received your message regarding "${cleanSubject}" and our team will get back to you within 4 hours.\n\nTicket Reference: #${newTicket.id.slice(0, 8).toUpperCase()}\n\n© ${new Date().getFullYear()} Funding Pulze`,
+              inReplyTo: email.messageId,
+              references: email.messageId,
+            })
 
-              // Mark auto-reply sent
-              await supabase
-                .from('help_support_tickets')
-                .update({ auto_reply_sent: true })
-                .eq('id', newTicket.id)
+            await supabase
+              .from('help_support_tickets')
+              .update({ auto_reply_sent: true })
+              .eq('id', newTicket.id)
 
-              // Store the auto-reply as a system message
-              await supabase.from('support_ticket_messages').insert({
-                ticket_id: newTicket.id,
-                sender_type: 'system',
-                sender_email: gmailEmail,
-                sender_name: 'Funding Pulze Support',
-                message: `Auto-reply sent: "We've received your message and will reply within 4 hours."`,
-              })
+            await supabase.from('support_ticket_messages').insert({
+              ticket_id: newTicket.id,
+              sender_type: 'system',
+              sender_email: gmailEmail,
+              sender_name: 'Funding Pulze Support',
+              message: `Auto-reply sent: "We've received your message and will reply within 4 hours."`,
+            })
 
-              console.log(`Auto-reply sent to ${email.from}`)
-            } catch (emailErr) {
-              console.error('Auto-reply failed:', emailErr)
-              errors.push(`Auto-reply failed for ${email.from}: ${emailErr}`)
-            }
+            console.log(`Auto-reply sent to ${email.from}`)
+          } catch (emailErr) {
+            console.error('Auto-reply failed:', emailErr)
+            errors.push(`Auto-reply failed for ${email.from}: ${emailErr}`)
           }
         }
 
