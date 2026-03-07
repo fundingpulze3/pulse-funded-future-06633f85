@@ -305,6 +305,7 @@ const Admin = () => {
     { id: "coupons", label: "Coupons", icon: <Ticket size={18} /> },
     { id: "utm", label: "UTM Tracker", icon: <Globe size={18} /> },
     { id: "helpcenter", label: "Help Center", icon: <BookOpen size={18} /> },
+    { id: "blog", label: "Blog", icon: <FileText size={18} /> },
   ];
 
   const statCards = [
@@ -836,6 +837,11 @@ const Admin = () => {
           {/* ===== Help Center Tab ===== */}
           {tab === "helpcenter" && (
             <HelpCenterCMS />
+          )}
+
+          {/* ===== Blog Tab ===== */}
+          {tab === "blog" && (
+            <BlogCMS />
           )}
         </div>
       </div>

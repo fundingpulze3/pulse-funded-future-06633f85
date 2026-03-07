@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAdminSubdomain } from "@/hooks/useAdminSubdomain";
 import Index from "./pages/Index";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import Auth from "./pages/Auth";
 import AdminAuth from "./pages/AdminAuth";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
@@ -43,6 +45,8 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/blog" element={<Blog />} />
+      <Route path="/blog/:slug" element={<BlogPost />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
       <Route path="/checkout" element={<Checkout />} />
