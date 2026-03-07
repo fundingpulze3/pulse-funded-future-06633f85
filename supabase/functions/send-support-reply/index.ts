@@ -1,11 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.98.0'
+import nodemailer from 'npm:nodemailer@6.9.16'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const SENDER_DOMAIN = 'notify.fundingpulze.com'
 const FROM_ADDRESS = 'Funding Pulze Support <support@fundingpulze.com>'
 
 Deno.serve(async (req) => {
@@ -14,7 +14,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authenticate the caller - must be admin
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -24,10 +23,11 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')
+    const gmailEmail = Deno.env.get('GMAIL_EMAIL')
+    const gmailAppPassword = Deno.env.get('GMAIL_APP_PASSWORD')
 
-    if (!lovableApiKey) {
-      return new Response(JSON.stringify({ error: 'Email API not configured' }), {
+    if (!gmailEmail || !gmailAppPassword) {
+      return new Response(JSON.stringify({ error: 'Gmail credentials not configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -43,7 +43,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Check admin role
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -79,8 +78,13 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Send email reply
-    const { sendLovableEmail } = await import('npm:@lovable.dev/email-js')
+    // Create SMTP transporter
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: { user: gmailEmail, pass: gmailAppPassword },
+    })
 
     const replyHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #ffffff;">
@@ -88,12 +92,8 @@ Deno.serve(async (req) => {
           <img src="https://rpshiyvndmnogbhbgmfm.supabase.co/storage/v1/object/public/email-assets/logo.png" alt="Funding Pulze" style="height: 40px;" />
         </div>
         <div style="background: #f8f9fa; border-radius: 12px; padding: 30px; border: 1px solid #e9ecef;">
-          <h2 style="margin: 0 0 16px; color: #1a1a1a; font-size: 18px;">
-            Re: ${ticket.subject}
-          </h2>
-          <div style="color: #495057; line-height: 1.7; white-space: pre-wrap; margin: 0 0 20px;">
-${message}
-          </div>
+          <h2 style="margin: 0 0 16px; color: #1a1a1a; font-size: 18px;">Re: ${ticket.subject}</h2>
+          <div style="color: #495057; line-height: 1.7; white-space: pre-wrap; margin: 0 0 20px;">${message}</div>
           <div style="border-top: 1px solid #e9ecef; padding-top: 16px; margin-top: 16px;">
             <p style="color: #868e96; font-size: 13px; margin: 0;">
               Ticket Reference: #${ticket.id.slice(0, 8).toUpperCase()}<br/>
@@ -107,18 +107,22 @@ ${message}
       </div>
     `
 
-    const result = await sendLovableEmail(
-      {
-        to: ticket.email,
-        from: FROM_ADDRESS,
-        sender_domain: SENDER_DOMAIN,
-        subject: `Re: ${ticket.subject}`,
-        html: replyHtml,
-        text: `Re: ${ticket.subject}\n\n${message}\n\nTicket Reference: #${ticket.id.slice(0, 8).toUpperCase()}\nReply to this email to continue the conversation.\n\n© ${new Date().getFullYear()} Funding Pulze`,
-        purpose: 'transactional',
-      },
-      { apiKey: lovableApiKey }
-    )
+    // Build threading headers
+    const mailOptions: Record<string, unknown> = {
+      from: FROM_ADDRESS,
+      to: ticket.email,
+      subject: `Re: ${ticket.subject}`,
+      html: replyHtml,
+      text: `Re: ${ticket.subject}\n\n${message}\n\nTicket Reference: #${ticket.id.slice(0, 8).toUpperCase()}\nReply to this email to continue the conversation.\n\n© ${new Date().getFullYear()} Funding Pulze`,
+    }
+
+    // Add In-Reply-To for threading
+    if (ticket.gmail_message_id) {
+      mailOptions.inReplyTo = `<${ticket.gmail_message_id}>`
+      mailOptions.references = `<${ticket.gmail_message_id}>`
+    }
+
+    const result = await transporter.sendMail(mailOptions)
 
     // Save reply as ticket message
     await supabaseAdmin.from('support_ticket_messages').insert({
@@ -127,23 +131,23 @@ ${message}
       sender_email: 'support@fundingpulze.com',
       sender_name: user.email?.split('@')[0] || 'Support',
       message,
+      gmail_message_id: result.messageId?.replace(/[<>]/g, '') || null,
     })
 
     // Update ticket
-    const updatePayload: Record<string, unknown> = {
-      last_reply_at: new Date().toISOString(),
-      status: close_ticket ? 'closed' : 'in_progress',
-    }
     await supabaseAdmin
       .from('help_support_tickets')
-      .update(updatePayload)
+      .update({
+        last_reply_at: new Date().toISOString(),
+        status: close_ticket ? 'closed' : 'in_progress',
+      })
       .eq('id', ticket_id)
 
     console.log(`Support reply sent to ${ticket.email} for ticket ${ticket_id}`)
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message_id: result.message_id,
+      message_id: result.messageId,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
