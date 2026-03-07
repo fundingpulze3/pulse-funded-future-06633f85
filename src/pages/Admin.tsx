@@ -16,7 +16,7 @@ import {
 import {
   Users, Trophy, Link2, Shield, Plus, Pencil, Trash2,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
-  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen,
+  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
