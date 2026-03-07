@@ -67,6 +67,13 @@ const Auth = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (error) toast.error(error.message);
+  };
+
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setEmail("");
