@@ -19,6 +19,10 @@ import {
   Code, Link, Image, Quote, Minus, ArrowLeft, Search, Star,
   BarChart3, ThumbsUp, ThumbsDown, Globe, Copy, ExternalLink,
   GripVertical, ChevronDown, ChevronUp, AlertCircle, Check,
+  HelpCircle, TrendingUp, BookOpen, Settings, Shield, CreditCard,
+  Users, Zap, MessageCircle, Award, Target, Layers, Gift,
+  LifeBuoy, Briefcase, DollarSign, BarChart2, PieChart, Activity,
+  Wallet, Lock, Unlock, Bell, Flag, Heart, Bookmark, Compass,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -59,6 +63,38 @@ interface FeedbackStats {
 
 const slugify = (text: string) =>
   text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const ICON_OPTIONS: { key: string; label: string; icon: React.ReactNode }[] = [
+  { key: "folder", label: "Folder", icon: <FolderOpen size={18} /> },
+  { key: "help", label: "Help", icon: <HelpCircle size={18} /> },
+  { key: "trending", label: "Trending", icon: <TrendingUp size={18} /> },
+  { key: "book", label: "Book", icon: <BookOpen size={18} /> },
+  { key: "settings", label: "Settings", icon: <Settings size={18} /> },
+  { key: "shield", label: "Shield", icon: <Shield size={18} /> },
+  { key: "credit", label: "Credit Card", icon: <CreditCard size={18} /> },
+  { key: "users", label: "Users", icon: <Users size={18} /> },
+  { key: "star", label: "Star", icon: <Star size={18} /> },
+  { key: "zap", label: "Zap", icon: <Zap size={18} /> },
+  { key: "message", label: "Message", icon: <MessageCircle size={18} /> },
+  { key: "award", label: "Award", icon: <Award size={18} /> },
+  { key: "target", label: "Target", icon: <Target size={18} /> },
+  { key: "layers", label: "Layers", icon: <Layers size={18} /> },
+  { key: "gift", label: "Gift", icon: <Gift size={18} /> },
+  { key: "lifebuoy", label: "Life Buoy", icon: <LifeBuoy size={18} /> },
+  { key: "briefcase", label: "Briefcase", icon: <Briefcase size={18} /> },
+  { key: "dollar", label: "Dollar", icon: <DollarSign size={18} /> },
+  { key: "chart", label: "Chart", icon: <BarChart2 size={18} /> },
+  { key: "pie", label: "Pie Chart", icon: <PieChart size={18} /> },
+  { key: "activity", label: "Activity", icon: <Activity size={18} /> },
+  { key: "wallet", label: "Wallet", icon: <Wallet size={18} /> },
+  { key: "lock", label: "Lock", icon: <Lock size={18} /> },
+  { key: "unlock", label: "Unlock", icon: <Unlock size={18} /> },
+  { key: "bell", label: "Bell", icon: <Bell size={18} /> },
+  { key: "flag", label: "Flag", icon: <Flag size={18} /> },
+  { key: "heart", label: "Heart", icon: <Heart size={18} /> },
+  { key: "bookmark", label: "Bookmark", icon: <Bookmark size={18} /> },
+  { key: "compass", label: "Compass", icon: <Compass size={18} /> },
+];
 
 type CMSView = "dashboard" | "editor" | "feedback";
 
@@ -717,11 +753,27 @@ const HelpCenterCMS = () => {
                 className="font-mono" />
               <p className="text-[10px] text-muted-foreground mt-1">help.fundingpulze.com/collection/{collectionForm.slug}</p>
             </div>
-            <div>
+          <div>
               <Label className="text-xs">Description</Label>
               <Textarea value={collectionForm.description}
                 onChange={e => setCollectionForm({ ...collectionForm, description: e.target.value })}
                 placeholder="Brief description..." />
+            </div>
+            <div>
+              <Label className="text-xs mb-2 block">Icon</Label>
+              <div className="grid grid-cols-8 gap-1.5 max-h-[180px] overflow-y-auto p-1">
+                {ICON_OPTIONS.map(opt => (
+                  <button key={opt.key} type="button" onClick={() => setCollectionForm({ ...collectionForm, icon: opt.key })}
+                    title={opt.label}
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                      collectionForm.icon === opt.key
+                        ? "bg-foreground text-background ring-2 ring-foreground ring-offset-2 ring-offset-card"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}>
+                    {opt.icon}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>
