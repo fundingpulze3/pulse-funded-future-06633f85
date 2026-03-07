@@ -3,3 +3,7 @@ project_id = "rpshiyvndmnogbhbgmfm"
 [functions]
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.poll-gmail]
+    verify_jwt = false
+  [functions.send-support-reply]
+    verify_jwt = false

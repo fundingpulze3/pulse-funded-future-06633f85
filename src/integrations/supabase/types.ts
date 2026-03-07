@@ -442,31 +442,49 @@ export type Database = {
       help_support_tickets: {
         Row: {
           article_id: string | null
+          auto_reply_sent: boolean
           created_at: string
           email: string
+          gmail_message_id: string | null
+          gmail_thread_id: string | null
           id: string
+          last_reply_at: string | null
           message: string
           name: string
+          priority: string
+          source: string
           status: string
           subject: string
         }
         Insert: {
           article_id?: string | null
+          auto_reply_sent?: boolean
           created_at?: string
           email: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
           id?: string
+          last_reply_at?: string | null
           message: string
           name: string
+          priority?: string
+          source?: string
           status?: string
           subject: string
         }
         Update: {
           article_id?: string | null
+          auto_reply_sent?: boolean
           created_at?: string
           email?: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
           id?: string
+          last_reply_at?: string | null
           message?: string
           name?: string
+          priority?: string
+          source?: string
           status?: string
           subject?: string
         }
@@ -555,6 +573,24 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_gmail_ids: {
+        Row: {
+          gmail_uid: string
+          id: string
+          processed_at: string
+        }
+        Insert: {
+          gmail_uid: string
+          id?: string
+          processed_at?: string
+        }
+        Update: {
+          gmail_uid?: string
+          id?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -605,6 +641,47 @@ export type Database = {
           utm_term?: string | null
         }
         Relationships: []
+      }
+      support_ticket_messages: {
+        Row: {
+          created_at: string
+          gmail_message_id: string | null
+          id: string
+          message: string
+          sender_email: string | null
+          sender_name: string | null
+          sender_type: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          gmail_message_id?: string | null
+          id?: string
+          message: string
+          sender_email?: string | null
+          sender_name?: string | null
+          sender_type?: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          gmail_message_id?: string | null
+          id?: string
+          message?: string
+          sender_email?: string | null
+          sender_name?: string | null
+          sender_type?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "help_support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
