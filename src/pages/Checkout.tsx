@@ -24,6 +24,11 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
 
   const stepType = searchParams.get("step") || "2-step";
   const accountSize = searchParams.get("size") || "$50K";
