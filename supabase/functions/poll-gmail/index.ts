@@ -128,15 +128,57 @@ class SimpleIMAP {
   }
 }
 
+// ─── Decoding helpers ───
+function decodeQuotedPrintable(str: string): string {
+  return str
+    .replace(/=\r?\n/g, '') // soft line breaks
+    .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+}
+
+function decodeBase64(str: string): string {
+  try { return atob(str.replace(/\s/g, '')) } catch { return str }
+}
+
+function decodePartBody(body: string, encoding: string): string {
+  const enc = encoding.toLowerCase().trim()
+  if (enc === 'quoted-printable') return decodeQuotedPrintable(body)
+  if (enc === 'base64') return decodeBase64(body)
+  return body
+}
+
+function extractPartHeaders(partHeader: string): Record<string, string> {
+  const unfolded = partHeader.replace(/\r?\n([ \t])/g, ' ')
+  const h: Record<string, string> = {}
+  for (const line of unfolded.split(/\r?\n/)) {
+    const ci = line.indexOf(':')
+    if (ci > 0) {
+      h[line.substring(0, ci).trim().toLowerCase()] = line.substring(ci + 1).trim()
+    }
+  }
+  return h
+}
+
+function stripHtmlToText(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 // ─── Email Parser ───
 function parseEmail(raw: string) {
   const headerEnd = raw.indexOf('\r\n\r\n')
   const headerSection = headerEnd > 0 ? raw.substring(0, headerEnd) : raw
   const bodySection = headerEnd > 0 ? raw.substring(headerEnd + 4) : ''
 
-  // Unfold headers (continuation lines start with whitespace)
+  // Unfold headers
   const unfolded = headerSection.replace(/\r\n([ \t])/g, ' ')
-  
+
   const headers: Record<string, string> = {}
   for (const line of unfolded.split('\r\n')) {
     const colonIdx = line.indexOf(':')
@@ -147,7 +189,7 @@ function parseEmail(raw: string) {
     }
   }
 
-  // Parse From header: "Name <email>" or just "email"
+  // Parse From
   let fromName = ''
   let fromEmail = ''
   const fromHeader = headers['from'] || ''
@@ -159,60 +201,58 @@ function parseEmail(raw: string) {
     fromEmail = fromHeader.trim()
   }
 
-  // Extract plain text body from potentially multipart message
+  // Extract body from potentially multipart message
   let body = bodySection
   const contentType = headers['content-type'] || ''
-  
+  const topEncoding = headers['content-transfer-encoding'] || ''
+
   if (contentType.includes('multipart')) {
     const boundaryMatch = contentType.match(/boundary="?([^";\s]+)"?/)
     if (boundaryMatch) {
       const boundary = boundaryMatch[1]
       const parts = bodySection.split(`--${boundary}`)
+      let foundText = false
+      let foundHtml = false
+
+      // First pass: look for text/plain
       for (const part of parts) {
-        if (part.includes('text/plain')) {
-          const partBodyStart = part.indexOf('\r\n\r\n')
-          if (partBodyStart > 0) {
-            body = part.substring(partBodyStart + 4).trim()
+        const partHeaderEnd = part.indexOf('\r\n\r\n')
+        if (partHeaderEnd < 0) continue
+        const partHeaders = extractPartHeaders(part.substring(0, partHeaderEnd))
+        const pct = partHeaders['content-type'] || ''
+        const pte = partHeaders['content-transfer-encoding'] || ''
+
+        if (pct.includes('text/plain')) {
+          body = decodePartBody(part.substring(partHeaderEnd + 4).trim(), pte)
+          foundText = true
+          break
+        }
+      }
+
+      // Second pass: fall back to text/html → strip to text
+      if (!foundText) {
+        for (const part of parts) {
+          const partHeaderEnd = part.indexOf('\r\n\r\n')
+          if (partHeaderEnd < 0) continue
+          const partHeaders = extractPartHeaders(part.substring(0, partHeaderEnd))
+          const pct = partHeaders['content-type'] || ''
+          const pte = partHeaders['content-transfer-encoding'] || ''
+
+          if (pct.includes('text/html')) {
+            const decoded = decodePartBody(part.substring(partHeaderEnd + 4).trim(), pte)
+            body = stripHtmlToText(decoded)
+            foundHtml = true
             break
           }
         }
       }
-      // Fallback to text/html if no text/plain
-      if (body === bodySection) {
-        for (const part of parts) {
-          if (part.includes('text/html')) {
-            const partBodyStart = part.indexOf('\r\n\r\n')
-            if (partBodyStart > 0) {
-              body = part.substring(partBodyStart + 4)
-                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-                .replace(/<[^>]+>/g, ' ')
-                .replace(/&nbsp;/g, ' ')
-                .replace(/&amp;/g, '&')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>')
-                .replace(/\s+/g, ' ')
-                .trim()
-              break
-            }
-          }
-        }
-      }
     }
-  }
-
-  // Handle quoted-printable decoding
-  if (body.includes('=\r\n') || body.match(/=[0-9A-Fa-f]{2}/)) {
-    body = body
-      .replace(/=\r\n/g, '')
-      .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
-  }
-
-  // Handle base64
-  const transferEncoding = headers['content-transfer-encoding'] || ''
-  if (transferEncoding.includes('base64')) {
-    try {
-      body = atob(body.replace(/\s/g, ''))
-    } catch { /* keep as is */ }
+  } else {
+    // Single-part message: decode with top-level encoding
+    body = decodePartBody(body, topEncoding)
+    if (contentType.includes('text/html')) {
+      body = stripHtmlToText(body)
+    }
   }
 
   // Clean up trailing boundary markers
@@ -226,7 +266,7 @@ function parseEmail(raw: string) {
     inReplyTo: headers['in-reply-to'] || '',
     references: headers['references'] || '',
     date: headers['date'] || new Date().toISOString(),
-    body: body.substring(0, 10000), // Limit body size
+    body: body.substring(0, 10000),
   }
 }
 
