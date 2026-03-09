@@ -31,7 +31,7 @@ import {
 } from "recharts";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages";
+type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase";
 
 interface ChallengeForm {
   name: string;
