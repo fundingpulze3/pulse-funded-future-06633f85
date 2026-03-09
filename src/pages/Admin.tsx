@@ -313,6 +313,7 @@ const Admin = () => {
     { id: "blog", label: "Blog", icon: <FileText size={18} /> },
     { id: "certificates", label: "Certificates", icon: <Award size={18} /> },
     { id: "pages", label: "Pages", icon: <Layers size={18} /> },
+    { id: "knowledgebase", label: "PULZEX KB", icon: <Brain size={18} /> },
   ];
 
   const statCards = [
