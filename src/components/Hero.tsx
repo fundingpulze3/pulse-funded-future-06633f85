@@ -231,7 +231,7 @@ const Hero = () => {
       />
 
       <div className="relative z-10 text-center max-w-4xl mx-auto px-6">
-        <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full glow-border surface-elevated text-sm text-muted-foreground mb-8 opacity-0">
+        <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full glow-border surface-elevated text-sm text-muted-foreground mb-8">
           <Zap size={14} className="text-primary" />
           <span>The Future of Prop Trading</span>
         </div>
