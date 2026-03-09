@@ -154,6 +154,7 @@ const AffiliateDashboard = () => {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

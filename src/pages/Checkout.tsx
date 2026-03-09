@@ -154,22 +154,8 @@ const Checkout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <div className="border-b border-border/50 backdrop-blur-md bg-background/80 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={16} /> Back
-          </button>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Shield size={16} />
-            <span className="text-xs font-medium">Secure Checkout</span>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
 
       <div className="max-w-6xl mx-auto px-6 py-12">
         <h1 className="font-display text-3xl sm:text-4xl font-bold mb-2">Checkout</h1>
