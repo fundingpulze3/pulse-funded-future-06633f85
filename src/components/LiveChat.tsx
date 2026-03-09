@@ -829,8 +829,8 @@ const LiveChat = () => {
                         </div>
 
                         {createdTicketRef && (
-                          <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
-                            <p className="text-sm text-green-600 font-medium">✅ Ticket #{createdTicketRef} created!</p>
+                          <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-center">
+                            <p className="text-sm text-primary font-medium">✅ Ticket #{createdTicketRef} created!</p>
                             <p className="text-xs text-muted-foreground mt-1">Check your email for updates.</p>
                           </div>
                         )}
