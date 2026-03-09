@@ -7,3 +7,5 @@ project_id = "rpshiyvndmnogbhbgmfm"
     verify_jwt = false
   [functions.send-support-reply]
     verify_jwt = false
+  [functions.enhance-reply]
+    verify_jwt = false
