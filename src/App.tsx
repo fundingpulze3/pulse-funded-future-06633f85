@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import LiveChat from "@/components/LiveChat";
 import { useAdminSubdomain } from "@/hooks/useAdminSubdomain";
 import Index from "./pages/Index";
 import Blog from "./pages/Blog";
