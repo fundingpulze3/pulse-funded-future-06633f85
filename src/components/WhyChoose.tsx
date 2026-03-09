@@ -33,7 +33,7 @@ const WhyChoose = () => {
   return (
     <section ref={sectionRef} className="py-20 px-6">
       <div className="max-w-5xl mx-auto">
-        <h2 className="wc-header font-display text-3xl sm:text-4xl font-bold text-center mb-12 opacity-0">
+        <h2 className="wc-header font-display text-3xl sm:text-4xl font-bold text-center mb-12">
           Why Choose <span className="text-gradient">Funding Pulze</span>
         </h2>
 
