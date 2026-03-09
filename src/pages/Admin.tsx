@@ -16,13 +16,14 @@ import {
 import {
   Users, Trophy, Link2, Shield, Plus, Pencil, Trash2,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
-  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones,
+  LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
 import CertificatesCMS from "@/components/admin/CertificatesCMS";
 import PagesCMS from "@/components/admin/PagesCMS";
 import SupportTicketsCMS from "@/components/admin/SupportTicketsCMS";
+import KnowledgeBaseCMS from "@/components/admin/KnowledgeBaseCMS";
 import { toast } from "sonner";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -30,7 +31,7 @@ import {
 } from "recharts";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages";
+type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase";
 
 interface ChallengeForm {
   name: string;
@@ -312,6 +313,7 @@ const Admin = () => {
     { id: "blog", label: "Blog", icon: <FileText size={18} /> },
     { id: "certificates", label: "Certificates", icon: <Award size={18} /> },
     { id: "pages", label: "Pages", icon: <Layers size={18} /> },
+    { id: "knowledgebase", label: "PULZEX KB", icon: <Brain size={18} /> },
   ];
 
   const statCards = [
@@ -863,6 +865,11 @@ const Admin = () => {
           {/* ===== Pages CMS Tab ===== */}
           {tab === "pages" && (
             <PagesCMS />
+          )}
+
+          {/* ===== Knowledge Base CMS Tab ===== */}
+          {tab === "knowledgebase" && (
+            <KnowledgeBaseCMS />
           )}
         </div>
       </div>
