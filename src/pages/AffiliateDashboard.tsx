@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Copy, Users, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 interface Profile {
   referral_code: string | null;
@@ -21,9 +23,14 @@ interface Referral {
 const AffiliateDashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [profile, setProfile] = useState<Profile | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -62,8 +69,9 @@ const AffiliateDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-16 px-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
+      <div className="max-w-5xl mx-auto pt-28 pb-16 px-6">
         <div className="mb-10">
           <h1 className="font-display text-4xl font-bold mb-2">
             Affiliate <span className="text-gradient">Dashboard</span>
@@ -146,6 +154,7 @@ const AffiliateDashboard = () => {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
