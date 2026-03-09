@@ -69,8 +69,9 @@ const AffiliateDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-16 px-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
+      <div className="max-w-5xl mx-auto pt-28 pb-16 px-6">
         <div className="mb-10">
           <h1 className="font-display text-4xl font-bold mb-2">
             Affiliate <span className="text-gradient">Dashboard</span>
