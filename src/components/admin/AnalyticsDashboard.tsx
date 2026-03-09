@@ -152,7 +152,7 @@ export default function AnalyticsDashboard({ pageVisits, profiles }: AnalyticsDa
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
-            <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} />
+            <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} />
             <Area type="monotone" dataKey="visits" stroke="hsl(0,0%,0%)" strokeWidth={2} fill="url(#visitGrad)" />
           </AreaChart>
         </ResponsiveContainer>
