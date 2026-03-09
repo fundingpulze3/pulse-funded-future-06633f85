@@ -46,11 +46,11 @@ type HelpSubView = "collections" | "articles" | "article-detail";
 type TicketStep = "subject" | "detail" | "submitting" | "done";
 
 /* ─── Constants ─── */
-const QUICK_ACTIONS = [
+const QUICK_ACTIONS: { label: string; icon: React.ReactNode; action?: "help" }[] = [
   { label: "How do challenges work?", icon: <HelpCircle size={12} /> },
   { label: "Payout process", icon: <CreditCard size={12} /> },
   { label: "Trading rules", icon: <TrendingUp size={12} /> },
-  { label: "Browse Help Center", icon: <BookOpen size={12} />, action: "help" as const },
+  { label: "Browse Help Center", icon: <BookOpen size={12} />, action: "help" },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai`;
