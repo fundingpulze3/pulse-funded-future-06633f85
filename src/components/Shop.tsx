@@ -79,7 +79,7 @@ const Shop = () => {
   return (
     <section ref={sectionRef} id="rules" className="py-24 px-6">
       <div className="max-w-5xl mx-auto">
-        <div className="section-header text-center mb-14 opacity-0">
+        <div className="section-header text-center mb-14">
           <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
             Start Your <span className="text-gradient">Challenge</span>
           </h2>
