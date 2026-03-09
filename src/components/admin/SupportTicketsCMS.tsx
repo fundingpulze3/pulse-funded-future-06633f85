@@ -1,20 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   ArrowLeft, Search, Mail, Clock, User, Send, X, RefreshCw,
   AlertCircle, CheckCircle2, MessageCircle, ExternalLink, Filter,
-  Inbox, MailOpen, Archive,
+  Inbox, MailOpen, Archive, Sparkles, Volume2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,6 +41,50 @@ interface TicketMessage {
 type ViewMode = "list" | "detail";
 type FilterStatus = "all" | "open" | "in_progress" | "closed";
 
+// Notification sound (short beep using Web Audio API)
+const playNotificationSound = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = "sine";
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch {}
+};
+
+const showBrowserNotification = (ticket: Ticket) => {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    new Notification("New Support Ticket", {
+      body: `${ticket.name}: ${ticket.subject}`,
+      icon: "/favicon.png",
+    });
+  }
+};
+
+// Sanitize HTML for safe rendering
+const createSafeHTML = (html: string) => {
+  // Strip script tags, event handlers, and dangerous elements
+  let safe = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/on\w+="[^"]*"/gi, "")
+    .replace(/on\w+='[^']*'/gi, "")
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+    .replace(/<object[\s\S]*?<\/object>/gi, "")
+    .replace(/<embed[\s\S]*?>/gi, "")
+    .replace(/<form[\s\S]*?<\/form>/gi, "");
+  return safe;
+};
+
+const isHTML = (str: string) => /<\/?[a-z][\s\S]*>/i.test(str);
+
 const SupportTicketsCMS = () => {
   const { session } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -61,6 +98,18 @@ const SupportTicketsCMS = () => {
   const [sending, setSending] = useState(false);
   const [polling, setPolling] = useState(false);
   const [closeOnReply, setCloseOnReply] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const prevTicketIdsRef = useRef<Set<string>>(new Set());
+
+  // Request notification permission
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().then(p => setNotificationsEnabled(p === "granted"));
+    } else if ("Notification" in window) {
+      setNotificationsEnabled(Notification.permission === "granted");
+    }
+  }, []);
 
   const fetchTickets = useCallback(async () => {
     const { data, error } = await supabase
@@ -68,7 +117,21 @@ const SupportTicketsCMS = () => {
       .select("*")
       .order("created_at", { ascending: false });
     if (error) { toast.error(error.message); return; }
-    setTickets((data || []) as Ticket[]);
+    const newTickets = (data || []) as Ticket[];
+
+    // Check for new open tickets
+    if (prevTicketIdsRef.current.size > 0) {
+      const newOpenTickets = newTickets.filter(
+        t => t.status === "open" && !prevTicketIdsRef.current.has(t.id)
+      );
+      if (newOpenTickets.length > 0) {
+        playNotificationSound();
+        newOpenTickets.forEach(t => showBrowserNotification(t));
+        toast.info(`${newOpenTickets.length} new ticket${newOpenTickets.length > 1 ? 's' : ''} received`);
+      }
+    }
+    prevTicketIdsRef.current = new Set(newTickets.map(t => t.id));
+    setTickets(newTickets);
     setLoading(false);
   }, []);
 
@@ -84,7 +147,6 @@ const SupportTicketsCMS = () => {
 
   useEffect(() => { fetchTickets(); }, [fetchTickets]);
 
-  // Poll for new tickets every 60 seconds
   useEffect(() => {
     const interval = setInterval(fetchTickets, 60000);
     return () => clearInterval(interval);
@@ -98,10 +160,35 @@ const SupportTicketsCMS = () => {
     fetchMessages(ticket.id);
   };
 
+  const enhanceReply = async () => {
+    if (!selectedTicket) return;
+    setEnhancing(true);
+    try {
+      const res = await supabase.functions.invoke("enhance-reply", {
+        body: {
+          draft: replyText,
+          customer_name: selectedTicket.name,
+          customer_message: selectedTicket.message,
+          subject: selectedTicket.subject,
+        },
+      });
+      if (res.error) throw new Error(res.error.message);
+      const data = res.data as { enhanced?: string; error?: string };
+      if (data.error) throw new Error(data.error);
+      if (data.enhanced) {
+        setReplyText(data.enhanced);
+        toast.success("Reply enhanced with AI");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "AI enhancement failed");
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
   const sendReply = async () => {
     if (!replyText.trim() || !selectedTicket || !session?.access_token) return;
     setSending(true);
-
     try {
       const res = await supabase.functions.invoke("send-support-reply", {
         body: {
@@ -110,16 +197,12 @@ const SupportTicketsCMS = () => {
           close_ticket: closeOnReply,
         },
       });
-
       if (res.error) throw new Error(res.error.message);
-
       toast.success("Reply sent successfully");
       setReplyText("");
       setCloseOnReply(false);
       fetchMessages(selectedTicket.id);
       fetchTickets();
-
-      // Update local selected ticket status
       setSelectedTicket(prev => prev ? {
         ...prev,
         status: closeOnReply ? 'closed' : 'in_progress',
@@ -188,11 +271,10 @@ const SupportTicketsCMS = () => {
     fetchTickets();
   };
 
-  // Filtered tickets
   const filteredTickets = tickets.filter(t => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      if (!t.subject.toLowerCase().includes(q) && 
+      if (!t.subject.toLowerCase().includes(q) &&
           !t.email.toLowerCase().includes(q) &&
           !t.name.toLowerCase().includes(q)) return false;
     }
@@ -240,6 +322,24 @@ const SupportTicketsCMS = () => {
     return `${days}d ago`;
   };
 
+  const renderMessageContent = (content: string) => {
+    if (isHTML(content)) {
+      return (
+        <div
+          className="text-sm text-[hsl(0,0%,30%)] leading-relaxed prose prose-sm max-w-none
+            [&_a]:text-blue-600 [&_a]:underline [&_img]:max-w-full [&_img]:h-auto
+            [&_table]:border-collapse [&_td]:p-1 [&_th]:p-1"
+          dangerouslySetInnerHTML={{ __html: createSafeHTML(content) }}
+        />
+      );
+    }
+    return (
+      <p className="text-sm text-[hsl(0,0%,30%)] whitespace-pre-wrap leading-relaxed">
+        {content}
+      </p>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -255,9 +355,9 @@ const SupportTicketsCMS = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => { setViewMode("list"); setSelectedTicket(null); }}
               className="text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)]"
             >
@@ -290,8 +390,8 @@ const SupportTicketsCMS = () => {
               <option value="in_progress">In Progress</option>
               <option value="closed">Closed</option>
             </select>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => deleteTicket(selectedTicket.id)}
               className="text-red-500 hover:text-red-700 hover:bg-red-50"
@@ -312,7 +412,7 @@ const SupportTicketsCMS = () => {
             <div>
               <span className="text-[hsl(0,0%,50%)] text-xs block mb-1">Status</span>
               <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border ${getStatusColor(selectedTicket.status)}`}>
-                {selectedTicket.status === "open" ? <Inbox size={10} /> : 
+                {selectedTicket.status === "open" ? <Inbox size={10} /> :
                  selectedTicket.status === "in_progress" ? <MailOpen size={10} /> : <Archive size={10} />}
                 {selectedTicket.status.replace("_", " ")}
               </span>
@@ -342,7 +442,7 @@ const SupportTicketsCMS = () => {
               <RefreshCw size={12} className="mr-1" /> Refresh
             </Button>
           </div>
-          
+
           <div className="divide-y divide-[hsl(0,0%,95%)]">
             {/* Original ticket message */}
             <div className="p-5 bg-[hsl(45,50%,97%)]">
@@ -358,15 +458,15 @@ const SupportTicketsCMS = () => {
                 </div>
                 <span className="text-xs text-[hsl(0,0%,50%)]">{timeAgo(selectedTicket.created_at)}</span>
               </div>
-              <p className="text-sm text-[hsl(0,0%,30%)] whitespace-pre-wrap leading-relaxed">{selectedTicket.message}</p>
+              {renderMessageContent(selectedTicket.message)}
             </div>
 
             {/* Thread messages */}
             {messages.map(msg => (
-              <div 
-                key={msg.id} 
+              <div
+                key={msg.id}
                 className={`p-5 ${
-                  msg.sender_type === 'support' ? 'bg-blue-50/50' : 
+                  msg.sender_type === 'support' ? 'bg-blue-50/50' :
                   msg.sender_type === 'system' ? 'bg-[hsl(0,0%,98%)]' : ''
                 }`}
               >
@@ -391,9 +491,7 @@ const SupportTicketsCMS = () => {
                   </div>
                   <span className="text-xs text-[hsl(0,0%,50%)]">{timeAgo(msg.created_at)}</span>
                 </div>
-                <p className="text-sm text-[hsl(0,0%,30%)] whitespace-pre-wrap leading-relaxed">
-                  {msg.message}
-                </p>
+                {renderMessageContent(msg.message)}
               </div>
             ))}
 
@@ -408,7 +506,22 @@ const SupportTicketsCMS = () => {
         {/* Reply box */}
         {selectedTicket.status !== "closed" && (
           <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
-            <h3 className="text-sm font-semibold text-[hsl(0,0%,15%)] mb-3">Reply</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-[hsl(0,0%,15%)]">Reply</h3>
+              <Button
+                onClick={enhanceReply}
+                disabled={enhancing}
+                variant="outline"
+                size="sm"
+                className="rounded-lg border-purple-200 text-purple-700 hover:bg-purple-50 hover:text-purple-800 gap-1.5"
+              >
+                {enhancing ? (
+                  <><RefreshCw size={13} className="animate-spin" /> Enhancing...</>
+                ) : (
+                  <><Sparkles size={13} /> Fix with AI</>
+                )}
+              </Button>
+            </div>
             <Textarea
               value={replyText}
               onChange={e => setReplyText(e.target.value)}
@@ -431,13 +544,9 @@ const SupportTicketsCMS = () => {
                 className="bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] rounded-lg"
               >
                 {sending ? (
-                  <>
-                    <RefreshCw size={14} className="mr-1 animate-spin" /> Sending...
-                  </>
+                  <><RefreshCw size={14} className="mr-1 animate-spin" /> Sending...</>
                 ) : (
-                  <>
-                    <Send size={14} className="mr-1" /> Send Reply
-                  </>
+                  <><Send size={14} className="mr-1" /> Send Reply</>
                 )}
               </Button>
             </div>
@@ -470,17 +579,29 @@ const SupportTicketsCMS = () => {
           <h2 className="font-display text-xl font-bold text-[hsl(0,0%,10%)]">Support Tickets</h2>
           <p className="text-xs text-[hsl(0,0%,50%)]">Manage customer support from email & web</p>
         </div>
-        <Button
-          onClick={triggerPoll}
-          disabled={polling}
-          className="bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] rounded-lg"
-        >
-          {polling ? (
-            <><RefreshCw size={14} className="mr-2 animate-spin" /> Polling Gmail...</>
-          ) : (
-            <><Mail size={14} className="mr-2" /> Check Gmail</>
+        <div className="flex items-center gap-2">
+          {!notificationsEnabled && "Notification" in window && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => Notification.requestPermission().then(p => setNotificationsEnabled(p === "granted"))}
+              className="rounded-lg text-xs"
+            >
+              <Volume2 size={14} className="mr-1" /> Enable Alerts
+            </Button>
           )}
-        </Button>
+          <Button
+            onClick={triggerPoll}
+            disabled={polling}
+            className="bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] rounded-lg"
+          >
+            {polling ? (
+              <><RefreshCw size={14} className="mr-2 animate-spin" /> Polling Gmail...</>
+            ) : (
+              <><Mail size={14} className="mr-2" /> Check Gmail</>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
