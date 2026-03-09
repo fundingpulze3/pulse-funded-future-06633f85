@@ -134,15 +134,17 @@ const Shop = () => {
           {/* Evaluation Stage Label */}
           <p className="text-center text-sm text-muted-foreground mb-3">(Evaluation Stage)</p>
 
-          {/* Stage Progress — aligned to the 3 data columns */}
-          <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-6">
+          {/* Stage Progress — 1 above Student, 2 above Practitioner, Crown above Master */}
+          <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4">
             <div />
-            <div className="col-span-3 flex items-center justify-center">
-              <span className="w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-xs font-semibold text-foreground shrink-0">1</span>
-              <div className="w-16 sm:w-28 h-px bg-border" />
-              <span className="w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-xs font-semibold text-foreground shrink-0">2</span>
-              <div className="w-10 sm:w-16 h-px bg-border" />
-              <Crown size={22} className="text-foreground shrink-0" />
+            <div className="flex justify-center">
+              <span className="w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-xs font-semibold text-foreground">1</span>
+            </div>
+            <div className="flex justify-center">
+              <span className="w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-xs font-semibold text-foreground">2</span>
+            </div>
+            <div className="flex justify-center">
+              <Crown size={22} className="text-foreground" />
             </div>
           </div>
 
