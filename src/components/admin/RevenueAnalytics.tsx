@@ -202,7 +202,7 @@ export default function RevenueAnalytics({ purchases, challenges, coupons, profi
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(0,0%,50%)" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} formatter={(v: number) => [`$${v.toFixed(0)}`, "AOV"]} />
+              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} formatter={(v: number) => [`$${v.toFixed(0)}`, "AOV"]} />
               <Line type="monotone" dataKey="aov" stroke="hsl(0,0%,30%)" strokeWidth={2} dot={{ r: 3, fill: "hsl(0,0%,30%)" }} />
             </LineChart>
           </ResponsiveContainer>
