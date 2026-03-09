@@ -51,7 +51,6 @@ const Hero = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Smooth lerp toward actual mouse
     smoothMouse.current.x += (mouseRef.current.x - smoothMouse.current.x) * 0.08;
     smoothMouse.current.y += (mouseRef.current.y - smoothMouse.current.y) * 0.08;
 
@@ -76,7 +75,6 @@ const Hero = () => {
     const isDark = document.documentElement.classList.contains("dark");
     const lineColor = isDark ? "255,255,255" : "0,0,0";
 
-    // Draw base grid — ultra faint
     ctx.strokeStyle = `rgba(${lineColor},0.018)`;
     ctx.lineWidth = 0.5;
     for (let x = 0; x <= w; x += GRID_SIZE) {
@@ -86,11 +84,9 @@ const Hero = () => {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
-    // Warp + reveal grid near cursor
     if (mx > -500) {
       const bulgeStrength = 6;
 
-      // Vertical lines — warped
       for (let x = 0; x <= w; x += GRID_SIZE) {
         ctx.beginPath();
         for (let y = 0; y <= h; y += 4) {
@@ -98,17 +94,13 @@ const Hero = () => {
           const dy = y - my;
           const d = Math.sqrt(dx * dx + dy * dy);
           const falloff = Math.max(0, 1 - d / radius);
-          const ease = falloff * falloff * falloff; // cubic falloff for liquid feel
-
-          // Bulge: push points outward from cursor
+          const ease = falloff * falloff * falloff;
           const angle = Math.atan2(dy, dx);
           const pushX = Math.cos(angle) * ease * bulgeStrength;
           const drawX = x + pushX;
-
           if (y === 0) ctx.moveTo(drawX, y);
           else ctx.lineTo(drawX, y);
         }
-        // Alpha based on proximity to cursor center column
         const colDist = Math.abs(x - mx);
         const colFalloff = Math.max(0, 1 - colDist / radius);
         const alpha = 0.018 + colFalloff * colFalloff * 0.18;
@@ -117,7 +109,6 @@ const Hero = () => {
         ctx.stroke();
       }
 
-      // Horizontal lines — warped
       for (let y = 0; y <= h; y += GRID_SIZE) {
         ctx.beginPath();
         for (let x = 0; x <= w; x += 4) {
@@ -126,11 +117,9 @@ const Hero = () => {
           const d = Math.sqrt(dx * dx + dy * dy);
           const falloff = Math.max(0, 1 - d / radius);
           const ease = falloff * falloff * falloff;
-
           const angle = Math.atan2(dy, dx);
           const pushY = Math.sin(angle) * ease * bulgeStrength;
           const drawY = y + pushY;
-
           if (x === 0) ctx.moveTo(x, drawY);
           else ctx.lineTo(x, drawY);
         }
@@ -142,7 +131,6 @@ const Hero = () => {
         ctx.stroke();
       }
 
-      // Intersection dots — reveal
       for (let x = 0; x <= w; x += GRID_SIZE) {
         for (let y = 0; y <= h; y += GRID_SIZE) {
           const dx = x - mx;
@@ -156,7 +144,6 @@ const Hero = () => {
             const by = y + Math.sin(angle) * ease * bulgeStrength;
             const dotAlpha = ease * 0.5;
             const dotSize = 0.8 + ease * 2;
-
             ctx.beginPath();
             ctx.arc(bx, by, dotSize, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(${lineColor},${dotAlpha})`;
@@ -165,7 +152,6 @@ const Hero = () => {
         }
       }
 
-      // Soft radial glow
       const grad = ctx.createRadialGradient(mx, my, 0, mx, my, radius * 1.2);
       grad.addColorStop(0, `rgba(${lineColor},0.03)`);
       grad.addColorStop(0.5, `rgba(${lineColor},0.01)`);
@@ -204,15 +190,10 @@ const Hero = () => {
   useEffect(() => {
     const loadGsap = async () => {
       const { gsap } = await import("gsap");
-      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
-      gsap.registerPlugin(ScrollTrigger);
       const el = sectionRef.current;
       if (!el) return;
 
-      const tl = gsap.timeline({
-        defaults: { ease: "power3.out" },
-        scrollTrigger: { trigger: el, start: "top 85%", once: true },
-      });
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
       tl.fromTo(el.querySelector(".hero-badge"), { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6 })
         .fromTo(el.querySelector(".hero-title"), { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 }, "-=0.3")
         .fromTo(el.querySelector(".hero-sub"), { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6 }, "-=0.3")
@@ -223,7 +204,6 @@ const Hero = () => {
 
   return (
     <section ref={sectionRef} id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
-      {/* Interactive grid canvas */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
@@ -231,23 +211,23 @@ const Hero = () => {
       />
 
       <div className="relative z-10 text-center max-w-4xl mx-auto px-6">
-        <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full glow-border surface-elevated text-sm text-muted-foreground mb-8 opacity-0">
+        <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full glow-border surface-elevated text-sm text-muted-foreground mb-8">
           <Zap size={14} className="text-primary" />
           <span>The Future of Prop Trading</span>
         </div>
 
-        <h1 className="hero-title font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-6 opacity-0">
+        <h1 className="hero-title font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-6">
           Get Funded.{" "}
           <span className="text-gradient">Trade Big.</span>
           <br />
           Keep the Profits.
         </h1>
 
-        <p className="hero-sub text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed opacity-0">
+        <p className="hero-sub text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
           Prove your trading skills and access accounts up to $100K. No risk on your capital — all the upside is yours.
         </p>
 
-        <div className="hero-buttons flex flex-col sm:flex-row items-center justify-center gap-4 opacity-0">
+        <div className="hero-buttons flex flex-col sm:flex-row items-center justify-center gap-4">
           <MagneticButton>
             <Button size="lg" className="rounded-xl text-base px-8 py-6 glow-box">
               Start Challenge <ArrowRight size={18} className="ml-2" />
@@ -263,7 +243,6 @@ const Hero = () => {
         <LiveTicker />
       </div>
 
-      {/* Floating particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         {Array.from({ length: 20 }).map((_, i) => (
           <div
