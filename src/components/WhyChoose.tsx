@@ -33,16 +33,14 @@ const WhyChoose = () => {
   return (
     <section ref={sectionRef} className="py-20 px-6">
       <div className="max-w-5xl mx-auto">
-        <h2 className="wc-header font-display text-3xl sm:text-4xl font-bold text-center mb-12">
-          Why Choose <span className="text-gradient">Funding Pulze</span>
+        <h2 className="wc-header font-display text-3xl sm:text-4xl font-bold text-center mb-12   Why Choose <span className="text-gradient">Funding Pulze</span>
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {features.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="wc-card group relative rounded-2xl p-6 text-center cursor-default transition-all duration-500 hover:scale-[1.04] hover:-translate-y-1 opacity-0"
-              style={{
+              className="wc-card group relative rounded-2xl p-6 text-center cursor-default transition-all duration-500 hover:scale-[1.04] hover:-translate-y-1 opacity-0      style={{
                 background: "hsl(var(--surface-elevated) / 0.35)",
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
