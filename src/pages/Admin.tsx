@@ -7,16 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Users, Trophy, Link2, Shield, Plus, Pencil, Trash2,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
+  LineChart as LineChartIcon, Search as SearchIcon, Bell,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
@@ -24,57 +21,33 @@ import CertificatesCMS from "@/components/admin/CertificatesCMS";
 import PagesCMS from "@/components/admin/PagesCMS";
 import SupportTicketsCMS from "@/components/admin/SupportTicketsCMS";
 import KnowledgeBaseCMS from "@/components/admin/KnowledgeBaseCMS";
+import Dashboard from "@/components/admin/Dashboard";
+import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
+import SEOManager from "@/components/admin/SEOManager";
+import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
 import { toast } from "sonner";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  ResponsiveContainer, Area, AreaChart,
-} from "recharts";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase";
 
 interface ChallengeForm {
-  name: string;
-  account_size: string;
-  price: string;
-  profit_target: string;
-  daily_drawdown: string;
-  max_drawdown: string;
-  min_trading_days: string;
-  leverage: string;
-  step_type: string;
-  is_active: boolean;
+  name: string; account_size: string; price: string; profit_target: string;
+  daily_drawdown: string; max_drawdown: string; min_trading_days: string;
+  leverage: string; step_type: string; is_active: boolean;
 }
 
 const emptyChallengeForm: ChallengeForm = {
-  name: "",
-  account_size: "",
-  price: "",
-  profit_target: "",
-  daily_drawdown: "",
-  max_drawdown: "",
-  min_trading_days: "",
-  leverage: "1:100",
-  step_type: "1-step",
-  is_active: true,
+  name: "", account_size: "", price: "", profit_target: "", daily_drawdown: "",
+  max_drawdown: "", min_trading_days: "", leverage: "1:100", step_type: "1-step", is_active: true,
 };
 
 interface CouponForm {
-  code: string;
-  discount_type: string;
-  discount_value: string;
-  max_uses: string;
-  is_active: boolean;
-  expires_at: string;
+  code: string; discount_type: string; discount_value: string;
+  max_uses: string; is_active: boolean; expires_at: string;
 }
 
 const emptyCouponForm: CouponForm = {
-  code: "",
-  discount_type: "percentage",
-  discount_value: "",
-  max_uses: "",
-  is_active: true,
-  expires_at: "",
+  code: "", discount_type: "percentage", discount_value: "", max_uses: "", is_active: true, expires_at: "",
 };
 
 const Admin = () => {
@@ -89,6 +62,8 @@ const Admin = () => {
   const [purchases, setPurchases] = useState<any[]>([]);
   const [pageVisits, setPageVisits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
   const [editingChallengeId, setEditingChallengeId] = useState<string | null>(null);
@@ -99,6 +74,21 @@ const Admin = () => {
   const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
   const [couponForm, setCouponForm] = useState<CouponForm>(emptyCouponForm);
   const [couponSaving, setCouponSaving] = useState(false);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    let gPressed = false;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "TEXTAREA") return;
+      if (e.key === "g") { gPressed = true; setTimeout(() => { gPressed = false; }, 500); return; }
+      if (gPressed) {
+        const map: Record<string, Tab> = { d: "dashboard", a: "analytics", r: "revenue", s: "seo", u: "users" };
+        if (map[e.key]) { setTab(map[e.key]); gPressed = false; }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !adminLoading) {
@@ -126,97 +116,31 @@ const Admin = () => {
     setLoading(false);
   };
 
-  // Dashboard stats
-  const totalRevenue = useMemo(() => purchases.reduce((s, p) => s + (p.amount_paid || 0), 0), [purchases]);
-  const totalOrders = purchases.length;
-  const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const totalPayouts = useMemo(() =>
-    referrals.filter(r => r.commission_status === "paid").reduce((s, r) => s + (r.commission_amount || 0), 0),
-    [referrals]
+  // UTM analytics
+  const filteredVisits = useMemo(() =>
+    pageVisits.filter((v: any) => !v.page_url?.includes("lovable") && !v.page_url?.includes("__lovable") && !v.referrer?.includes("lovable")),
+    [pageVisits]
   );
 
-  // Chart data - last 30 days
-  const chartData = useMemo(() => {
-    const days: Record<string, { revenue: number; payouts: number }> = {};
-    const now = new Date();
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(5, 10);
-      days[key] = { revenue: 0, payouts: 0 };
-    }
-    purchases.forEach(p => {
-      const key = p.created_at?.slice(5, 10);
-      if (key && days[key]) days[key].revenue += p.amount_paid || 0;
-    });
-    referrals.filter(r => r.commission_status === "paid").forEach(r => {
-      const key = r.created_at?.slice(5, 10);
-      if (key && days[key]) days[key].payouts += r.commission_amount || 0;
-    });
-    return Object.entries(days).map(([date, vals]) => ({ date, ...vals }));
-  }, [purchases, referrals]);
-
-  // Recent sales
-  const recentSales = useMemo(() => purchases.slice(0, 8), [purchases]);
-
-  // Filter out Lovable preview visits
-  const filteredVisits = useMemo(() =>
-    pageVisits.filter((v: any) =>
-      !v.page_url?.includes("lovable") &&
-      !v.page_url?.includes("__lovable") &&
-      !v.referrer?.includes("lovable")
-    ), [pageVisits]);
-
-  // UTM analytics
   const utmSourceStats = useMemo(() => {
     const sources: Record<string, { visits: number; signups: number }> = {};
-    filteredVisits.forEach((v) => {
-      const src = v.utm_source || "(direct)";
-      if (!sources[src]) sources[src] = { visits: 0, signups: 0 };
-      sources[src].visits++;
-    });
-    profiles.forEach((p: any) => {
-      const src = p.utm_source || "(direct)";
-      if (!sources[src]) sources[src] = { visits: 0, signups: 0 };
-      sources[src].signups++;
-    });
-    return Object.entries(sources)
-      .map(([source, data]) => ({ source, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
-      .sort((a, b) => b.visits - a.visits);
+    filteredVisits.forEach((v) => { const src = v.utm_source || "(direct)"; if (!sources[src]) sources[src] = { visits: 0, signups: 0 }; sources[src].visits++; });
+    profiles.forEach((p: any) => { const src = p.utm_source || "(direct)"; if (!sources[src]) sources[src] = { visits: 0, signups: 0 }; sources[src].signups++; });
+    return Object.entries(sources).map(([source, data]) => ({ source, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" })).sort((a, b) => b.visits - a.visits);
   }, [filteredVisits, profiles]);
 
   const utmCampaignStats = useMemo(() => {
     const campaigns: Record<string, { visits: number; signups: number }> = {};
-    filteredVisits.filter(v => v.utm_campaign).forEach((v) => {
-      const c = v.utm_campaign!;
-      if (!campaigns[c]) campaigns[c] = { visits: 0, signups: 0 };
-      campaigns[c].visits++;
-    });
-    profiles.filter((p: any) => p.utm_campaign).forEach((p: any) => {
-      const c = p.utm_campaign;
-      if (!campaigns[c]) campaigns[c] = { visits: 0, signups: 0 };
-      campaigns[c].signups++;
-    });
-    return Object.entries(campaigns)
-      .map(([campaign, data]) => ({ campaign, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
-      .sort((a, b) => b.visits - a.visits);
+    filteredVisits.filter(v => v.utm_campaign).forEach((v) => { const c = v.utm_campaign!; if (!campaigns[c]) campaigns[c] = { visits: 0, signups: 0 }; campaigns[c].visits++; });
+    profiles.filter((p: any) => p.utm_campaign).forEach((p: any) => { const c = p.utm_campaign; if (!campaigns[c]) campaigns[c] = { visits: 0, signups: 0 }; campaigns[c].signups++; });
+    return Object.entries(campaigns).map(([campaign, data]) => ({ campaign, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" })).sort((a, b) => b.visits - a.visits);
   }, [filteredVisits, profiles]);
 
   const utmMediumStats = useMemo(() => {
     const mediums: Record<string, { visits: number; signups: number }> = {};
-    filteredVisits.filter(v => v.utm_medium).forEach((v) => {
-      const m = v.utm_medium!;
-      if (!mediums[m]) mediums[m] = { visits: 0, signups: 0 };
-      mediums[m].visits++;
-    });
-    profiles.filter((p: any) => p.utm_medium).forEach((p: any) => {
-      const m = p.utm_medium;
-      if (!mediums[m]) mediums[m] = { visits: 0, signups: 0 };
-      mediums[m].signups++;
-    });
-    return Object.entries(mediums)
-      .map(([medium, data]) => ({ medium, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" }))
-      .sort((a, b) => b.visits - a.visits);
+    filteredVisits.filter(v => v.utm_medium).forEach((v) => { const m = v.utm_medium!; if (!mediums[m]) mediums[m] = { visits: 0, signups: 0 }; mediums[m].visits++; });
+    profiles.filter((p: any) => p.utm_medium).forEach((p: any) => { const m = p.utm_medium; if (!mediums[m]) mediums[m] = { visits: 0, signups: 0 }; mediums[m].signups++; });
+    return Object.entries(mediums).map(([medium, data]) => ({ medium, ...data, conversionRate: data.visits > 0 ? ((data.signups / data.visits) * 100).toFixed(1) : "0" })).sort((a, b) => b.visits - a.visits);
   }, [filteredVisits, profiles]);
 
   // ---- Challenge CRUD ----
@@ -289,6 +213,18 @@ const Admin = () => {
     return c?.name || "Unknown";
   };
 
+  // CSV export helper
+  const exportCSV = (data: any[], filename: string) => {
+    if (!data.length) return;
+    const keys = Object.keys(data[0]);
+    const csv = [keys.join(","), ...data.map(row => keys.map(k => `"${String(row[k] ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${filename}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (authLoading || adminLoading || loading) {
     return (
       <div className="min-h-screen bg-[hsl(0,0%,0%)] flex items-center justify-center">
@@ -300,68 +236,96 @@ const Admin = () => {
     );
   }
 
-
-  const sidebarItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
-    { id: "users", label: "Users", icon: <Users size={18} /> },
-    { id: "challenges", label: "Challenges", icon: <Trophy size={18} /> },
-    { id: "referrals", label: "Referrals", icon: <Link2 size={18} /> },
-    { id: "coupons", label: "Coupons", icon: <Ticket size={18} /> },
-    { id: "utm", label: "UTM Tracker", icon: <Globe size={18} /> },
-    { id: "helpcenter", label: "Help Center", icon: <BookOpen size={18} /> },
-    { id: "support", label: "Support", icon: <Headphones size={18} /> },
-    { id: "blog", label: "Blog", icon: <FileText size={18} /> },
-    { id: "certificates", label: "Certificates", icon: <Award size={18} /> },
-    { id: "pages", label: "Pages", icon: <Layers size={18} /> },
-    { id: "knowledgebase", label: "PULZEX KB", icon: <Brain size={18} /> },
+  const sidebarGroups = [
+    {
+      label: "Overview",
+      items: [
+        { id: "dashboard" as Tab, label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+        { id: "analytics" as Tab, label: "Analytics", icon: <LineChartIcon size={18} /> },
+        { id: "revenue" as Tab, label: "Revenue", icon: <DollarSign size={18} /> },
+        { id: "seo" as Tab, label: "SEO", icon: <SearchIcon size={18} /> },
+      ],
+    },
+    {
+      label: "Management",
+      items: [
+        { id: "users" as Tab, label: "Users", icon: <Users size={18} /> },
+        { id: "challenges" as Tab, label: "Challenges", icon: <Trophy size={18} /> },
+        { id: "referrals" as Tab, label: "Referrals", icon: <Link2 size={18} /> },
+        { id: "coupons" as Tab, label: "Coupons", icon: <Ticket size={18} /> },
+        { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
+      ],
+    },
+    {
+      label: "Content",
+      items: [
+        { id: "helpcenter" as Tab, label: "Help Center", icon: <BookOpen size={18} /> },
+        { id: "support" as Tab, label: "Support", icon: <Headphones size={18} /> },
+        { id: "blog" as Tab, label: "Blog", icon: <FileText size={18} /> },
+        { id: "certificates" as Tab, label: "Certificates", icon: <Award size={18} /> },
+        { id: "pages" as Tab, label: "Pages", icon: <Layers size={18} /> },
+        { id: "knowledgebase" as Tab, label: "PULZEX KB", icon: <Brain size={18} /> },
+      ],
+    },
   ];
 
-  const statCards = [
-    { label: "Total Revenue", value: `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, icon: <DollarSign size={18} />, sub: `${purchases.filter(p => { const d = new Date(p.created_at); const now = new Date(); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length} this month` },
-    { label: "Total Users", value: profiles.length.toLocaleString(), icon: <Users size={18} />, sub: `+${profiles.filter(p => { const d = new Date(p.created_at); const now = new Date(); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length} new` },
-    { label: "Total Orders", value: totalOrders.toLocaleString(), icon: <ShoppingCart size={18} />, sub: `${purchases.filter(p => p.payment_status === "confirmed").length} confirmed` },
-    { label: "Avg Order Value", value: `$${avgOrderValue.toFixed(0)}`, icon: <TrendingUp size={18} />, sub: "" },
-    { label: "Total Payouts", value: `$${totalPayouts.toFixed(2)}`, icon: <BarChart3 size={18} />, sub: `${referrals.filter(r => r.commission_status === "pending").length} pending` },
-  ];
+  const tabLabels: Record<Tab, string> = {
+    dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager",
+    users: "Users", challenges: "Challenges", referrals: "Referrals", coupons: "Coupons",
+    utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
+    certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
+  };
 
   return (
     <div className="min-h-screen bg-[hsl(0,0%,100%)] text-[hsl(0,0%,10%)] flex">
       {/* ===== Left Sidebar ===== */}
-      <div className="w-60 bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] flex flex-col shrink-0">
+      <div className={`${sidebarCollapsed ? "w-16" : "w-56"} bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] flex flex-col shrink-0 transition-all duration-200`}>
         {/* Brand */}
-        <div className="h-16 flex items-center gap-2.5 px-5 border-b border-[hsl(0,0%,90%)]">
-          <img src={logo} alt="Funding Pulze" className="h-8 w-8 rounded-lg" />
-          <div>
-            <p className="font-display text-sm font-bold text-[hsl(0,0%,5%)] leading-tight">Funding Pulze</p>
-            <p className="text-[10px] text-[hsl(0,0%,50%)]">Admin Panel</p>
-          </div>
+        <div className="h-14 flex items-center gap-2 px-4 border-b border-[hsl(0,0%,90%)] cursor-pointer" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+          <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg shrink-0" />
+          {!sidebarCollapsed && (
+            <div>
+              <p className="font-display text-xs font-bold text-[hsl(0,0%,5%)] leading-tight">Funding Pulze</p>
+              <p className="text-[9px] text-[hsl(0,0%,50%)]">Admin Panel</p>
+            </div>
+          )}
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-4 px-3 space-y-0.5">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setTab(item.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                tab === item.id
-                  ? "bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] shadow-sm"
-                  : "text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)]"
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
+        <nav className="flex-1 py-3 px-2 space-y-4 overflow-auto">
+          {sidebarGroups.map(group => (
+            <div key={group.label}>
+              {!sidebarCollapsed && (
+                <p className="text-[9px] font-semibold text-[hsl(0,0%,50%)] uppercase tracking-widest px-2 mb-1.5">{group.label}</p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setTab(item.id)}
+                    title={sidebarCollapsed ? item.label : undefined}
+                    className={`w-full flex items-center gap-2 ${sidebarCollapsed ? "justify-center px-0" : "px-2.5"} py-2 rounded-lg text-[12px] font-medium transition-all ${
+                      tab === item.id
+                        ? "bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] shadow-sm"
+                        : "text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)]"
+                    }`}
+                  >
+                    {item.icon}
+                    {!sidebarCollapsed && <span>{item.label}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
         {/* Bottom */}
-        <div className="border-t border-[hsl(0,0%,90%)] p-3 space-y-0.5">
-          <button onClick={() => navigate("/")} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors">
-            <Home size={18} /><span>Back to Site</span>
+        <div className="border-t border-[hsl(0,0%,90%)] p-2 space-y-0.5">
+          <button onClick={() => navigate("/")} className={`w-full flex items-center gap-2 ${sidebarCollapsed ? "justify-center px-0" : "px-2.5"} py-2 rounded-lg text-[12px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors`}>
+            <Home size={18} />{!sidebarCollapsed && <span>Back to Site</span>}
           </button>
-          <button onClick={() => { signOut(); navigate("/"); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors">
-            <LogOut size={18} /><span>Sign Out</span>
+          <button onClick={() => { signOut(); navigate("/"); }} className={`w-full flex items-center gap-2 ${sidebarCollapsed ? "justify-center px-0" : "px-2.5"} py-2 rounded-lg text-[12px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors`}>
+            <LogOut size={18} />{!sidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
       </div>
@@ -369,14 +333,22 @@ const Admin = () => {
       {/* ===== Main Content ===== */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <div className="h-16 border-b border-[hsl(0,0%,90%)] flex items-center justify-between px-8 shrink-0 bg-[hsl(0,0%,100%)]">
+        <div className="h-14 border-b border-[hsl(0,0%,90%)] flex items-center justify-between px-6 shrink-0 bg-[hsl(0,0%,100%)]">
           <div>
-            <h1 className="font-display text-xl font-bold text-[hsl(0,0%,5%)] capitalize">{tab}</h1>
-            <p className="text-xs text-[hsl(0,0%,50%)]">This Month</p>
+            <h1 className="font-display text-lg font-bold text-[hsl(0,0%,5%)]">{tabLabels[tab]}</h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[hsl(0,0%,0%)] flex items-center justify-center">
-              <span className="text-[hsl(0,0%,100%)] text-xs font-bold">
+            <div className="relative">
+              <SearchIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[hsl(0,0%,55%)]" />
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search... (G+D, G+A, G+R, G+S)"
+                className="h-8 w-52 pl-8 pr-3 rounded-lg bg-[hsl(0,0%,96%)] border border-[hsl(0,0%,90%)] text-xs text-[hsl(0,0%,20%)] placeholder:text-[hsl(0,0%,55%)] focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,70%)]"
+              />
+            </div>
+            <div className="w-7 h-7 rounded-full bg-[hsl(0,0%,0%)] flex items-center justify-center">
+              <span className="text-[hsl(0,0%,100%)] text-[10px] font-bold">
                 {user?.email?.charAt(0).toUpperCase() || "A"}
               </span>
             </div>
@@ -384,103 +356,52 @@ const Admin = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-8 bg-[hsl(0,0%,96%)]">
+        <div className="flex-1 overflow-auto p-6 bg-[hsl(0,0%,96%)]">
 
           {/* ===== Dashboard Tab ===== */}
           {tab === "dashboard" && (
-            <div className="space-y-6">
-              {/* Stat cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                {statCards.map((card) => (
-                  <div key={card.label} className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">{card.label}</span>
-                      <span className="text-[hsl(0,0%,60%)]">{card.icon}</span>
-                    </div>
-                    <p className="text-2xl font-display font-bold text-[hsl(0,0%,5%)]">{card.value}</p>
-                    {card.sub && <p className="text-[11px] text-[hsl(0,0%,50%)] mt-1">{card.sub}</p>}
-                  </div>
-                ))}
-              </div>
+            <Dashboard
+              profiles={profiles}
+              purchases={purchases}
+              referrals={referrals}
+              challenges={challenges}
+              pageVisits={pageVisits}
+              getProfileName={getProfileName}
+              getChallengeNameById={getChallengeNameById}
+            />
+          )}
 
-              {/* Revenue Chart */}
-              <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <BarChart3 size={18} className="text-[hsl(0,0%,40%)]" />
-                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Revenue vs Payouts</h3>
-                </div>
-                <ResponsiveContainer width="100%" height={320}>
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(0,0%,0%)" stopOpacity={0.1} />
-                        <stop offset="95%" stopColor="hsl(0,0%,0%)" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="payoutGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(0,0%,60%)" stopOpacity={0.1} />
-                        <stop offset="95%" stopColor="hsl(0,0%,60%)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,92%)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(0,0%,50%)" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 11, fill: "hsl(0,0%,50%)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
-                    <RechartsTooltip
-                      contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 12 }}
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, ""]}
-                    />
-                    <Area type="monotone" dataKey="revenue" stroke="hsl(0,0%,0%)" strokeWidth={2} fill="url(#revenueGrad)" name="Revenue" dot={{ r: 3, fill: "#000" }} />
-                    <Area type="monotone" dataKey="payouts" stroke="hsl(0,0%,60%)" strokeWidth={2} fill="url(#payoutGrad)" name="Payouts" dot={{ r: 3, fill: "hsl(0,0%,60%)" }} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+          {/* ===== Analytics Tab ===== */}
+          {tab === "analytics" && (
+            <AnalyticsDashboard pageVisits={pageVisits} profiles={profiles} />
+          )}
 
-              {/* Recent Sales */}
-              <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-6">
-                <div className="flex items-center gap-2 mb-5">
-                  <ShoppingCart size={18} className="text-[hsl(0,0%,40%)]" />
-                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Recent Sales</h3>
-                </div>
-                <div className="space-y-0">
-                  {recentSales.length === 0 && (
-                    <p className="text-center text-sm text-[hsl(0,0%,50%)] py-8">No sales yet.</p>
-                  )}
-                  {recentSales.map((sale) => (
-                    <div key={sale.id} className="flex items-center justify-between py-3.5 border-b border-[hsl(0,0%,94%)] last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[hsl(0,0%,94%)] flex items-center justify-center">
-                          <ShoppingCart size={14} className="text-[hsl(0,0%,50%)]" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[hsl(0,0%,10%)]">{getProfileName(sale.user_id)}</p>
-                          <p className="text-[11px] text-[hsl(0,0%,50%)]">{getChallengeNameById(sale.challenge_id)}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-[hsl(0,0%,5%)]">${sale.amount_paid}</p>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                            sale.payment_status === "confirmed"
-                              ? "bg-[hsl(0,0%,92%)] text-[hsl(0,0%,30%)]"
-                              : "bg-[hsl(0,0%,95%)] text-[hsl(0,0%,55%)]"
-                          }`}>{sale.payment_status}</span>
-                          <span className="text-[10px] text-[hsl(0,0%,55%)]">
-                            {new Date(sale.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {/* ===== Revenue Tab ===== */}
+          {tab === "revenue" && (
+            <RevenueAnalytics
+              purchases={purchases}
+              challenges={challenges}
+              coupons={coupons}
+              profiles={profiles}
+              getProfileName={getProfileName}
+              getChallengeNameById={getChallengeNameById}
+            />
+          )}
+
+          {/* ===== SEO Tab ===== */}
+          {tab === "seo" && (
+            <SEOManager />
           )}
 
           {/* ===== Users Tab ===== */}
           {tab === "users" && (
             <div>
-              <div className="mb-6">
-                <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Users</h2>
-                <p className="text-xs text-[hsl(0,0%,50%)] mt-1">{profiles.length} registered users</p>
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Users</h2>
+                  <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{profiles.length} registered users</p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => exportCSV(profiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
               </div>
               <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
                 <table className="w-full">
@@ -495,43 +416,29 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {profiles.map((p) => (
+                    {profiles.filter(p => !searchQuery || p.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) || p.email?.toLowerCase().includes(searchQuery.toLowerCase())).map((p) => (
                       <tr key={p.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)] transition-colors">
-                        <td className="px-5 py-3.5 text-sm font-medium text-[hsl(0,0%,10%)]">{p.display_name || "—"}</td>
-                        <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,45%)]">{p.email || "—"}</td>
-                        <td className="px-5 py-3.5"><code className="text-xs bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,88%)] px-2 py-0.5 rounded font-mono text-[hsl(0,0%,30%)]">{p.referral_code || "—"}</code></td>
-                        <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,45%)]">{p.referred_by ? getProfileName(p.referred_by) : <span className="text-[hsl(0,0%,75%)]">Direct</span>}</td>
-                        <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,50%)]">{new Date(p.created_at).toLocaleDateString()}</td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3 text-sm font-medium text-[hsl(0,0%,10%)]">{p.display_name || "—"}</td>
+                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{p.email || "—"}</td>
+                        <td className="px-5 py-3"><code className="text-xs bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,88%)] px-2 py-0.5 rounded font-mono text-[hsl(0,0%,30%)]">{p.referral_code || "—"}</code></td>
+                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{p.referred_by ? getProfileName(p.referred_by) : <span className="text-[hsl(0,0%,75%)]">Direct</span>}</td>
+                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,50%)]">{new Date(p.created_at).toLocaleDateString()}</td>
+                        <td className="px-5 py-3">
                           <button
                             onClick={async () => {
                               const toastId = toast.loading("Generating login link...");
                               try {
                                 const { data: { session } } = await supabase.auth.getSession();
-                                const res = await fetch(
-                                  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-impersonate`,
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                      Authorization: `Bearer ${session?.access_token}`,
-                                    },
-                                    body: JSON.stringify({ user_id: p.user_id }),
-                                  }
-                                );
+                                const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-impersonate`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ user_id: p.user_id }) });
                                 const data = await res.json();
                                 if (!res.ok) throw new Error(data.error);
                                 toast.dismiss(toastId);
                                 window.open(data.url + `&redirect_to=${window.location.origin}`, "_blank");
-                              } catch (err: any) {
-                                toast.dismiss(toastId);
-                                toast.error(err.message || "Failed to impersonate");
-                              }
+                              } catch (err: any) { toast.dismiss(toastId); toast.error(err.message || "Failed to impersonate"); }
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] text-xs font-medium hover:bg-[hsl(0,0%,15%)] transition-colors"
                           >
-                            <LogIn size={12} />
-                            Login
+                            <LogIn size={12} /> Login
                           </button>
                         </td>
                       </tr>
@@ -546,14 +453,17 @@ const Admin = () => {
           {/* ===== Challenges Tab ===== */}
           {tab === "challenges" && (
             <div>
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Challenges</h2>
-                  <p className="text-xs text-[hsl(0,0%,50%)] mt-1">{challenges.length} challenges</p>
+                  <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{challenges.length} challenges</p>
                 </div>
-                <Button size="sm" onClick={openCreateChallenge} className="bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] rounded-lg text-xs font-medium">
-                  <Plus size={14} className="mr-1" /> New Challenge
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => exportCSV(challenges, "challenges")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
+                  <Button size="sm" onClick={openCreateChallenge} className="bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] rounded-lg text-xs font-medium">
+                    <Plus size={14} className="mr-1" /> New Challenge
+                  </Button>
+                </div>
               </div>
               <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
                 <table className="w-full">
@@ -571,17 +481,17 @@ const Admin = () => {
                   <tbody>
                     {challenges.map((c) => (
                       <tr key={c.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)] transition-colors">
-                        <td className="px-5 py-3.5 text-sm font-medium text-[hsl(0,0%,10%)]">{c.name}</td>
-                        <td className="px-5 py-3.5 text-sm">${c.account_size.toLocaleString()}</td>
-                        <td className="px-5 py-3.5 text-sm">${c.price}</td>
-                        <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,45%)]">{c.profit_target}</td>
-                        <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,45%)]">{c.step_type}</td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3 text-sm font-medium text-[hsl(0,0%,10%)]">{c.name}</td>
+                        <td className="px-5 py-3 text-sm">${c.account_size.toLocaleString()}</td>
+                        <td className="px-5 py-3 text-sm">${c.price}</td>
+                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{c.profit_target}</td>
+                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{c.step_type}</td>
+                        <td className="px-5 py-3">
                           <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${c.is_active ? "bg-[hsl(0,0%,92%)] text-[hsl(0,0%,25%)]" : "bg-[hsl(0,0%,96%)] text-[hsl(0,0%,60%)]"}`}>
                             {c.is_active ? "Active" : "Inactive"}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5 text-right">
+                        <td className="px-5 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button onClick={() => openEditChallenge(c)} className="p-1.5 rounded-lg text-[hsl(0,0%,50%)] hover:text-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,93%)] transition-colors"><Pencil size={14} /></button>
                             <button onClick={() => deleteChallenge(c.id)} className="p-1.5 rounded-lg text-[hsl(0,0%,50%)] hover:text-[hsl(0,84%,50%)] hover:bg-[hsl(0,84%,95%)] transition-colors"><Trash2 size={14} /></button>
@@ -599,9 +509,12 @@ const Admin = () => {
           {/* ===== Referrals Tab ===== */}
           {tab === "referrals" && (
             <div>
-              <div className="mb-6">
-                <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Referrals</h2>
-                <p className="text-xs text-[hsl(0,0%,50%)] mt-1">{referrals.length} referrals</p>
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Referrals</h2>
+                  <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{referrals.length} referrals</p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => exportCSV(referrals, "referrals")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
               </div>
               <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
                 <table className="w-full">
@@ -618,10 +531,10 @@ const Admin = () => {
                   <tbody>
                     {referrals.map((r) => (
                       <tr key={r.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)] transition-colors">
-                        <td className="px-5 py-3.5 text-sm font-medium text-[hsl(0,0%,10%)]">{getProfileName(r.referrer_id)}</td>
-                        <td className="px-5 py-3.5 text-sm">{getProfileName(r.referred_id)}</td>
-                        <td className="px-5 py-3.5 text-sm font-semibold">${(r.commission_amount || 0).toFixed(2)}</td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3 text-sm font-medium text-[hsl(0,0%,10%)]">{getProfileName(r.referrer_id)}</td>
+                        <td className="px-5 py-3 text-sm">{getProfileName(r.referred_id)}</td>
+                        <td className="px-5 py-3 text-sm font-semibold">${(r.commission_amount || 0).toFixed(2)}</td>
+                        <td className="px-5 py-3">
                           <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${
                             r.commission_status === "paid" ? "bg-[hsl(0,0%,90%)] text-[hsl(0,0%,20%)]" :
                             r.commission_status === "approved" ? "bg-[hsl(0,0%,92%)] text-[hsl(0,0%,30%)]" :
@@ -629,8 +542,8 @@ const Admin = () => {
                             "bg-[hsl(0,0%,94%)] text-[hsl(0,0%,40%)]"
                           }`}>{r.commission_status}</span>
                         </td>
-                        <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,50%)]">{new Date(r.created_at).toLocaleDateString()}</td>
-                        <td className="px-5 py-3.5 text-right">
+                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,50%)]">{new Date(r.created_at).toLocaleDateString()}</td>
+                        <td className="px-5 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             {r.commission_status === "pending" && (
                               <>
@@ -655,14 +568,17 @@ const Admin = () => {
           {/* ===== Coupons Tab ===== */}
           {tab === "coupons" && (
             <div>
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Coupons</h2>
-                  <p className="text-xs text-[hsl(0,0%,50%)] mt-1">{coupons.length} coupon codes</p>
+                  <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{coupons.length} coupon codes</p>
                 </div>
-                <Button size="sm" onClick={openCreateCoupon} className="bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] rounded-lg text-xs font-medium">
-                  <Plus size={14} className="mr-1" /> New Coupon
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => exportCSV(coupons, "coupons")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
+                  <Button size="sm" onClick={openCreateCoupon} className="bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] rounded-lg text-xs font-medium">
+                    <Plus size={14} className="mr-1" /> New Coupon
+                  </Button>
+                </div>
               </div>
               <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
                 <table className="w-full">
@@ -671,24 +587,24 @@ const Admin = () => {
                       <th className="px-5 py-3 font-medium">Code</th>
                       <th className="px-5 py-3 font-medium">Discount</th>
                       <th className="px-5 py-3 font-medium">Uses</th>
-                      <th className="px-5 py-3 font-medium">Expires</th>
                       <th className="px-5 py-3 font-medium">Status</th>
+                      <th className="px-5 py-3 font-medium">Expires</th>
                       <th className="px-5 py-3 font-medium text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {coupons.map((c: any) => (
+                    {coupons.map((c) => (
                       <tr key={c.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)] transition-colors">
-                        <td className="px-5 py-3.5"><code className="text-sm font-mono font-bold tracking-wider text-[hsl(0,0%,10%)]">{c.code}</code></td>
-                        <td className="px-5 py-3.5 text-sm">{c.discount_type === "percentage" ? `${c.discount_value}%` : `$${c.discount_value}`}</td>
-                        <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,45%)]">{c.current_uses}{c.max_uses ? ` / ${c.max_uses}` : " / ∞"}</td>
-                        <td className="px-5 py-3.5 text-sm text-[hsl(0,0%,50%)]">{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "Never"}</td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3"><code className="text-sm font-mono font-semibold tracking-wider text-[hsl(0,0%,10%)]">{c.code}</code></td>
+                        <td className="px-5 py-3 text-sm">{c.discount_type === "percentage" ? `${c.discount_value}%` : `$${c.discount_value}`}</td>
+                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{c.current_uses}{c.max_uses ? ` / ${c.max_uses}` : " / ∞"}</td>
+                        <td className="px-5 py-3">
                           <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${c.is_active ? "bg-[hsl(0,0%,92%)] text-[hsl(0,0%,25%)]" : "bg-[hsl(0,0%,96%)] text-[hsl(0,0%,60%)]"}`}>
                             {c.is_active ? "Active" : "Inactive"}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5 text-right">
+                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,50%)]">{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "Never"}</td>
+                        <td className="px-5 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button onClick={() => openEditCoupon(c)} className="p-1.5 rounded-lg text-[hsl(0,0%,50%)] hover:text-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,93%)] transition-colors"><Pencil size={14} /></button>
                             <button onClick={() => deleteCoupon(c.id)} className="p-1.5 rounded-lg text-[hsl(0,0%,50%)] hover:text-[hsl(0,84%,50%)] hover:bg-[hsl(0,84%,95%)] transition-colors"><Trash2 size={14} /></button>
@@ -706,7 +622,6 @@ const Admin = () => {
           {/* ===== UTM Tracker Tab ===== */}
           {tab === "utm" && (
             <div className="space-y-6">
-              {/* Summary cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
                   <span className="text-xs font-medium text-[hsl(0,0%,45%)] uppercase tracking-wide">Total Page Visits</span>
@@ -724,9 +639,12 @@ const Admin = () => {
 
               {/* By Source */}
               <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
-                <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)] flex items-center gap-2">
-                  <Globe size={18} className="text-[hsl(0,0%,40%)]" />
-                  <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Source</h3>
+                <div className="px-5 py-4 border-b border-[hsl(0,0%,92%)] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe size={18} className="text-[hsl(0,0%,40%)]" />
+                    <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Source</h3>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => exportCSV(utmSourceStats, "utm-sources")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
                 </div>
                 <table className="w-full text-sm">
                   <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
@@ -741,9 +659,7 @@ const Admin = () => {
                         <td className="px-5 py-3 font-medium text-[hsl(0,0%,10%)]">{row.source}</td>
                         <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.visits}</td>
                         <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.signups}</td>
-                        <td className="px-5 py-3">
-                          <span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span>
-                        </td>
+                        <td className="px-5 py-3"><span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span></td>
                       </tr>
                     ))}
                     {utmSourceStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No visit data yet.</td></tr>}
@@ -770,9 +686,7 @@ const Admin = () => {
                         <td className="px-5 py-3 font-medium text-[hsl(0,0%,10%)]">{row.campaign}</td>
                         <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.visits}</td>
                         <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.signups}</td>
-                        <td className="px-5 py-3">
-                          <span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span>
-                        </td>
+                        <td className="px-5 py-3"><span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span></td>
                       </tr>
                     ))}
                     {utmCampaignStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No campaign data yet.</td></tr>}
@@ -799,9 +713,7 @@ const Admin = () => {
                         <td className="px-5 py-3 font-medium text-[hsl(0,0%,10%)]">{row.medium}</td>
                         <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.visits}</td>
                         <td className="px-5 py-3 text-[hsl(0,0%,40%)]">{row.signups}</td>
-                        <td className="px-5 py-3">
-                          <span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span>
-                        </td>
+                        <td className="px-5 py-3"><span className="px-2 py-0.5 bg-[hsl(0,0%,95%)] rounded text-xs font-mono">{row.conversionRate}%</span></td>
                       </tr>
                     ))}
                     {utmMediumStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No medium data yet.</td></tr>}
@@ -842,35 +754,12 @@ const Admin = () => {
             </div>
           )}
 
-          {/* ===== Help Center Tab ===== */}
-          {tab === "helpcenter" && (
-            <HelpCenterCMS />
-          )}
-
-          {/* ===== Support Tickets Tab ===== */}
-          {tab === "support" && (
-            <SupportTicketsCMS />
-          )}
-
-          {/* ===== Blog Tab ===== */}
-          {tab === "blog" && (
-            <BlogCMS />
-          )}
-
-          {/* ===== Certificates Tab ===== */}
-          {tab === "certificates" && (
-            <CertificatesCMS />
-          )}
-
-          {/* ===== Pages CMS Tab ===== */}
-          {tab === "pages" && (
-            <PagesCMS />
-          )}
-
-          {/* ===== Knowledge Base CMS Tab ===== */}
-          {tab === "knowledgebase" && (
-            <KnowledgeBaseCMS />
-          )}
+          {tab === "helpcenter" && <HelpCenterCMS />}
+          {tab === "support" && <SupportTicketsCMS />}
+          {tab === "blog" && <BlogCMS />}
+          {tab === "certificates" && <CertificatesCMS />}
+          {tab === "pages" && <PagesCMS />}
+          {tab === "knowledgebase" && <KnowledgeBaseCMS />}
         </div>
       </div>
 
