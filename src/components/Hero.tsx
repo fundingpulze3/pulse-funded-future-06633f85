@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap } from "lucide-react";
+import LiveTicker from "@/components/LiveTicker";
 
 const MagneticButton = ({ children, className }: { children: React.ReactNode; className?: string }) => {
   const btnRef = useRef<HTMLDivElement>(null);
