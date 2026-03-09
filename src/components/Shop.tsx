@@ -134,31 +134,24 @@ const Shop = () => {
           {/* Evaluation Stage Label */}
           <p className="text-center text-sm text-muted-foreground mb-3">(Evaluation Stage)</p>
 
-          {/* Stage Progress */}
-          <div className="flex items-center justify-center gap-0 mb-8">
-            <div className="flex items-center gap-0">
-              <span className="w-8 h-8 rounded-full border border-primary flex items-center justify-center text-xs font-semibold text-primary">1</span>
-              <div className="w-24 sm:w-40 h-px bg-border" />
-              <span className="w-8 h-8 rounded-full border border-primary flex items-center justify-center text-xs font-semibold text-primary">2</span>
+          {/* Stage Progress — aligned to the 3 data columns */}
+          <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-6">
+            <div />
+            <div className="col-span-3 flex items-center justify-center">
+              <span className="w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-xs font-semibold text-foreground shrink-0">1</span>
+              <div className="w-16 sm:w-28 h-px bg-border" />
+              <span className="w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-xs font-semibold text-foreground shrink-0">2</span>
+              <div className="w-10 sm:w-16 h-px bg-border" />
+              <Crown size={22} className="text-foreground shrink-0" />
             </div>
-            <div className="w-16 sm:w-24 h-px bg-border" />
-            <Crown size={24} className="text-primary" />
           </div>
 
           {/* Column Headers */}
-          <div className="hidden sm:grid grid-cols-4 gap-4 mb-2">
+          <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-2">
             <div />
-            <p className="text-center font-display font-bold text-lg text-foreground">Student</p>
-            <p className="text-center font-display font-bold text-lg text-foreground">Practitioner</p>
-            <p className="text-center font-display font-bold text-lg text-foreground">Master</p>
-          </div>
-
-          {/* Mobile column headers */}
-          <div className="sm:hidden grid grid-cols-4 gap-2 mb-2">
-            <div />
-            <p className="text-center font-display font-bold text-xs text-foreground">Student</p>
-            <p className="text-center font-display font-bold text-xs text-foreground">Practitioner</p>
-            <p className="text-center font-display font-bold text-xs text-foreground">Master</p>
+            <p className="text-center font-display font-bold text-xs sm:text-lg text-foreground">Student</p>
+            <p className="text-center font-display font-bold text-xs sm:text-lg text-foreground">Practitioner</p>
+            <p className="text-center font-display font-bold text-xs sm:text-lg text-foreground">Master</p>
           </div>
 
           {/* Rules Table */}
