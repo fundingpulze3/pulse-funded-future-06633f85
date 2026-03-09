@@ -73,6 +73,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <LiveChat />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
