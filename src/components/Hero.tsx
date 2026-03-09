@@ -259,6 +259,24 @@ const Hero = () => {
             </Button>
           </MagneticButton>
         </div>
+
+        <LiveTicker />
+      </div>
+
+      {/* Floating particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 rounded-full bg-foreground/[0.06] animate-particle-float"
+            style={{
+              left: `${Math.random() * 100}%`,
+              bottom: `-5%`,
+              animationDelay: `${Math.random() * 8}s`,
+              animationDuration: `${6 + Math.random() * 8}s`,
+            }}
+          />
+        ))}
       </div>
     </section>
   );

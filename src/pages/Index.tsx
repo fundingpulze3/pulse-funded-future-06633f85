@@ -33,12 +33,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <ScrollProgress />
       <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
       <Hero />
+      <MarqueeTrustBar />
       <StatsBar />
       <WhyChoose />
+      <ComparisonSection />
+      <div className="section-divider" />
       <Shop />
+      <PayoutFeed />
+      <div className="section-divider" />
       <Roadmap />
+      <PlatformPreview />
+      <div className="section-divider" />
       <CertificateShowcase />
       <Testimonials />
       <Community />
