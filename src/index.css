@@ -134,4 +134,72 @@
   .surface-elevated {
     background: hsl(var(--surface-elevated));
   }
+
+  .section-divider {
+    @apply mx-auto;
+    height: 1px;
+    max-width: 60%;
+    background: linear-gradient(90deg, transparent, hsl(var(--foreground) / 0.06), transparent);
+  }
+}
+
+/* Marquee animations */
+.marquee-container {
+  overflow: hidden;
+  width: 100%;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+}
+
+@keyframes marquee-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.animate-marquee-left {
+  animation: marquee-left 40s linear infinite;
+}
+
+.animate-marquee-right {
+  animation: marquee-right 40s linear infinite;
+}
+
+/* Payout feed scroll */
+@keyframes payout-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+.animate-payout-scroll {
+  animation: payout-scroll 20s linear infinite;
+}
+
+/* Particle float */
+@keyframes particle-float {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(20px);
+    opacity: 0;
+  }
+}
+
+.animate-particle-float {
+  animation: particle-float 8s ease-in-out infinite;
 }
