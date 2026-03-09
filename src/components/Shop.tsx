@@ -47,16 +47,14 @@ const Shop = () => {
   useEffect(() => {
     const loadGsap = async () => {
       const { gsap } = await import("gsap");
-      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
-      gsap.registerPlugin(ScrollTrigger);
       const el = sectionRef.current;
       if (!el) return;
 
       gsap.fromTo(el.querySelector(".section-header"), { y: 40, opacity: 0 }, {
-        y: 0, opacity: 1, duration: 0.7, scrollTrigger: { trigger: el, start: "top 80%", once: true },
+        y: 0, opacity: 1, duration: 0.7,
       });
       gsap.fromTo(el.querySelector(".shop-card"), { y: 50, opacity: 0 }, {
-        y: 0, opacity: 1, duration: 0.8, scrollTrigger: { trigger: el, start: "top 70%", once: true },
+        y: 0, opacity: 1, duration: 0.8,
       });
     };
     loadGsap();
@@ -79,13 +77,15 @@ const Shop = () => {
   return (
     <section ref={sectionRef} id="rules" className="py-24 px-6">
       <div className="max-w-5xl mx-auto">
-        <div className="section-header text-center mb-14   <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
+        <div className="section-header text-center mb-14">
+          <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
             Start Your <span className="text-gradient">Challenge</span>
           </h2>
           <p className="text-muted-foreground text-lg">Choose your path and account size.</p>
         </div>
 
-        <div className="shop-card glass-card p-6 sm:p-10 opacity-0   {/* Step & Account Selectors */}
+        <div className="shop-card glass-card p-6 sm:p-10">
+          {/* Step & Account Selectors */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <div className="inline-flex surface-elevated rounded-full p-1 glow-border">
               {(["one", "two"] as StepType[]).map((s) => (
@@ -117,7 +117,7 @@ const Shop = () => {
           </div>
 
           {/* Reward Cycles */}
-          <div className="rounded-xl p-4 mb-10 text-center" style={{ background: "linear-gradient(135deg, hsl(var(--glow-primary) / 0.25), hsl(var(--glow-accent) / 0.1))" }}>
+          <div className="rounded-xl p-4 mb-10 text-center border border-border/40 bg-muted/30">
             <p className="text-xs text-muted-foreground mb-2 tracking-wider uppercase">Reward Cycles</p>
             <div className="flex flex-wrap items-center justify-center gap-6">
               {rewardCycles.map((cycle) => (
@@ -132,7 +132,7 @@ const Shop = () => {
           {/* Evaluation Stage Label */}
           <p className="text-center text-sm text-muted-foreground mb-3">(Evaluation Stage)</p>
 
-          {/* Stage Progress — 1 above Student, 2 above Practitioner, Crown above Master */}
+          {/* Stage Progress */}
           <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4">
             <div />
             <div className="flex justify-center">
