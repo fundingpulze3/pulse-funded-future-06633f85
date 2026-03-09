@@ -142,7 +142,7 @@ export default function RevenueAnalytics({ purchases, challenges, coupons, profi
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
               <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(0,0%,50%)" }} axisLine={false} tickLine={false} angle={-25} textAnchor="end" height={60} />
               <YAxis tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} formatter={(v: number) => [`$${v.toFixed(2)}`, "Revenue"]} />
+              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} formatter={(v: number) => [`$${v.toFixed(2)}`, "Revenue"]} />
               <Bar dataKey="revenue" radius={[4, 4, 0, 0]} barSize={30}>
                 {revenueByChallenge.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
               </Bar>
@@ -158,7 +158,7 @@ export default function RevenueAnalytics({ purchases, challenges, coupons, profi
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(0,0%,50%)" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} formatter={(v: number) => [`$${v.toFixed(2)}`, "Revenue"]} />
+              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} formatter={(v: number) => [`$${v.toFixed(2)}`, "Revenue"]} />
               <Line type="monotone" dataKey="revenue" stroke="hsl(0,0%,0%)" strokeWidth={2.5} dot={{ r: 4, fill: "#000" }} />
             </LineChart>
           </ResponsiveContainer>
@@ -202,7 +202,7 @@ export default function RevenueAnalytics({ purchases, challenges, coupons, profi
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(0,0%,50%)" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} formatter={(v: number) => [`$${v.toFixed(0)}`, "AOV"]} />
+              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} formatter={(v: number) => [`$${v.toFixed(0)}`, "AOV"]} />
               <Line type="monotone" dataKey="aov" stroke="hsl(0,0%,30%)" strokeWidth={2} dot={{ r: 3, fill: "hsl(0,0%,30%)" }} />
             </LineChart>
           </ResponsiveContainer>

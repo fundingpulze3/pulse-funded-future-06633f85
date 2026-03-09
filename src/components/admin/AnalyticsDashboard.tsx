@@ -152,7 +152,7 @@ export default function AnalyticsDashboard({ pageVisits, profiles }: AnalyticsDa
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
-            <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} />
+            <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} />
             <Area type="monotone" dataKey="visits" stroke="hsl(0,0%,0%)" strokeWidth={2} fill="url(#visitGrad)" />
           </AreaChart>
         </ResponsiveContainer>
@@ -213,7 +213,7 @@ export default function AnalyticsDashboard({ pageVisits, profiles }: AnalyticsDa
                   <Pie data={utmPie} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} innerRadius={35} strokeWidth={0}>
                     {utmPie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
-                  <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} />
+                  <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-1.5 mt-2">

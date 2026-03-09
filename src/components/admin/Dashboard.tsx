@@ -250,7 +250,7 @@ export default function Dashboard({
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} formatter={(v: number) => [`$${v.toFixed(2)}`, ""]} />
+              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} formatter={(v: number) => [`$${v.toFixed(2)}`, ""]} />
               <Area type="monotone" dataKey="revenue" stroke="hsl(0,0%,0%)" strokeWidth={2} fill="url(#revGrad)" name="Revenue" />
               <Area type="monotone" dataKey="payouts" stroke="hsl(0,0%,60%)" strokeWidth={1.5} fill="none" name="Payouts" strokeDasharray="4 4" />
             </AreaChart>
@@ -270,7 +270,7 @@ export default function Dashboard({
                   <Pie data={trafficPie} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={40} strokeWidth={0}>
                     {trafficPie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
-                  <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} />
+                  <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-1.5 mt-2">
@@ -304,7 +304,7 @@ export default function Dashboard({
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
-              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} />
+              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} />
               <Line type="monotone" dataKey="total" stroke="hsl(0,0%,0%)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
@@ -321,7 +321,7 @@ export default function Dashboard({
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
               <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
               <YAxis dataKey="stage" type="category" tick={{ fontSize: 11, fill: "hsl(0,0%,30%)" }} axisLine={false} tickLine={false} width={70} />
-              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} />
+              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} />
               <Bar dataKey="value" fill="hsl(0,0%,15%)" radius={[0, 4, 4, 0]} barSize={28} />
             </BarChart>
           </ResponsiveContainer>
