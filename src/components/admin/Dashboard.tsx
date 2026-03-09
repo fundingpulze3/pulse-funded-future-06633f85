@@ -250,7 +250,7 @@ export default function Dashboard({
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} formatter={(v: number) => [`$${v.toFixed(2)}`, ""]} />
+              <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#ccc" }} formatter={(v: number) => [`$${v.toFixed(2)}`, ""]} />
               <Area type="monotone" dataKey="revenue" stroke="hsl(0,0%,0%)" strokeWidth={2} fill="url(#revGrad)" name="Revenue" />
               <Area type="monotone" dataKey="payouts" stroke="hsl(0,0%,60%)" strokeWidth={1.5} fill="none" name="Payouts" strokeDasharray="4 4" />
             </AreaChart>
