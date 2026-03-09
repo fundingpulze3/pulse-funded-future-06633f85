@@ -23,6 +23,7 @@ import BlogCMS from "@/components/admin/BlogCMS";
 import CertificatesCMS from "@/components/admin/CertificatesCMS";
 import PagesCMS from "@/components/admin/PagesCMS";
 import SupportTicketsCMS from "@/components/admin/SupportTicketsCMS";
+import KnowledgeBaseCMS from "@/components/admin/KnowledgeBaseCMS";
 import { toast } from "sonner";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
