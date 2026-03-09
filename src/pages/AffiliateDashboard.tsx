@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Copy, Users, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 interface Profile {
   referral_code: string | null;
