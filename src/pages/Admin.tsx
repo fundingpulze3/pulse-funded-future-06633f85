@@ -866,6 +866,11 @@ const Admin = () => {
           {tab === "pages" && (
             <PagesCMS />
           )}
+
+          {/* ===== Knowledge Base CMS Tab ===== */}
+          {tab === "knowledgebase" && (
+            <KnowledgeBaseCMS />
+          )}
         </div>
       </div>
 
