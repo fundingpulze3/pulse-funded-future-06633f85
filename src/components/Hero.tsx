@@ -234,7 +234,7 @@ const Hero = () => {
             </Button>
           </MagneticButton>
           <MagneticButton>
-            <Button variant="outline" size="lg" className="rounded-xl text-base px-8 py-6">
+            <Button variant="outline" size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6">
               View Rules
             </Button>
           </MagneticButton>
