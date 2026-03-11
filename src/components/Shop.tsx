@@ -192,7 +192,7 @@ const Shop = () => {
             </div>
             <Button
               size="lg"
-              className="rounded-xl px-10 py-6 text-base glow-box"
+              className="rounded-xl px-8 sm:px-10 py-5 sm:py-6 text-sm sm:text-base glow-box w-full sm:w-auto"
               onClick={() => {
                 const priceNum = price.replace("$", "");
                 const stepLabel = step === "one" ? "1-step" : "2-step";
