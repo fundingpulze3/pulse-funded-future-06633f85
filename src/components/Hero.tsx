@@ -216,7 +216,7 @@ const Hero = () => {
           <span>The Future of Prop Trading</span>
         </div>
 
-        <h1 className="hero-title font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-6">
+        <h1 className="hero-title font-display text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight mb-6">
           Get Funded.{" "}
           <span className="text-gradient">Trade Big.</span>
           <br />
