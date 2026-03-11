@@ -229,7 +229,7 @@ const Hero = () => {
 
         <div className="hero-buttons flex flex-col sm:flex-row items-center justify-center gap-4">
           <MagneticButton>
-            <Button size="lg" className="rounded-xl text-base px-8 py-6 glow-box">
+            <Button size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 glow-box">
               Start Challenge <ArrowRight size={18} className="ml-2" />
             </Button>
           </MagneticButton>
