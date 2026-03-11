@@ -18,7 +18,7 @@ import ScrollProgress from "@/components/ScrollProgress";
 import { useUtmTracking } from "@/hooks/useUtmTracking";
 
 const Index = () => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   useUtmTracking();
 
   useEffect(() => {

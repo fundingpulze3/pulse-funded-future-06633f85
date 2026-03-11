@@ -169,7 +169,7 @@ const Community = () => {
           <span className="inline-block text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground mb-4">
             Community
           </span>
-          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-5">
+          <h2 className="font-display text-3xl sm:text-4xl lg:text-6xl font-bold leading-tight mb-5">
             Trade Together.{" "}
             <span className="text-gradient">Grow Together.</span>
           </h2>

@@ -59,7 +59,7 @@ const Roadmap = () => {
             <TrendingUp size={13} />
             Your Journey
           </div>
-          <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             From Trader to{" "}
             <span className="relative">
               Funded

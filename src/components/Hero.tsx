@@ -216,25 +216,25 @@ const Hero = () => {
           <span>The Future of Prop Trading</span>
         </div>
 
-        <h1 className="hero-title font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-6">
+        <h1 className="hero-title font-display text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight mb-6">
           Get Funded.{" "}
           <span className="text-gradient">Trade Big.</span>
           <br />
           Keep the Profits.
         </h1>
 
-        <p className="hero-sub text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="hero-sub text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2">
           Prove your trading skills and access accounts up to $100K. No risk on your capital — all the upside is yours.
         </p>
 
         <div className="hero-buttons flex flex-col sm:flex-row items-center justify-center gap-4">
           <MagneticButton>
-            <Button size="lg" className="rounded-xl text-base px-8 py-6 glow-box">
+            <Button size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 glow-box">
               Start Challenge <ArrowRight size={18} className="ml-2" />
             </Button>
           </MagneticButton>
           <MagneticButton>
-            <Button variant="outline" size="lg" className="rounded-xl text-base px-8 py-6">
+            <Button variant="outline" size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6">
               View Rules
             </Button>
           </MagneticButton>
