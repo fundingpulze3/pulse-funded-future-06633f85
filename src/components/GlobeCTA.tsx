@@ -173,7 +173,7 @@ const GlobeCTA = () => {
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
         >
-          <Button size="lg" className="rounded-xl text-base px-8 py-6 glow-box" asChild>
+          <Button size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 glow-box" asChild>
             <a href="#shop">
               Start Challenge <ArrowRight size={18} className="ml-2" />
             </a>
