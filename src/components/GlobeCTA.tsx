@@ -178,7 +178,7 @@ const GlobeCTA = () => {
               Start Challenge <ArrowRight size={18} className="ml-2" />
             </a>
           </Button>
-          <Button variant="outline" size="lg" className="rounded-xl text-base px-8 py-6" asChild>
+          <Button variant="outline" size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6" asChild>
             <a href="/faq">Learn More</a>
           </Button>
         </motion.div>
