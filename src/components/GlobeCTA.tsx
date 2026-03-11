@@ -157,7 +157,7 @@ const GlobeCTA = () => {
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-5 max-w-3xl mx-auto px-6">
+          <h2 className="font-display text-3xl sm:text-4xl lg:text-6xl font-bold leading-tight mb-5 max-w-3xl mx-auto px-4">
             Ready to Get{" "}
             <span className="text-gradient">Funded?</span>
           </h2>

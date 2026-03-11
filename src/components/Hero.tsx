@@ -223,7 +223,7 @@ const Hero = () => {
           Keep the Profits.
         </h1>
 
-        <p className="hero-sub text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="hero-sub text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2">
           Prove your trading skills and access accounts up to $100K. No risk on your capital — all the upside is yours.
         </p>
 

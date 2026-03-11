@@ -224,7 +224,7 @@ const Testimonials = () => {
               <Star size={13} />
               Trader Stories
             </div>
-            <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight">
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
               Real Results.{" "}
               <span className="text-highlight">Real Traders.</span>
             </h2>

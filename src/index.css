@@ -127,6 +127,10 @@
     border: 1px solid hsl(var(--glow-primary) / 0.2);
   }
 
+  .dark .glow-border {
+    border: 1px solid hsl(210 40% 50% / 0.2);
+  }
+
   .glass {
     @apply backdrop-blur-xl;
     background: hsl(var(--background) / 0.7);

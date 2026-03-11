@@ -78,7 +78,7 @@ const Shop = () => {
     <section ref={sectionRef} id="rules" className="py-24 px-6">
       <div className="max-w-5xl mx-auto">
         <div className="section-header text-center mb-14">
-          <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
             Start Your <span className="text-gradient">Challenge</span>
           </h2>
           <p className="text-muted-foreground text-lg">Choose your path and account size.</p>
