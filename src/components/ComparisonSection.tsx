@@ -31,7 +31,7 @@ const ComparisonSection = () => {
           Why Switch?
         </p>
         <h2 className="text-center font-display text-3xl sm:text-4xl font-bold mb-16">
-          Funding Pulze vs <span className="text-muted-foreground/40">The Rest</span>
+          Funding Pulze vs <span className="text-highlight">The Rest</span>
         </h2>
 
         <div className="space-y-8">

@@ -226,7 +226,7 @@ const Testimonials = () => {
             </div>
             <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight">
               Real Results.{" "}
-              <span className="text-muted-foreground/60">Real Traders.</span>
+              <span className="text-highlight">Real Traders.</span>
             </h2>
             <p className="mt-3 text-muted-foreground text-sm md:text-base max-w-md">
               Don't take our word for it — hear from traders who turned their

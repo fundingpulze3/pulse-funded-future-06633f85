@@ -43,7 +43,7 @@ const CountUp = ({
   }, [trigger, target]);
 
   return (
-    <span className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
+    <span className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-highlight">
       {prefix}
       {current.toFixed(decimals)}
       {suffix}

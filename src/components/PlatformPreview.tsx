@@ -24,7 +24,7 @@ const PlatformPreview = () => {
           Your Trading Hub
         </p>
         <h2 className="text-center font-display text-3xl sm:text-4xl font-bold mb-4">
-          Professional Dashboard
+          Professional <span className="text-highlight">Dashboard</span>
         </h2>
         <p className="text-center text-muted-foreground mb-16 text-sm max-w-lg mx-auto">
           Track your challenge progress, analyze performance, and manage payouts — all in one place
