@@ -51,6 +51,7 @@
     --surface-elevated: 0 0% 100%;
     --gradient-start: 0 0% 15%;
     --gradient-end: 0 0% 5%;
+    --highlight: 0 0% 40%;
   }
 
   .dark {
