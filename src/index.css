@@ -51,6 +51,7 @@
     --surface-elevated: 0 0% 100%;
     --gradient-start: 0 0% 15%;
     --gradient-end: 0 0% 5%;
+    --highlight: 0 0% 5%;
   }
 
   .dark {
@@ -83,10 +84,11 @@
     --ring: 0 0% 80%;
 
     --glow-primary: 0 0% 96%;
-    --glow-accent: 0 0% 70%;
+    --glow-accent: 210 30% 70%;
     --surface-elevated: 0 0% 8%;
-    --gradient-start: 0 0% 30%;
-    --gradient-end: 0 0% 10%;
+    --gradient-start: 210 35% 75%;
+    --gradient-end: 210 25% 60%;
+    --highlight: 210 35% 70%;
   }
 }
 

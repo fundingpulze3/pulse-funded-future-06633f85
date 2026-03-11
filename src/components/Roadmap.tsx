@@ -68,7 +68,7 @@ const Roadmap = () => {
                 whileInView={{ scaleX: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
-                className="absolute -bottom-1 left-0 right-0 h-[3px] bg-foreground/20 origin-left rounded-full"
+                className="absolute -bottom-1 left-0 right-0 h-[3px] bg-highlight origin-left rounded-full"
               />
             </span>
           </h2>
