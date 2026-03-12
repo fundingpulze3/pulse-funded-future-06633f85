@@ -675,7 +675,6 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Streaks — extended with max consecutive P&L amounts */}
 
               {/* Symbols breakdown */}
               {activeAccountStats?.symbols && activeAccountStats.symbols.length > 0 && (
