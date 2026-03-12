@@ -101,6 +101,16 @@ Deno.serve(async (req) => {
 
     // If breached (drawdown violation) → FAIL immediately, no certificate
     if (evaluation.breached) {
+      // Send breach email to user
+      try {
+        const isDailyBreach = evaluation.violations.some((v: string) => v.toLowerCase().includes("daily"));
+        await sendEmailNotification(adminClient, supabaseUrl, credential.assigned_to, isDailyBreach ? "daily_dd_breach" : "max_dd_breach", {
+          accountNumber: parsed.accountNumber,
+          breachValue: isDailyBreach ? evaluation.details.actualDailyDrawdown : evaluation.details.actualMaxDrawdown,
+          limit: isDailyBreach ? evaluation.details.dailyDrawdownLimit : evaluation.details.maxDrawdownLimit,
+        });
+      } catch (e) { console.error("Failed to send breach email:", e); }
+
       return new Response(
         JSON.stringify({
           success: false,
@@ -201,6 +211,29 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Send email notification for the certificate type
+    try {
+      const emailTypeMap: Record<string, string> = {
+        phase1_passed: "phase1_passed",
+        phase2_passed: "phase2_passed",
+        payout: "payout_received",
+      };
+      const emailType = emailTypeMap[certificateType];
+      if (emailType) {
+        const emailData: Record<string, any> = { accountNumber: parsed.accountNumber };
+        if (emailType === "phase1_passed" || emailType === "phase2_passed") {
+          emailData.profit = `$${evaluation.profitAmount?.toFixed(2) || "0"}`;
+          emailData.profitPercent = `${evaluation.profitPercent?.toFixed(2) || "0"}%`;
+        }
+        if (emailType === "payout_received") {
+          const payoutCount = existingTypes.filter(t => t === "payout").length + 1;
+          emailData.payoutAmount = `$${((evaluation.profitAmount || 0) * 0.9).toFixed(2)}`;
+          emailData.payoutNumber = String(payoutCount);
+        }
+        await sendEmailNotification(adminClient, supabaseUrl, credential.assigned_to, emailType, emailData);
+      }
+    } catch (e) { console.error("Failed to send certificate email:", e); }
 
     return new Response(
       JSON.stringify({
@@ -550,4 +583,27 @@ function parseHtmlRegex(html: string): Record<string, any> {
   if (leverageMatch) result.leverage = leverageMatch[1];
 
   return result;
+}
+
+/**
+ * Send email notification to a user via the transactional email edge function
+ */
+async function sendEmailNotification(adminClient: any, supabaseUrl: string, userId: string, type: string, data: Record<string, any>) {
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  
+  const res = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ type, data, recipientUserId: userId }),
+  });
+  
+  if (!res.ok) {
+    const err = await res.text();
+    console.error(`Email notification failed (${type}):`, err);
+  } else {
+    console.log(`Email notification sent: ${type} to user ${userId}`);
+  }
 }

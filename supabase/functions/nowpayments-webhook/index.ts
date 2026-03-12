@@ -81,7 +81,39 @@ Deno.serve(async (req) => {
             purchase_id: order_id,
           })
           .eq("id", cred.id);
+
+        // Send credentials email
+        const { data: credDetails } = await adminClient.from("trading_credentials").select("mt5_login, mt5_password, mt5_server").eq("id", cred.id).single();
+        const { data: challengeInfo } = await adminClient.from("challenges").select("name, account_size").eq("id", purchase.challenge_id).single();
+        
+        if (credDetails) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "credentials",
+                recipientUserId: purchase.user_id,
+                data: { mt5Login: credDetails.mt5_login, mt5Password: credDetails.mt5_password, mt5Server: credDetails.mt5_server, challengeName: challengeInfo?.name || "", accountSize: challengeInfo ? `$${challengeInfo.account_size / 1000}K` : "" },
+              }),
+            });
+          } catch (e) { console.error("Cred email failed:", e); }
+        }
       }
+
+      // Send purchase confirmation
+      try {
+        const { data: ci } = await adminClient.from("challenges").select("name, account_size").eq("id", purchase.challenge_id).single();
+        await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "purchase_confirmation",
+            recipientUserId: purchase.user_id,
+            data: { challengeName: ci?.name || "", accountSize: ci ? `$${ci.account_size / 1000}K` : "", amountPaid: `$${body.price_amount || "0"}` },
+          }),
+        });
+      } catch (e) { console.error("Purchase email failed:", e); }
     } else if (payment_status === "failed" || payment_status === "expired") {
       await adminClient
         .from("challenge_purchases")

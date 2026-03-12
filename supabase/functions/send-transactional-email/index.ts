@@ -3,6 +3,13 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.98.0'
 import { PurchaseConfirmationEmail } from '../_shared/email-templates/purchase-confirmation.tsx'
 import { PasswordChangedEmail } from '../_shared/email-templates/password-changed.tsx'
+import { CredentialsEmail } from '../_shared/email-templates/credentials.tsx'
+import { DailyDDBreachEmail } from '../_shared/email-templates/daily-dd-breach.tsx'
+import { MaxDDBreachEmail } from '../_shared/email-templates/max-dd-breach.tsx'
+import { Phase1PassedEmail } from '../_shared/email-templates/phase1-passed.tsx'
+import { Phase2PassedEmail } from '../_shared/email-templates/phase2-passed.tsx'
+import { PayoutReceivedEmail } from '../_shared/email-templates/payout-received.tsx'
+import { WelcomeEmail } from '../_shared/email-templates/welcome.tsx'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,12 +27,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authenticate the caller
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
@@ -34,33 +39,52 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
+    // Support both user token and service role calls
+    let recipientEmail: string
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    
+    // Try user auth first
+    const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+    
+    const body = await req.json()
+    const { type, data, recipientUserId } = body
 
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // If recipientUserId is provided (admin/system call), look up their email
+    if (recipientUserId) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('email')
+        .eq('user_id', recipientUserId)
+        .single()
+      recipientEmail = profile?.email || ''
+      
+      if (!recipientEmail) {
+        const { data: { user: targetUser } } = await supabaseAdmin.auth.admin.getUserById(recipientUserId)
+        recipientEmail = targetUser?.email || ''
+      }
+    } else if (user) {
+      recipientEmail = user.email!
+    } else {
+      return new Response(JSON.stringify({ error: 'No recipient found' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const body = await req.json()
-    const { type, data } = body
+    if (!recipientEmail) {
+      return new Response(JSON.stringify({ error: 'No recipient email' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     let html: string
     let text: string
     let subject: string
 
+    const baseProps = { siteName: SITE_NAME, siteUrl: SITE_URL, recipient: recipientEmail }
+
     switch (type) {
       case 'purchase_confirmation': {
-        const props = {
-          siteName: SITE_NAME,
-          siteUrl: SITE_URL,
-          recipient: user.email!,
-          challengeName: data.challengeName || '2 Step Challenge',
-          accountSize: data.accountSize || '$50K',
-          amountPaid: data.amountPaid || '$0',
-        }
+        const props = { ...baseProps, challengeName: data.challengeName || '2 Step Challenge', accountSize: data.accountSize || '$50K', amountPaid: data.amountPaid || '$0' }
         html = await renderAsync(React.createElement(PurchaseConfirmationEmail, props))
         text = await renderAsync(React.createElement(PurchaseConfirmationEmail, props), { plainText: true })
         subject = '🎉 Your Funding Pulze challenge is confirmed!'
@@ -68,49 +92,89 @@ Deno.serve(async (req) => {
       }
 
       case 'password_changed': {
-        const props = {
-          siteName: SITE_NAME,
-          recipient: user.email!,
-        }
-        html = await renderAsync(React.createElement(PasswordChangedEmail, props))
-        text = await renderAsync(React.createElement(PasswordChangedEmail, props), { plainText: true })
+        html = await renderAsync(React.createElement(PasswordChangedEmail, { ...baseProps }))
+        text = await renderAsync(React.createElement(PasswordChangedEmail, { ...baseProps }), { plainText: true })
         subject = '🔒 Your password was changed'
+        break
+      }
+
+      case 'credentials': {
+        const props = { ...baseProps, mt5Login: data.mt5Login, mt5Password: data.mt5Password, mt5Server: data.mt5Server || 'MetaQuotes-Demo', challengeName: data.challengeName || 'Trading Challenge', accountSize: data.accountSize || '' }
+        html = await renderAsync(React.createElement(CredentialsEmail, props))
+        text = await renderAsync(React.createElement(CredentialsEmail, props), { plainText: true })
+        subject = '🚀 Your MT5 trading credentials are ready!'
+        break
+      }
+
+      case 'daily_dd_breach': {
+        const props = { ...baseProps, accountNumber: data.accountNumber, breachType: 'daily', breachValue: data.breachValue, limit: data.limit }
+        html = await renderAsync(React.createElement(DailyDDBreachEmail, props))
+        text = await renderAsync(React.createElement(DailyDDBreachEmail, props), { plainText: true })
+        subject = `⚠️ Daily Drawdown Breach — Account #${data.accountNumber}`
+        break
+      }
+
+      case 'max_dd_breach': {
+        const props = { ...baseProps, accountNumber: data.accountNumber, breachType: 'max', breachValue: data.breachValue, limit: data.limit }
+        html = await renderAsync(React.createElement(MaxDDBreachEmail, props))
+        text = await renderAsync(React.createElement(MaxDDBreachEmail, props), { plainText: true })
+        subject = `⚠️ Max Drawdown Breach — Account #${data.accountNumber}`
+        break
+      }
+
+      case 'phase1_passed': {
+        const props = { ...baseProps, accountNumber: data.accountNumber, profit: data.profit, profitPercent: data.profitPercent }
+        html = await renderAsync(React.createElement(Phase1PassedEmail, props))
+        text = await renderAsync(React.createElement(Phase1PassedEmail, props), { plainText: true })
+        subject = `✅ Phase 1 Passed — Account #${data.accountNumber}`
+        break
+      }
+
+      case 'phase2_passed': {
+        const props = { ...baseProps, accountNumber: data.accountNumber, profit: data.profit, profitPercent: data.profitPercent }
+        html = await renderAsync(React.createElement(Phase2PassedEmail, props))
+        text = await renderAsync(React.createElement(Phase2PassedEmail, props), { plainText: true })
+        subject = `🏆 Phase 2 Passed — You're Getting Funded! Account #${data.accountNumber}`
+        break
+      }
+
+      case 'payout_received': {
+        const props = { ...baseProps, accountNumber: data.accountNumber, payoutAmount: data.payoutAmount, payoutNumber: data.payoutNumber || '1' }
+        html = await renderAsync(React.createElement(PayoutReceivedEmail, props))
+        text = await renderAsync(React.createElement(PayoutReceivedEmail, props), { plainText: true })
+        subject = `💰 Payout #${data.payoutNumber || '1'} Processed — ${data.payoutAmount}`
+        break
+      }
+
+      case 'welcome': {
+        const props = { ...baseProps, displayName: data.displayName || '' }
+        html = await renderAsync(React.createElement(WelcomeEmail, props))
+        text = await renderAsync(React.createElement(WelcomeEmail, props), { plainText: true })
+        subject = '🎯 Welcome to Funding Pulze — Your Trading Journey Starts Now!'
         break
       }
 
       default:
         return new Response(JSON.stringify({ error: `Unknown email type: ${type}` }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
     }
 
-    // Send via Lovable Email API
     const apiKey = Deno.env.get('LOVABLE_API_KEY')
     if (!apiKey) {
-      console.error('LOVABLE_API_KEY not configured')
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
     const { sendLovableEmail } = await import('npm:@lovable.dev/email-js')
 
     const result = await sendLovableEmail(
-      {
-        to: user.email!,
-        from: FROM_ADDRESS,
-        sender_domain: SENDER_DOMAIN,
-        subject,
-        html,
-        text,
-        purpose: 'transactional',
-      },
+      { to: recipientEmail, from: FROM_ADDRESS, sender_domain: SENDER_DOMAIN, subject, html, text, purpose: 'transactional' },
       { apiKey }
     )
 
-    console.log('Transactional email sent', { type, email: user.email, message_id: result.message_id })
+    console.log('Transactional email sent', { type, email: recipientEmail, message_id: result.message_id })
 
     return new Response(
       JSON.stringify({ success: true, message_id: result.message_id }),
@@ -120,8 +184,7 @@ Deno.serve(async (req) => {
     console.error('Transactional email error:', error)
     const message = error instanceof Error ? error.message : 'Unknown error'
     return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 })
