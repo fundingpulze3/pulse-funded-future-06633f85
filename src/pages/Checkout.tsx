@@ -41,7 +41,6 @@ const Checkout = () => {
     value: number;
   } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [selectedGateway, setSelectedGateway] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
   const subtotal = basePrice;
