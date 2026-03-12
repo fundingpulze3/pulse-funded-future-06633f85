@@ -563,6 +563,112 @@ const Dashboard = () => {
                 </div>
               )}
 
+              {/* Account Information */}
+              {activeAccountStats && (activeAccountStats.broker || activeAccountStats.accountNumber) && (
+                <div className="glass-card p-5">
+                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Account Information</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {activeAccountStats.accountNumber && (
+                      <div className="bg-secondary/30 rounded-lg px-3 py-2">
+                        <p className="text-[10px] text-muted-foreground">Account #</p>
+                        <p className="text-sm font-bold font-mono text-foreground">{activeAccountStats.accountNumber}</p>
+                      </div>
+                    )}
+                    {activeAccountStats.broker && (
+                      <div className="bg-secondary/30 rounded-lg px-3 py-2">
+                        <p className="text-[10px] text-muted-foreground">Broker</p>
+                        <p className="text-sm font-bold text-foreground">{activeAccountStats.broker}</p>
+                      </div>
+                    )}
+                    {activeAccountStats.currency && (
+                      <div className="bg-secondary/30 rounded-lg px-3 py-2">
+                        <p className="text-[10px] text-muted-foreground">Currency</p>
+                        <p className="text-sm font-bold text-foreground">{activeAccountStats.currency}</p>
+                      </div>
+                    )}
+                    {activeAccountStats.accountType && (
+                      <div className="bg-secondary/30 rounded-lg px-3 py-2">
+                        <p className="text-[10px] text-muted-foreground">Type</p>
+                        <p className="text-sm font-bold text-foreground">{activeAccountStats.accountType}</p>
+                      </div>
+                    )}
+                    <div className="bg-secondary/30 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-muted-foreground">Deposit</p>
+                      <p className="text-sm font-bold text-foreground">${Number(activeAccountStats.deposit).toLocaleString()} ({activeAccountStats.depositCount}x)</p>
+                    </div>
+                    {activeAccountStats.withdrawal > 0 && (
+                      <div className="bg-secondary/30 rounded-lg px-3 py-2">
+                        <p className="text-[10px] text-muted-foreground">Withdrawal</p>
+                        <p className="text-sm font-bold text-foreground">${Number(activeAccountStats.withdrawal).toLocaleString()} ({activeAccountStats.withdrawalCount}x)</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Detailed Long/Short Breakdown */}
+              {activeAccountStats && (activeAccountStats.tradesLong > 0 || activeAccountStats.tradesShort > 0) && (
+                <div className="glass-card p-5">
+                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Long / Short Detailed Breakdown</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border/50">
+                          <th className="px-4 py-2">Metric</th>
+                          <th className="px-4 py-2 text-center">Long</th>
+                          <th className="px-4 py-2 text-center">Short</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-sm">
+                        <tr className="border-b border-border/20">
+                          <td className="px-4 py-3 text-muted-foreground">Total Trades</td>
+                          <td className="px-4 py-3 text-center font-bold text-foreground">{activeAccountStats.tradesLong}</td>
+                          <td className="px-4 py-3 text-center font-bold text-foreground">{activeAccountStats.tradesShort}</td>
+                        </tr>
+                        <tr className="border-b border-border/20">
+                          <td className="px-4 py-3 text-muted-foreground">Win Trades</td>
+                          <td className="px-4 py-3 text-center font-bold text-green-400">{activeAccountStats.winTradesLong}</td>
+                          <td className="px-4 py-3 text-center font-bold text-green-400">{activeAccountStats.winTradesShort}</td>
+                        </tr>
+                        <tr className="border-b border-border/20">
+                          <td className="px-4 py-3 text-muted-foreground">Net P&L</td>
+                          <td className={`px-4 py-3 text-center font-bold ${activeAccountStats.longNetPL >= 0 ? "text-green-400" : "text-red-400"}`}>${Number(activeAccountStats.longNetPL).toFixed(2)}</td>
+                          <td className={`px-4 py-3 text-center font-bold ${activeAccountStats.shortNetPL >= 0 ? "text-green-400" : "text-red-400"}`}>${Number(activeAccountStats.shortNetPL).toFixed(2)}</td>
+                        </tr>
+                        <tr className="border-b border-border/20">
+                          <td className="px-4 py-3 text-muted-foreground">Avg P&L</td>
+                          <td className={`px-4 py-3 text-center font-bold ${activeAccountStats.avgPLLong >= 0 ? "text-green-400" : "text-red-400"}`}>${Number(activeAccountStats.avgPLLong).toFixed(2)}</td>
+                          <td className={`px-4 py-3 text-center font-bold ${activeAccountStats.avgPLShort >= 0 ? "text-green-400" : "text-red-400"}`}>${Number(activeAccountStats.avgPLShort).toFixed(2)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Trade Type Breakdown (Manual / Robot / Signal) */}
+              {activeAccountStats && (activeAccountStats.manualTrades > 0 || activeAccountStats.robotTrades > 0 || activeAccountStats.signalTrades > 0) && (
+                <div className="glass-card p-5">
+                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Trade Execution Type</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 rounded-xl bg-secondary/30 border border-border/30">
+                      <p className="text-2xl font-bold font-display text-foreground">{activeAccountStats.manualTrades}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Manual</p>
+                    </div>
+                    <div className="text-center p-4 rounded-xl bg-secondary/30 border border-border/30">
+                      <p className="text-2xl font-bold font-display text-foreground">{activeAccountStats.robotTrades}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Robot / EA</p>
+                    </div>
+                    <div className="text-center p-4 rounded-xl bg-secondary/30 border border-border/30">
+                      <p className="text-2xl font-bold font-display text-foreground">{activeAccountStats.signalTrades}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Signal</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Streaks — extended with max consecutive P&L amounts */}
+
               {/* Symbols breakdown */}
               {activeAccountStats?.symbols && activeAccountStats.symbols.length > 0 && (
                 <div className="glass-card p-5">
