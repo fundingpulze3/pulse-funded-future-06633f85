@@ -35,6 +35,16 @@ const WhyChoose = () => {
           Why Choose <span className="text-gradient">Funding Pulze</span>
         </h2>
 
+        {/* Banner image */}
+        <div className="mb-10 rounded-2xl overflow-hidden glow-border">
+          <img
+            src={whyChooseBanner}
+            alt="More Power, Less Risk — Up to $200K simulated capital"
+            className="w-full h-auto object-cover"
+            loading="lazy"
+          />
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {features.map(({ icon: Icon, title, desc }) => (
             <div
