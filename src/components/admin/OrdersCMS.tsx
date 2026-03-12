@@ -39,7 +39,7 @@ export default function OrdersCMS({
   const counts = useMemo(() => ({
     all: purchases.length,
     pending: purchases.filter(p => p.payment_status === "pending").length,
-    confirmed: purchases.filter(p => p.payment_status === "confirmed").length,
+    completed: purchases.filter(p => p.payment_status === "completed").length,
     cancelled: purchases.filter(p => p.payment_status === "cancelled").length,
   }), [purchases]);
 
