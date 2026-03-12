@@ -212,6 +212,29 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Send email notification for the certificate type
+    try {
+      const emailTypeMap: Record<string, string> = {
+        phase1_passed: "phase1_passed",
+        phase2_passed: "phase2_passed",
+        payout: "payout_received",
+      };
+      const emailType = emailTypeMap[certificateType];
+      if (emailType) {
+        const emailData: Record<string, any> = { accountNumber: parsed.accountNumber };
+        if (emailType === "phase1_passed" || emailType === "phase2_passed") {
+          emailData.profit = `$${evaluation.profitAmount?.toFixed(2) || "0"}`;
+          emailData.profitPercent = `${evaluation.profitPercent?.toFixed(2) || "0"}%`;
+        }
+        if (emailType === "payout_received") {
+          const payoutCount = existingTypes.filter(t => t === "payout").length + 1;
+          emailData.payoutAmount = `$${((evaluation.profitAmount || 0) * 0.9).toFixed(2)}`;
+          emailData.payoutNumber = String(payoutCount);
+        }
+        await sendEmailNotification(adminClient, supabaseUrl, credential.assigned_to, emailType, emailData);
+      }
+    } catch (e) { console.error("Failed to send certificate email:", e); }
+
     return new Response(
       JSON.stringify({
         success: true,
