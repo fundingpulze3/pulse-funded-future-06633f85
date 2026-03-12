@@ -127,15 +127,29 @@ const CredentialsManager = () => {
     fetchData();
   };
 
-  // Group credentials by challenge
-  const grouped = challenges.map(ch => {
-    const creds = credentials.filter(c => c.challenge_id === ch.id);
-    const filtered = creds.filter(c => {
-      if (search && !c.mt5_login.includes(search) && !c.mt5_server.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
+  // Group credentials by challenge (deduplicate by label)
+  const grouped = (() => {
+    const map = new Map<string, { challenge: Challenge; challengeIds: string[]; credentials: Credential[]; total: number; available: number; assigned: number }>();
+    challenges.forEach(ch => {
+      const label = getChallengeLabel(ch);
+      const existing = map.get(label);
+      const creds = credentials.filter(c => c.challenge_id === ch.id);
+      const filtered = creds.filter(c => {
+        if (search && !c.mt5_login.includes(search) && !c.mt5_server.toLowerCase().includes(search.toLowerCase())) return false;
+        return true;
+      });
+      if (existing) {
+        existing.challengeIds.push(ch.id);
+        existing.credentials.push(...filtered);
+        existing.total += creds.length;
+        existing.available += creds.filter(c => !c.is_assigned).length;
+        existing.assigned += creds.filter(c => c.is_assigned).length;
+      } else {
+        map.set(label, { challenge: ch, challengeIds: [ch.id], credentials: filtered, total: creds.length, available: creds.filter(c => !c.is_assigned).length, assigned: creds.filter(c => c.is_assigned).length });
+      }
     });
-    return { challenge: ch, credentials: filtered, total: creds.length, available: creds.filter(c => !c.is_assigned).length, assigned: creds.filter(c => c.is_assigned).length };
-  }).filter(g => g.total > 0 || !search);
+    return Array.from(map.values()).filter(g => g.total > 0 || !search);
+  })();
 
   const totalAll = credentials.length;
   const availableAll = credentials.filter(c => !c.is_assigned).length;
