@@ -13,7 +13,7 @@ interface OrdersCMSProps {
   onRefresh: () => void;
 }
 
-type StatusFilter = "all" | "pending" | "confirmed" | "cancelled";
+type StatusFilter = "all" | "pending" | "completed" | "cancelled";
 
 export default function OrdersCMS({
   purchases, profiles, challenges, getProfileName, getChallengeNameById, onRefresh,
