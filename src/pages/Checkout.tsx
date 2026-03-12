@@ -12,6 +12,8 @@ import {
   X,
   Loader2,
   CreditCard,
+  Bitcoin,
+  ExternalLink,
 } from "lucide-react";
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 import Navbar from "@/components/Navbar";
