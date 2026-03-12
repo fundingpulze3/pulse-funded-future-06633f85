@@ -45,7 +45,9 @@ export default function OrdersCMS({
 
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id);
-    const { error } = await supabase.from("challenge_purchases").update({ payment_status: status, status: status === "confirmed" ? "active" : status }).eq("id", id);
+    const paymentStatus = status === "confirmed" ? "completed" : status;
+    const orderStatus = status === "confirmed" ? "active" : status;
+    const { error } = await supabase.from("challenge_purchases").update({ payment_status: paymentStatus, status: orderStatus }).eq("id", id);
     if (error) { toast.error(error.message); setUpdating(null); return; }
 
     // Auto-assign credentials when confirming
