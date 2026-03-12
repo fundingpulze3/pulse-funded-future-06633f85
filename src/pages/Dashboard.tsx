@@ -311,8 +311,24 @@ const Dashboard = () => {
           animate={{ opacity: 1, scale: 1 }}
         >
           <div className="w-10 h-10 border-2 border-highlight border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground font-medium">Loading dashboard...</p>
+          <p className="text-sm text-foreground/80 font-medium">Loading dashboard...</p>
         </motion.div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar isDark={true} onToggleTheme={() => {}} />
+        <div className="max-w-7xl mx-auto pt-28 pb-16 px-4 sm:px-6">
+          <div className="glass-card p-8 text-center">
+            <p className="text-lg font-display font-bold mb-2">Dashboard unavailable</p>
+            <p className="text-muted-foreground mb-5">{loadError}</p>
+            <Button className="rounded-xl" onClick={fetchAllData}>Retry</Button>
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }
