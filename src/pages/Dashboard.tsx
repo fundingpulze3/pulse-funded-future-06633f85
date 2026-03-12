@@ -474,7 +474,7 @@ const Dashboard = () => {
                 const isActive = selectedAccount === p.id;
                 const status = getAccountStatus(p);
                 const sc = statusConfig[status] || statusConfig.ongoing;
-                const cred = credentials.find(c => c.challenge_id === p.challenges?.name);
+                const cred = credentials.find(c => c.challenge_id === p.challenge_id);
                 const challengeName = p.challenges?.name || "Account";
                 const stepType = p.challenges?.step_type || "—";
 
