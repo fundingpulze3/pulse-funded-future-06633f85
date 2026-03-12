@@ -110,30 +110,102 @@ const Checkout = () => {
     }
 
     setProcessing(true);
-    await new Promise((r) => setTimeout(r, 2000));
 
-    // Send purchase confirmation email
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData?.session?.access_token) {
-        await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            type: "purchase_confirmation",
-            data: {
-              challengeName: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge`,
-              accountSize,
-              amountPaid: `$${total}`,
-            },
-          },
-        });
-      }
-    } catch (emailErr) {
-      console.error("Failed to send confirmation email:", emailErr);
-    }
+      // 1. Parse account size (e.g. "$5K" -> 5000, "$50K" -> 50000, "$100K" -> 100000)
+      const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
 
-    toast.success("Order placed! You'll receive confirmation shortly.");
-    setProcessing(false);
-    navigate("/");
+      // Find the matching challenge
+      const { data: challenge } = await supabase
+        .from("challenges")
+        .select("id")
+        .eq("step_type", stepType)
+        .eq("account_size", sizeNum)
+        .eq("is_active", true)
+        .single();
+
+      if (!challenge) {
+        toast.error("Challenge not found. Please try again.");
+        setProcessing(false);
+        return;
+      }
+
+      // 2. Get stored UTM data
+      const utm = getStoredUtm();
+
+      // 3. Create the purchase record
+      const { data: purchase, error: purchaseError } = await supabase
+        .from("challenge_purchases")
+        .insert({
+          user_id: user.id,
+          challenge_id: challenge.id,
+          amount_paid: total,
+          payment_status: "completed",
+          status: "active",
+          utm_source: utm.utm_source || null,
+          utm_medium: utm.utm_medium || null,
+          utm_campaign: utm.utm_campaign || null,
+          utm_term: utm.utm_term || null,
+          utm_content: utm.utm_content || null,
+        })
+        .select()
+        .single();
+
+      if (purchaseError) {
+        toast.error("Failed to create purchase: " + purchaseError.message);
+        setProcessing(false);
+        return;
+      }
+
+      // 4. Auto-assign a free credential for this challenge
+      const { data: freeCred } = await supabase
+        .from("trading_credentials")
+        .select("id")
+        .eq("challenge_id", challenge.id)
+        .eq("is_assigned", false)
+        .limit(1)
+        .single();
+
+      if (freeCred) {
+        await supabase
+          .from("trading_credentials")
+          .update({
+            is_assigned: true,
+            assigned_to: user.id,
+            purchase_id: purchase.id,
+            assigned_at: new Date().toISOString(),
+          })
+          .eq("id", freeCred.id)
+          .eq("is_assigned", false); // double-check to prevent race conditions
+      }
+
+      // 5. Send purchase confirmation email
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.access_token) {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              type: "purchase_confirmation",
+              data: {
+                challengeName: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge`,
+                accountSize,
+                amountPaid: `$${total}`,
+              },
+            },
+          });
+        }
+      } catch (emailErr) {
+        console.error("Failed to send confirmation email:", emailErr);
+      }
+
+      toast.success("Order placed! Check your dashboard for MT5 credentials.");
+      setProcessing(false);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Checkout error:", err);
+      toast.error("Something went wrong. Please try again.");
+      setProcessing(false);
+    }
   };
 
   const gateways = [
