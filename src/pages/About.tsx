@@ -152,7 +152,7 @@ const About = () => {
   const timelineRef = useRef<HTMLDivElement>(null);
   const { get } = usePageContent("about");
 
-  const hero = get("hero", { title: "Built by Traders,\nfor Traders.", content: "Funding Pulze was founded on a simple belief — skilled traders deserve access to capital, not gatekeeping." });
+  const hero = get("hero", { title: "Built by Mentors,\nfor Traders.", content: "Funding Pulze was founded on a simple belief — skilled traders deserve access to capital, not gatekeeping." });
   const mission = get("mission", { title: "Our Mission", content: "To democratize access to trading capital by providing a transparent, fair, and technology-driven evaluation process. We remove financial barriers so talented traders can focus on what they do best — trading." });
   const vision = get("vision", { title: "Our Vision", content: "To become the world's most trusted prop trading firm — where every trader, regardless of background or capital, has a fair shot at building generational wealth through the financial markets." });
   const founder = get("founder", { title: "Funding Pulze", content: "\"I started Funding Pulze because I believe every skilled trader deserves a chance to prove themselves — without risking their own capital. We're building the most transparent, trader-first prop firm in the world.\"" });
