@@ -24,7 +24,6 @@ const Footer = () => {
 
   return (
     <footer ref={ref} className="relative border-t border-border/50 overflow-hidden">
-      {/* Subtle top glow line */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-2/3 max-w-xl"
         style={{
@@ -64,21 +63,17 @@ const Footer = () => {
                 {title}
               </h4>
               <ul className="space-y-2.5">
-                {links.map((link) => {
-                  const label = typeof link === "string" ? link : link.label;
-                  const href = typeof link === "string" ? "#" : link.href;
-                  return (
-                    <li key={label}>
-                      <a
-                        href={href}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 relative group"
-                      >
-                        {label}
-                        <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-foreground/30 transition-all duration-300 group-hover:w-full" />
-                      </a>
-                    </li>
-                  );
-                })}
+                {links.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 relative group"
+                    >
+                      {link.label}
+                      <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-foreground/30 transition-all duration-300 group-hover:w-full" />
+                    </a>
+                  </li>
+                ))}
               </ul>
             </motion.div>
           ))}
@@ -94,7 +89,7 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <motion.div
-          className="flex flex-col sm:flex-row items-center justify-between gap-4"
+          className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10"
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -113,6 +108,23 @@ const Footer = () => {
               </a>
             ))}
           </div>
+        </motion.div>
+
+        {/* Large branding + disclaimer */}
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 10 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.5 }}
+        >
+          <h2 className="font-display text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground/[0.04] select-none leading-none mb-4">
+            FUNDINGPULZE
+          </h2>
+          <p className="text-[10px] sm:text-xs text-muted-foreground/60 max-w-2xl mx-auto leading-relaxed">
+            Disclaimer: All accounts provided by Funding Pulze are simulated accounts. They are not real brokerage accounts and do not involve real capital. 
+            All trading activity, profits, and losses are entirely simulated for educational and evaluation purposes only. 
+            Past simulated performance is not indicative of future results. Trading involves risk and is not suitable for everyone.
+          </p>
         </motion.div>
       </div>
     </footer>
