@@ -828,6 +828,8 @@ const Admin = () => {
           {tab === "certificates" && <CertificatesCMS />}
           {tab === "pages" && <PagesCMS />}
           {tab === "knowledgebase" && <KnowledgeBaseCMS />}
+          {tab === "credentials" && <CredentialsManager />}
+          {tab === "user_certificates" && <UserCertificatesCMS />}
         </div>
       </div>
 
