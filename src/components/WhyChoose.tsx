@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Zap, Headphones, Banknote, ShieldCheck } from "lucide-react";
+import whyChooseBanner from "@/assets/why-choose-banner.jpg";
 
 const features = [
   { icon: Zap, title: "Tight Spreads", desc: "Raw institutional spreads from 0.0 pips" },
