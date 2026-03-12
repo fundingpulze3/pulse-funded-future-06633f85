@@ -303,28 +303,73 @@ const Dashboard = () => {
           {/* ─── Certificates ─── */}
           <TabsContent value="certificates">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              {certificates.length === 0 ? (
+              {userCertificates.length === 0 ? (
                 <div className="glass-card p-10 text-center text-muted-foreground">
                   <Award size={32} className="mx-auto mb-3 opacity-40" />
-                  <p>No certificates available yet.</p>
+                  <p>No certificates earned yet.</p>
+                  <p className="text-xs mt-2">Complete challenges to earn certificates!</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {certificates.map((cert) => (
-                    <div key={cert.id} className="glass-card overflow-hidden group">
-                      <div className="aspect-[4/3] overflow-hidden">
-                        <img
-                          src={cert.image_url}
-                          alt={cert.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
+                  {userCertificates.map((cert) => {
+                    const typeColors: Record<string, string> = {
+                      phase1_passed: "from-blue-500/20 to-blue-600/5 border-blue-500/30",
+                      funded: "from-green-500/20 to-green-600/5 border-green-500/30",
+                      payout: "from-purple-500/20 to-purple-600/5 border-purple-500/30",
+                    };
+                    const typeLabels: Record<string, string> = {
+                      phase1_passed: "Phase 1 Passed",
+                      funded: "Funded",
+                      payout: "Payout",
+                    };
+                    return (
+                      <div key={cert.id} className={`glass-card overflow-hidden border bg-gradient-to-br ${typeColors[cert.certificate_type] || "border-border"}`}>
+                        <div className="p-5">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                              <Award size={20} className="text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="font-display font-bold text-foreground text-sm">{cert.title}</h3>
+                              <span className="text-xs text-muted-foreground">{typeLabels[cert.certificate_type] || cert.certificate_type}</span>
+                            </div>
+                          </div>
+                          {cert.account_number && (
+                            <p className="text-xs text-muted-foreground mb-3">Account: <span className="font-mono text-foreground">{cert.account_number}</span></p>
+                          )}
+                          {cert.stats && Object.keys(cert.stats).length > 0 && (
+                            <div className="grid grid-cols-2 gap-2">
+                              {cert.stats.balance != null && (
+                                <div className="bg-background/50 rounded-lg px-3 py-2">
+                                  <p className="text-[10px] text-muted-foreground">Balance</p>
+                                  <p className="text-sm font-bold text-foreground">${Number(cert.stats.balance).toLocaleString()}</p>
+                                </div>
+                              )}
+                              {cert.stats.profit != null && (
+                                <div className="bg-background/50 rounded-lg px-3 py-2">
+                                  <p className="text-[10px] text-muted-foreground">Profit</p>
+                                  <p className={`text-sm font-bold ${Number(cert.stats.profit) >= 0 ? "text-green-400" : "text-red-400"}`}>${Number(cert.stats.profit).toLocaleString()}</p>
+                                </div>
+                              )}
+                              {cert.stats.totalTrades != null && (
+                                <div className="bg-background/50 rounded-lg px-3 py-2">
+                                  <p className="text-[10px] text-muted-foreground">Trades</p>
+                                  <p className="text-sm font-bold text-foreground">{cert.stats.totalTrades}</p>
+                                </div>
+                              )}
+                              {cert.stats.profitFactor != null && (
+                                <div className="bg-background/50 rounded-lg px-3 py-2">
+                                  <p className="text-[10px] text-muted-foreground">Profit Factor</p>
+                                  <p className="text-sm font-bold text-foreground">{cert.stats.profitFactor}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <p className="text-[10px] text-muted-foreground mt-3">{new Date(cert.created_at).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-display font-bold text-foreground mb-1">{cert.title}</h3>
-                        {cert.description && <p className="text-xs text-muted-foreground">{cert.description}</p>}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </motion.div>
