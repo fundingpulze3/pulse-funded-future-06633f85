@@ -45,8 +45,56 @@ export default function OrdersCMS({
 
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id);
-    const { error } = await supabase.from("challenge_purchases").update({ payment_status: status }).eq("id", id);
+    const { error } = await supabase.from("challenge_purchases").update({ payment_status: status, status: status === "confirmed" ? "active" : status }).eq("id", id);
     if (error) { toast.error(error.message); setUpdating(null); return; }
+
+    // Auto-assign credentials when confirming
+    if (status === "confirmed") {
+      const order = purchases.find(p => p.id === id);
+      if (order) {
+        // Find a free credential for this challenge
+        const { data: freeCred } = await supabase
+          .from("trading_credentials")
+          .select("id")
+          .eq("challenge_id", order.challenge_id)
+          .eq("is_assigned", false)
+          .limit(1)
+          .single();
+
+        if (freeCred) {
+          await supabase
+            .from("trading_credentials")
+            .update({
+              is_assigned: true,
+              assigned_to: order.user_id,
+              purchase_id: order.id,
+              assigned_at: new Date().toISOString(),
+            })
+            .eq("id", freeCred.id)
+            .eq("is_assigned", false);
+          toast.success("Credentials auto-assigned!");
+        } else {
+          toast.warning("No free credentials available for this challenge.");
+        }
+
+        // Send confirmation email
+        try {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              type: "purchase_confirmation",
+              data: {
+                challengeName: getChallengeNameById(order.challenge_id),
+                accountSize: getChallengeNameById(order.challenge_id),
+                amountPaid: `$${order.amount_paid}`,
+              },
+            },
+          });
+        } catch (e) {
+          console.error("Email failed:", e);
+        }
+      }
+    }
+
     toast.success(`Order ${status}!`);
     setUpdating(null);
     onRefresh();
