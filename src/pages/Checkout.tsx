@@ -103,18 +103,12 @@ const Checkout = () => {
       navigate("/auth");
       return;
     }
-    if (!selectedGateway) {
-      toast.error("Please select a payment method.");
-      return;
-    }
 
     setProcessing(true);
 
     try {
-      // 1. Parse account size (e.g. "$5K" -> 5000, "$50K" -> 50000, "$100K" -> 100000)
       const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
 
-      // Find the matching challenge
       const { data: challenge } = await supabase
         .from("challenges")
         .select("id")
@@ -129,11 +123,9 @@ const Checkout = () => {
         return;
       }
 
-      // 2. Get stored UTM data
       const utm = getStoredUtm();
 
-      // 3. Create the purchase record as PENDING (manual payment bypass)
-      const { data: purchase, error: purchaseError } = await supabase
+      const { error: purchaseError } = await supabase
         .from("challenge_purchases")
         .insert({
           user_id: user.id,
