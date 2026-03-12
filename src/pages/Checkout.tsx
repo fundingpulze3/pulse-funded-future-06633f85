@@ -401,6 +401,80 @@ const Checkout = () => {
               )}
             </div>
 
+            {/* Crypto Payment via NOWPayments */}
+            <div className="glass-card p-6">
+              <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                <Bitcoin size={18} /> Pay with Crypto
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Pay with BTC, ETH, USDT, and 200+ cryptocurrencies via NOWPayments. Payment is confirmed automatically.
+              </p>
+              <Button
+                onClick={async () => {
+                  if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
+                  setProcessing(true);
+                  try {
+                    const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
+                    const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
+                    const { data: challenge } = await supabase
+                      .from("challenges").select("id")
+                      .eq("step_type", dbStepType).eq("account_size", sizeNum).eq("is_active", true).maybeSingle();
+                    if (!challenge) { toast.error("Challenge not found."); setProcessing(false); return; }
+
+                    const utm = getStoredUtm();
+                    const { data: purchase, error } = await supabase
+                      .from("challenge_purchases")
+                      .insert({
+                        user_id: user.id, challenge_id: challenge.id, amount_paid: total,
+                        payment_status: "pending", status: "pending",
+                        utm_source: utm.utm_source || null, utm_medium: utm.utm_medium || null,
+                        utm_campaign: utm.utm_campaign || null, utm_term: utm.utm_term || null,
+                        utm_content: utm.utm_content || null,
+                      }).select().single();
+
+                    if (error || !purchase) { toast.error("Failed to create order."); setProcessing(false); return; }
+
+                    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const res = await fetch(
+                      `https://${projectId}.supabase.co/functions/v1/nowpayments-create`,
+                      {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${session!.access_token}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "create_invoice",
+                          amount: total,
+                          currency: "usd",
+                          description: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge — ${accountSize}`,
+                          purchaseId: purchase.id,
+                          orderId: purchase.id,
+                        }),
+                      }
+                    );
+                    const data = await res.json();
+                    if (data.invoiceUrl) {
+                      window.open(data.invoiceUrl, "_blank");
+                      toast.success("Crypto payment page opened! Complete payment there.");
+                    } else {
+                      toast.error(data.error || "Failed to create crypto invoice.");
+                    }
+                  } catch (err) {
+                    toast.error("Error: " + String(err));
+                  }
+                  setProcessing(false);
+                }}
+                disabled={processing}
+                className="w-full rounded-xl py-5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold"
+              >
+                {processing ? (
+                  <span className="flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Creating invoice...</span>
+                ) : (
+                  <span className="flex items-center gap-2"><Bitcoin size={16} /> Pay with Crypto — ${total} <ExternalLink size={14} /></span>
+                )}
+              </Button>
+              <p className="text-[10px] text-muted-foreground mt-2 text-center">BTC • ETH • USDT • SOL • and 200+ coins supported</p>
+            </div>
+
             {/* Manual Payment Fallback */}
             <div className="glass-card p-6">
               <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
