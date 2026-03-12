@@ -278,10 +278,50 @@ const Dashboard = () => {
     }));
   }, [activeAccountStats]);
 
+  const monthlyPLRows = useMemo(() => {
+    const monthlyPL = activeAccountStats?.monthlyPL;
+    if (!monthlyPL || typeof monthlyPL !== "object") return [] as Array<{ year: string; months: number[]; total: number }>;
+
+    const normalizeMonths = (value: unknown): number[] => {
+      if (Array.isArray(value)) {
+        return Array.from({ length: 12 }, (_, i) => Number(value[i] ?? 0) || 0);
+      }
+
+      if (value && typeof value === "object") {
+        const monthsObj = value as Record<string, unknown>;
+        return Array.from({ length: 12 }, (_, i) => Number(monthsObj[String(i + 1)] ?? monthsObj[String(i)] ?? 0) || 0);
+      }
+
+      return Array(12).fill(0);
+    };
+
+    const rows: Array<{ year: string; months: number[]; total: number }> = [];
+    const typedMonthly = monthlyPL as Record<string, any>;
+
+    if (Array.isArray(typedMonthly.years)) {
+      typedMonthly.years.forEach((entry: any) => {
+        if (!entry || typeof entry !== "object") return;
+        const year = entry.year != null ? String(entry.year) : "Unknown";
+        const months = normalizeMonths(entry.months);
+        const total = Number(entry.yearly ?? months.reduce((sum, m) => sum + m, 0)) || 0;
+        rows.push({ year, months, total });
+      });
+    } else {
+      Object.entries(typedMonthly).forEach(([year, value]) => {
+        if (!/^\d{4}$/.test(year)) return;
+        const months = normalizeMonths(value?.months ?? value);
+        const total = Number(value?.total ?? value?.yearly ?? months.reduce((sum, m) => sum + m, 0)) || 0;
+        rows.push({ year, months, total });
+      });
+    }
+
+    return rows.sort((a, b) => Number(a.year) - Number(b.year));
+  }, [activeAccountStats]);
+
   const profitPercent = activeAccountStats
-    ? activeAccountStats.gainPercent || ((Number(activeAccountStats.profit) / activeAccountStats.accountSize) * 100)
+    ? Number(activeAccountStats.gainPercent || ((Number(activeAccountStats.profit) / activeAccountStats.accountSize) * 100))
     : 0;
-  const ddUsed = activeAccountStats?.maxDrawdownPercent || 0;
+  const ddUsed = Number(activeAccountStats?.maxDrawdownPercent || 0);
 
   // Loading
   if (authLoading || loading) {
