@@ -584,3 +584,26 @@ function parseHtmlRegex(html: string): Record<string, any> {
 
   return result;
 }
+
+/**
+ * Send email notification to a user via the transactional email edge function
+ */
+async function sendEmailNotification(adminClient: any, supabaseUrl: string, userId: string, type: string, data: Record<string, any>) {
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  
+  const res = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ type, data, recipientUserId: userId }),
+  });
+  
+  if (!res.ok) {
+    const err = await res.text();
+    console.error(`Email notification failed (${type}):`, err);
+  } else {
+    console.log(`Email notification sent: ${type} to user ${userId}`);
+  }
+}
