@@ -26,11 +26,11 @@ const rulesData: Record<StepType, { student: Record<string, string>; practitione
 };
 
 const ruleTooltips: Record<string, string> = {
-  "Profit Target": "The minimum profit you must reach to pass this evaluation phase. Calculated as a percentage of your account balance.",
-  "Maximum Loss": "The maximum total drawdown allowed on your account from the initial balance. Breaching this results in account termination.",
-  "Maximum Daily Loss": "The maximum loss you can incur in a single trading day. Resets at midnight server time (UTC).",
-  "Minimum Trading Days": "The minimum number of days you must actively trade before you can pass the evaluation phase.",
-  "Leverage": "The maximum leverage available for your trading account across all instruments.",
+  "Profit Target": "The minimum profit you must reach to pass this evaluation phase.",
+  "Maximum Loss": "The maximum total drawdown allowed on your account from the initial balance.",
+  "Maximum Daily Loss": "The maximum loss you can incur in a single trading day. Resets at midnight UTC.",
+  "Minimum Trading Days": "The minimum number of days you must actively trade before passing.",
+  "Leverage": "The maximum leverage available for your trading account.",
 };
 
 const rewardCycles = ["Weekly 60%", "Bi-weekly 80%", "On Demand 90%", "Monthly 100%"];
@@ -38,7 +38,7 @@ const accountSizes: AccountSize[] = ["$5K", "$10K", "$25K", "$50K", "$100K"];
 const ruleLabels = ["Profit Target", "Maximum Loss", "Maximum Daily Loss", "Minimum Trading Days", "Leverage"];
 
 const Shop = () => {
-  const [step, setStep] = useState<StepType>("two");
+  const [step, setStep] = useState<StepType>("one");
   const [account, setAccount] = useState<AccountSize>("$50K");
   const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
@@ -49,13 +49,8 @@ const Shop = () => {
       const { gsap } = await import("gsap");
       const el = sectionRef.current;
       if (!el) return;
-
-      gsap.fromTo(el.querySelector(".section-header"), { y: 40, opacity: 0 }, {
-        y: 0, opacity: 1, duration: 0.7,
-      });
-      gsap.fromTo(el.querySelector(".shop-card"), { y: 50, opacity: 0 }, {
-        y: 0, opacity: 1, duration: 0.8,
-      });
+      gsap.fromTo(el.querySelector(".section-header"), { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 });
+      gsap.fromTo(el.querySelector(".shop-card"), { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 });
     };
     loadGsap();
   }, []);
@@ -75,54 +70,62 @@ const Shop = () => {
   const sizeNum = account.replace("$", "").replace("K", "k");
 
   return (
-    <section ref={sectionRef} id="rules" className="py-24 px-6">
+    <section ref={sectionRef} id="rules" className="py-16 sm:py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
-        <div className="section-header text-center mb-14">
-          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+        <div className="section-header text-center mb-10 sm:mb-14">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
             Start Your <span className="text-gradient">Challenge</span>
           </h2>
-          <p className="text-muted-foreground text-lg">Choose your path and account size.</p>
+          <p className="text-muted-foreground text-base sm:text-lg">Choose your path and account size.</p>
         </div>
 
-        <div className="shop-card glass-card p-6 sm:p-10">
-          {/* Step & Account Selectors */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            <div className="inline-flex surface-elevated rounded-full p-1 glow-border">
-              {(["one", "two"] as StepType[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStep(s)}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                    step === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {s === "one" ? "1 Step" : "2 Step"}
-                </button>
-              ))}
+        <div className="shop-card glass-card p-4 sm:p-8 md:p-10">
+          {/* Selectors with labels */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-6 sm:gap-8 mb-8">
+            {/* Path selector */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 ml-1 tracking-wider">Path</p>
+              <div className="inline-flex surface-elevated rounded-full p-1 glow-border">
+                {(["one", "two"] as StepType[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStep(s)}
+                    className={`px-5 sm:px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                      step === s ? "bg-highlight text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {s === "one" ? "1 Step" : "2 Step"}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="inline-flex surface-elevated rounded-full p-1 glow-border flex-wrap justify-center">
-              {accountSizes.map((a) => (
-                <button
-                  key={a}
-                  onClick={() => setAccount(a)}
-                  className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${
-                    account === a ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {a}
-                </button>
-              ))}
+            {/* Account Size selector */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 ml-1 tracking-wider">Account Size</p>
+              <div className="inline-flex surface-elevated rounded-full p-1 glow-border flex-wrap">
+                {accountSizes.map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setAccount(a)}
+                    className={`px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${
+                      account === a ? "bg-highlight text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Reward Cycles */}
-          <div className="rounded-xl p-4 mb-10 text-center border border-border/40 bg-muted/30">
+          <div className="rounded-xl p-4 mb-8 sm:mb-10 text-center border border-border/40 bg-muted/30">
             <p className="text-xs text-muted-foreground mb-2 tracking-wider uppercase">Reward Cycles</p>
-            <div className="flex flex-wrap items-center justify-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
               {rewardCycles.map((cycle) => (
                 <div key={cycle} className="flex items-center gap-2 text-sm text-foreground">
-                  <Check size={16} className="text-primary" />
+                  <Check size={16} className="text-highlight" />
                   <span>{cycle}</span>
                 </div>
               ))}
@@ -136,13 +139,13 @@ const Shop = () => {
           <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4">
             <div />
             <div className="flex justify-center">
-              <span className="w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-xs font-semibold text-foreground">1</span>
+              <span className="w-8 h-8 rounded-full border border-highlight/50 flex items-center justify-center text-xs font-semibold text-foreground">1</span>
             </div>
             <div className="flex justify-center">
-              <span className="w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-xs font-semibold text-foreground">2</span>
+              <span className="w-8 h-8 rounded-full border border-highlight/50 flex items-center justify-center text-xs font-semibold text-foreground">2</span>
             </div>
             <div className="flex justify-center">
-              <Crown size={22} className="text-foreground" />
+              <Crown size={22} className="text-highlight" />
             </div>
           </div>
 
@@ -155,7 +158,7 @@ const Shop = () => {
           </div>
 
           {/* Rules Table */}
-          <div ref={tableRef} className="divide-y divide-border">
+          <div ref={tableRef} className="divide-y divide-border/50">
             {ruleLabels.map((label) => (
               <div key={label} className="rule-row grid grid-cols-4 gap-2 sm:gap-4 py-3 sm:py-4 items-center">
                 <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
@@ -179,7 +182,7 @@ const Shop = () => {
           </div>
 
           {/* Bottom Bar */}
-          <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-6">
             <div className="flex items-center gap-6 sm:gap-8">
               <div>
                 <span className="text-xs sm:text-sm text-muted-foreground">Account size: </span>
@@ -192,7 +195,7 @@ const Shop = () => {
             </div>
             <Button
               size="lg"
-              className="rounded-xl px-8 sm:px-10 py-5 sm:py-6 text-sm sm:text-base glow-box w-full sm:w-auto"
+              className="rounded-xl px-8 sm:px-10 py-5 sm:py-6 text-sm sm:text-base glow-box w-full sm:w-auto bg-highlight hover:bg-highlight/90 text-primary-foreground"
               onClick={() => {
                 const priceNum = price.replace("$", "");
                 const stepLabel = step === "one" ? "1-step" : "2-step";
