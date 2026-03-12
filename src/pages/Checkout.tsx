@@ -158,23 +158,6 @@ const Checkout = () => {
     }
   };
 
-  const gateways = [
-    {
-      id: "nowpayments",
-      name: "NOWPayments",
-      desc: "Pay with Crypto",
-      icon: <Bitcoin size={22} />,
-      tag: "BTC, ETH, USDT & 200+",
-    },
-    {
-      id: "paypal",
-      name: "PayPal",
-      desc: "Pay with PayPal",
-      icon: <Wallet size={22} />,
-      tag: "Cards, Balance & More",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
