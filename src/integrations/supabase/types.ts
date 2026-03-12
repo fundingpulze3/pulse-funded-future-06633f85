@@ -716,6 +716,123 @@ export type Database = {
           },
         ]
       }
+      trading_credentials: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          challenge_id: string
+          created_at: string
+          id: string
+          is_assigned: boolean
+          mt5_login: string
+          mt5_password: string
+          mt5_server: string
+          purchase_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          challenge_id: string
+          created_at?: string
+          id?: string
+          is_assigned?: boolean
+          mt5_login: string
+          mt5_password: string
+          mt5_server?: string
+          purchase_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          is_assigned?: boolean
+          mt5_login?: string
+          mt5_password?: string
+          mt5_server?: string
+          purchase_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trading_credentials_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trading_credentials_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_certificates: {
+        Row: {
+          account_number: string | null
+          certificate_image_url: string | null
+          certificate_type: string
+          created_at: string
+          credential_id: string | null
+          description: string | null
+          id: string
+          pdf_url: string | null
+          purchase_id: string | null
+          stats: Json | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          account_number?: string | null
+          certificate_image_url?: string | null
+          certificate_type?: string
+          created_at?: string
+          credential_id?: string | null
+          description?: string | null
+          id?: string
+          pdf_url?: string | null
+          purchase_id?: string | null
+          stats?: Json | null
+          title?: string
+          user_id: string
+        }
+        Update: {
+          account_number?: string | null
+          certificate_image_url?: string | null
+          certificate_type?: string
+          created_at?: string
+          credential_id?: string | null
+          description?: string | null
+          id?: string
+          pdf_url?: string | null
+          purchase_id?: string | null
+          stats?: Json | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_certificates_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: false
+            referencedRelation: "trading_credentials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_certificates_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string

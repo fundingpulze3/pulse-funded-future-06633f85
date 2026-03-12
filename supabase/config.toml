@@ -9,3 +9,5 @@ project_id = "rpshiyvndmnogbhbgmfm"
     verify_jwt = false
   [functions.enhance-reply]
     verify_jwt = false
+  [functions.parse-mt5-statement]
+    verify_jwt = false
