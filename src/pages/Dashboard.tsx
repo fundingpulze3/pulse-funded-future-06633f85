@@ -469,7 +469,7 @@ const Dashboard = () => {
 
           {/* Account Cards */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-[hsl(220,15%,15%)] scrollbar-track-transparent">
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence>
               {filteredPurchases.map((p, i) => {
                 const isActive = selectedAccount === p.id;
                 const status = getAccountStatus(p);
