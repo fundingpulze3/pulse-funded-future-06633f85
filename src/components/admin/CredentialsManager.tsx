@@ -197,6 +197,16 @@ const CredentialsManager = () => {
                   <span className="text-[hsl(0,0%,50%)]">{total} total</span>
                   <span className="text-green-600">{available} free</span>
                   <span className="text-blue-600">{assigned} assigned</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setForm(f => ({ ...f, challenge_id: challenge.id, mt5_server: "" })); setDialogOpen(true); }}
+                    className="ml-1 p-1 rounded-md hover:bg-[hsl(0,0%,92%)] text-[hsl(0,0%,40%)] hover:text-[hsl(0,0%,10%)] transition-colors"
+                    title="Add credential to this folder"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+                  <span className="text-green-600">{available} free</span>
+                  <span className="text-blue-600">{assigned} assigned</span>
                 </div>
               </button>
 
