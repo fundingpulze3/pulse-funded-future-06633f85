@@ -160,7 +160,63 @@ Deno.serve(async (req) => {
                 purchase_id: purchaseId,
               })
               .eq("id", cred.id);
+
+            // Send credentials email
+            const { data: credDetails } = await adminClient
+              .from("trading_credentials")
+              .select("mt5_login, mt5_password, mt5_server")
+              .eq("id", cred.id)
+              .single();
+
+            const { data: challengeInfo } = await adminClient
+              .from("challenges")
+              .select("name, account_size")
+              .eq("id", purchase.challenge_id)
+              .single();
+
+            if (credDetails) {
+              try {
+                await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    type: "credentials",
+                    recipientUserId: user.id,
+                    data: {
+                      mt5Login: credDetails.mt5_login,
+                      mt5Password: credDetails.mt5_password,
+                      mt5Server: credDetails.mt5_server,
+                      challengeName: challengeInfo?.name || "Trading Challenge",
+                      accountSize: challengeInfo ? `$${(challengeInfo.account_size / 1000)}K` : "",
+                    },
+                  }),
+                });
+              } catch (e) { console.error("Failed to send credentials email:", e); }
+            }
           }
+
+          // Send purchase confirmation email
+          try {
+            const { data: challengeInfo2 } = await adminClient
+              .from("challenges")
+              .select("name, account_size")
+              .eq("id", purchase.challenge_id)
+              .single();
+
+            await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "purchase_confirmation",
+                recipientUserId: user.id,
+                data: {
+                  challengeName: challengeInfo2?.name || "Trading Challenge",
+                  accountSize: challengeInfo2 ? `$${(challengeInfo2.account_size / 1000)}K` : "",
+                  amountPaid: `$${captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value || "0"}`,
+                },
+              }),
+            });
+          } catch (e) { console.error("Failed to send purchase confirmation email:", e); }
         }
       }
 
