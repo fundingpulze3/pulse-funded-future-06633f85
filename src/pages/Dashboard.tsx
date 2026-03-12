@@ -82,6 +82,7 @@ const Dashboard = () => {
   const [userCertificates, setUserCertificates] = useState<UserCertificate[]>([]);
   const [credentials, setCredentials] = useState<TradingCredential[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
@@ -95,23 +96,51 @@ const Dashboard = () => {
     if (user) fetchAllData();
   }, [user, authLoading]);
 
+  const withTimeout = <T,>(promise: Promise<T>, ms = 12000): Promise<T> =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("Dashboard request timeout")), ms);
+      promise
+        .then((value) => {
+          clearTimeout(timer);
+          resolve(value);
+        })
+        .catch((error) => {
+          clearTimeout(timer);
+          reject(error);
+        });
+    });
+
   const fetchAllData = async () => {
-    const [profileRes, referralsRes, purchasesRes, certsRes, credsRes] = await Promise.all([
-      supabase.from("profiles").select("referral_code, display_name, email, avatar_url, created_at").eq("user_id", user!.id).single(),
-      supabase.from("affiliate_referrals").select("*").eq("referrer_id", user!.id),
-      supabase.from("challenge_purchases").select("*, challenges(name, account_size, profit_target, daily_drawdown, max_drawdown, step_type)").eq("user_id", user!.id).order("created_at", { ascending: false }),
-      supabase.from("user_certificates").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }),
-      supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id").eq("assigned_to", user!.id),
-    ]);
-    if (profileRes.data) setProfile(profileRes.data);
-    if (referralsRes.data) setReferrals(referralsRes.data);
-    if (purchasesRes.data) setPurchases(purchasesRes.data as unknown as Purchase[]);
-    if (certsRes.data) setUserCertificates(certsRes.data as any);
-    if (credsRes.data) setCredentials(credsRes.data as any);
-    if (!selectedAccount && purchasesRes.data && purchasesRes.data.length > 0) {
-      setSelectedAccount((purchasesRes.data as any)[0].id);
+    try {
+      setLoading(true);
+      setLoadError(null);
+
+      const [profileRes, referralsRes, purchasesRes, certsRes, credsRes] = await withTimeout(
+        Promise.all([
+          supabase.from("profiles").select("referral_code, display_name, email, avatar_url, created_at").eq("user_id", user!.id).single(),
+          supabase.from("affiliate_referrals").select("*").eq("referrer_id", user!.id),
+          supabase.from("challenge_purchases").select("*, challenges(name, account_size, profit_target, daily_drawdown, max_drawdown, step_type)").eq("user_id", user!.id).order("created_at", { ascending: false }),
+          supabase.from("user_certificates").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }),
+          supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id").eq("assigned_to", user!.id),
+        ])
+      );
+
+      if (profileRes.data) setProfile(profileRes.data);
+      if (referralsRes.data) setReferrals(referralsRes.data);
+      if (purchasesRes.data) setPurchases(purchasesRes.data as unknown as Purchase[]);
+      if (certsRes.data) setUserCertificates(certsRes.data as any);
+      if (credsRes.data) setCredentials(credsRes.data as any);
+
+      if (!selectedAccount && purchasesRes.data && purchasesRes.data.length > 0) {
+        setSelectedAccount((purchasesRes.data as any)[0].id);
+      }
+    } catch (error) {
+      console.error("Dashboard load failed:", error);
+      setLoadError("Could not load dashboard data. Please retry.");
+      toast.error("Dashboard failed to load");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const copyReferralLink = () => {
@@ -282,8 +311,24 @@ const Dashboard = () => {
           animate={{ opacity: 1, scale: 1 }}
         >
           <div className="w-10 h-10 border-2 border-highlight border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground font-medium">Loading dashboard...</p>
+          <p className="text-sm text-foreground/80 font-medium">Loading dashboard...</p>
         </motion.div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar isDark={true} onToggleTheme={() => {}} />
+        <div className="max-w-7xl mx-auto pt-28 pb-16 px-4 sm:px-6">
+          <div className="glass-card p-8 text-center">
+            <p className="text-lg font-display font-bold mb-2">Dashboard unavailable</p>
+            <p className="text-muted-foreground mb-5">{loadError}</p>
+            <Button className="rounded-xl" onClick={fetchAllData}>Retry</Button>
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }
