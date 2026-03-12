@@ -731,6 +731,41 @@ const Dashboard = () => {
                 </div>
               )}
 
+              {/* Monthly P&L Table */}
+              {activeAccountStats?.monthlyPL && typeof activeAccountStats.monthlyPL === "object" && (
+                <div className="glass-card p-5">
+                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Monthly P&L</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border/50">
+                          <th className="px-4 py-2">Month</th>
+                          {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map(m => (
+                            <th key={m} className="px-2 py-2 text-center">{m}</th>
+                          ))}
+                          <th className="px-4 py-2 text-center">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-sm">
+                        {Object.entries(activeAccountStats.monthlyPL).map(([year, months]: [string, any]) => (
+                          <tr key={year} className="border-b border-border/20">
+                            <td className="px-4 py-3 font-bold text-foreground">{year}</td>
+                            {Array.isArray(months) ? months.slice(0, 12).map((val: number, i: number) => (
+                              <td key={i} className={`px-2 py-3 text-center text-xs font-mono font-bold ${val > 0 ? "text-green-400" : val < 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                                {val !== 0 ? `$${val.toFixed(0)}` : "—"}
+                              </td>
+                            )) : Array(12).fill(null).map((_, i) => <td key={i} className="px-2 py-3 text-center text-muted-foreground">—</td>)}
+                            <td className="px-4 py-3 text-center font-bold text-foreground">
+                              {Array.isArray(months) ? `$${months.reduce((s: number, v: number) => s + (v || 0), 0).toFixed(0)}` : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {/* MT5 Credentials */}
               {credentials.length > 0 && (
                 <div className="glass-card p-6">
