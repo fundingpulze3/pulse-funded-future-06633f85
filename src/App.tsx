@@ -54,6 +54,7 @@ const AppRoutes = () => {
       <Route path="/blog/:slug" element={<BlogPost />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/about" element={<About />} />

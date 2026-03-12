@@ -116,13 +116,6 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={onToggleTheme}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Toggle theme"
-            >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
 
             {user ? (
               <div className="hidden sm:flex items-center gap-2">
