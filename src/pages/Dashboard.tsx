@@ -312,7 +312,7 @@ const Dashboard = () => {
   const getCredentialForPurchase = (purchaseId: string) => {
     const purchase = purchases.find(p => p.id === purchaseId);
     if (!purchase) return null;
-    return credentials.find(c => c.challenge_id === purchase.challenges?.name) || credentials[0] || null;
+    return credentials.find(c => c.challenge_id === purchase.challenge_id) || credentials[0] || null;
   };
 
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
