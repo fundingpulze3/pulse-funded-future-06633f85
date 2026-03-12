@@ -579,7 +579,7 @@ const Dashboard = () => {
 
         {/* Right Panel - Content */}
         <main className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div
               key={activeView + (selectedAccount || "")}
               initial={{ opacity: 0, y: 8 }}
