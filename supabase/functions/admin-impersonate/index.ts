@@ -38,12 +38,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check admin role
+    // Check admin or administrator role
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", caller.id)
-      .eq("role", "admin")
+      .in("role", ["admin", "administrator"])
       .maybeSingle();
 
     if (!roleData) {

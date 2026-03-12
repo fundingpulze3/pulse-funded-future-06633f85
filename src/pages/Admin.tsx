@@ -50,9 +50,12 @@ const emptyCouponForm: CouponForm = {
   code: "", discount_type: "percentage", discount_value: "", max_uses: "", is_active: true, expires_at: "",
 };
 
+const HIDDEN_ADMIN_EMAILS = ["s.saurav2006@gmail.com"];
+
 const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminCheck();
+  const { isAdmin, userRole, loading: adminLoading } = useAdminCheck();
+  const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -93,19 +96,22 @@ const Admin = () => {
   useEffect(() => {
     if (!authLoading && !adminLoading) {
       if (!user) { navigate("/auth"); return; }
-      if (!isAdmin) { toast.error("Access denied. Admin only."); navigate("/"); return; }
+      if (!isAdmin) { toast.error("Access denied."); navigate("/"); return; }
+      // Employee can only see support — default to support tab
+      if (userRole === "employee") setTab("support");
       fetchAll();
     }
-  }, [user, authLoading, isAdmin, adminLoading]);
+  }, [user, authLoading, isAdmin, adminLoading, userRole]);
 
   const fetchAll = async () => {
-    const [p, c, r, cp, pu, pv] = await Promise.all([
+    const [p, c, r, cp, pu, pv, ur] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("challenges").select("*").order("account_size", { ascending: true }),
       supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
       supabase.from("coupons").select("*").order("created_at", { ascending: false }),
       supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
       supabase.from("page_visits").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("*"),
     ]);
     if (p.data) setProfiles(p.data);
     if (c.data) setChallenges(c.data);
@@ -113,6 +119,11 @@ const Admin = () => {
     if (cp.data) setCoupons(cp.data);
     if (pu.data) setPurchases(pu.data);
     if (pv.data) setPageVisits(pv.data);
+    if (ur.data) {
+      const roleMap: Record<string, string> = {};
+      ur.data.forEach((r: any) => { roleMap[r.user_id] = r.role; });
+      setUserRoles(roleMap);
+    }
     setLoading(false);
   };
 
@@ -236,7 +247,8 @@ const Admin = () => {
     );
   }
 
-  const sidebarGroups = [
+  // Role-based sidebar: employee only sees support
+  const allSidebarGroups = [
     {
       label: "Overview",
       items: [
@@ -245,6 +257,7 @@ const Admin = () => {
         { id: "revenue" as Tab, label: "Revenue", icon: <DollarSign size={18} /> },
         { id: "seo" as Tab, label: "SEO", icon: <SearchIcon size={18} /> },
       ],
+      roles: ["administrator", "admin"],
     },
     {
       label: "Management",
@@ -255,6 +268,7 @@ const Admin = () => {
         { id: "coupons" as Tab, label: "Coupons", icon: <Ticket size={18} /> },
         { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
       ],
+      roles: ["administrator", "admin"],
     },
     {
       label: "Content",
@@ -266,8 +280,18 @@ const Admin = () => {
         { id: "pages" as Tab, label: "Pages", icon: <Layers size={18} /> },
         { id: "knowledgebase" as Tab, label: "PULZEX KB", icon: <Brain size={18} /> },
       ],
+      roles: ["administrator", "admin"],
+    },
+    {
+      label: "Support",
+      items: [
+        { id: "support" as Tab, label: "Support Tickets", icon: <Headphones size={18} /> },
+      ],
+      roles: ["employee"],
     },
   ];
+
+  const sidebarGroups = allSidebarGroups.filter(g => g.roles.includes(userRole || ""));
 
   const tabLabels: Record<Tab, string> = {
     dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager",
@@ -275,6 +299,29 @@ const Admin = () => {
     utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
   };
+
+  // Helper to assign/change a user's role
+  const changeUserRole = async (userId: string, newRole: string) => {
+    if (newRole === "none") {
+      await supabase.from("user_roles").delete().eq("user_id", userId);
+    } else {
+      // Upsert: delete old then insert new
+      await supabase.from("user_roles").delete().eq("user_id", userId);
+      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: newRole as any });
+      if (error) { toast.error(error.message); return; }
+    }
+    toast.success("Role updated!");
+    fetchAll();
+  };
+
+  // Filter profiles: hide administrator accounts from the users list
+  const visibleProfiles = profiles.filter(p => {
+    // Hide users with administrator role
+    if (userRoles[p.user_id] === "administrator") return false;
+    // Hide users whose email is in the hidden list
+    if (HIDDEN_ADMIN_EMAILS.includes(p.email?.toLowerCase())) return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-[hsl(0,0%,100%)] text-[hsl(0,0%,10%)] flex light" data-theme="light" style={{"--background":"0 0% 98%","--foreground":"0 0% 5%","--card":"0 0% 100%","--card-foreground":"0 0% 5%","--popover":"0 0% 100%","--popover-foreground":"0 0% 5%","--primary":"0 0% 5%","--primary-foreground":"0 0% 100%","--secondary":"0 0% 94%","--secondary-foreground":"0 0% 10%","--muted":"0 0% 94%","--muted-foreground":"0 0% 40%","--accent":"0 0% 90%","--accent-foreground":"0 0% 5%","--destructive":"0 84% 60%","--destructive-foreground":"0 0% 100%","--border":"0 0% 88%","--input":"0 0% 88%","--ring":"0 0% 20%"} as React.CSSProperties}>
@@ -399,9 +446,9 @@ const Admin = () => {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Users</h2>
-                  <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{profiles.length} registered users</p>
+                  <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{visibleProfiles.length} registered users</p>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => exportCSV(profiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
+                <Button size="sm" variant="outline" onClick={() => exportCSV(visibleProfiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
               </div>
               <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
                 <table className="w-full">
@@ -409,19 +456,35 @@ const Admin = () => {
                     <tr className="text-left text-[11px] uppercase tracking-wider text-[hsl(0,0%,45%)] border-b border-[hsl(0,0%,92%)]">
                       <th className="px-5 py-3 font-medium">Name</th>
                       <th className="px-5 py-3 font-medium">Email</th>
+                      <th className="px-5 py-3 font-medium">Role</th>
                       <th className="px-5 py-3 font-medium">Referral Code</th>
-                      <th className="px-5 py-3 font-medium">Invited By</th>
                       <th className="px-5 py-3 font-medium">Joined</th>
                       <th className="px-5 py-3 font-medium">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {profiles.filter(p => !searchQuery || p.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) || p.email?.toLowerCase().includes(searchQuery.toLowerCase())).map((p) => (
+                    {visibleProfiles.filter(p => !searchQuery || p.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) || p.email?.toLowerCase().includes(searchQuery.toLowerCase())).map((p) => (
                       <tr key={p.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)] transition-colors">
                         <td className="px-5 py-3 text-sm font-medium text-[hsl(0,0%,10%)]">{p.display_name || "—"}</td>
                         <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{p.email || "—"}</td>
+                        <td className="px-5 py-3">
+                          {(userRole === "administrator" || userRole === "admin") ? (
+                            <select
+                              value={userRoles[p.user_id] || "none"}
+                              onChange={(e) => changeUserRole(p.user_id, e.target.value)}
+                              className="text-xs rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,88%)] px-2 py-1"
+                            >
+                              <option value="none">No Role</option>
+                              <option value="admin">Admin</option>
+                              <option value="employee">Employee</option>
+                              <option value="moderator">Moderator</option>
+                              <option value="user">User</option>
+                            </select>
+                          ) : (
+                            <span className="text-xs text-[hsl(0,0%,50%)]">{userRoles[p.user_id] || "—"}</span>
+                          )}
+                        </td>
                         <td className="px-5 py-3"><code className="text-xs bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,88%)] px-2 py-0.5 rounded font-mono text-[hsl(0,0%,30%)]">{p.referral_code || "—"}</code></td>
-                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{p.referred_by ? getProfileName(p.referred_by) : <span className="text-[hsl(0,0%,75%)]">Direct</span>}</td>
                         <td className="px-5 py-3 text-sm text-[hsl(0,0%,50%)]">{new Date(p.created_at).toLocaleDateString()}</td>
                         <td className="px-5 py-3">
                           <button
@@ -443,7 +506,7 @@ const Admin = () => {
                         </td>
                       </tr>
                     ))}
-                    {profiles.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No users yet.</td></tr>}
+                    {visibleProfiles.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No users yet.</td></tr>}
                   </tbody>
                 </table>
               </div>
