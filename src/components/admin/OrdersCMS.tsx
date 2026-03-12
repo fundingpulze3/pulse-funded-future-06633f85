@@ -13,7 +13,7 @@ interface OrdersCMSProps {
   onRefresh: () => void;
 }
 
-type StatusFilter = "all" | "pending" | "confirmed" | "cancelled";
+type StatusFilter = "all" | "pending" | "completed" | "cancelled";
 
 export default function OrdersCMS({
   purchases, profiles, challenges, getProfileName, getChallengeNameById, onRefresh,
@@ -39,13 +39,15 @@ export default function OrdersCMS({
   const counts = useMemo(() => ({
     all: purchases.length,
     pending: purchases.filter(p => p.payment_status === "pending").length,
-    confirmed: purchases.filter(p => p.payment_status === "confirmed").length,
+    completed: purchases.filter(p => p.payment_status === "completed").length,
     cancelled: purchases.filter(p => p.payment_status === "cancelled").length,
   }), [purchases]);
 
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id);
-    const { error } = await supabase.from("challenge_purchases").update({ payment_status: status, status: status === "confirmed" ? "active" : status }).eq("id", id);
+    const paymentStatus = status === "confirmed" ? "completed" : status;
+    const orderStatus = status === "confirmed" ? "active" : status;
+    const { error } = await supabase.from("challenge_purchases").update({ payment_status: paymentStatus, status: orderStatus }).eq("id", id);
     if (error) { toast.error(error.message); setUpdating(null); return; }
 
     // Auto-assign credentials when confirming
@@ -103,12 +105,12 @@ export default function OrdersCMS({
   const filters: { key: StatusFilter; label: string; color: string }[] = [
     { key: "all", label: "All", color: "" },
     { key: "pending", label: "Pending", color: "bg-amber-100 text-amber-700" },
-    { key: "confirmed", label: "Confirmed", color: "bg-emerald-100 text-emerald-700" },
+    { key: "completed", label: "Completed", color: "bg-emerald-100 text-emerald-700" },
     { key: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-700" },
   ];
 
   const statusBadge = (status: string) => {
-    if (status === "confirmed") return <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"><CheckCircle2 size={11} /> Confirmed</span>;
+    if (status === "completed") return <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"><CheckCircle2 size={11} /> Completed</span>;
     if (status === "cancelled") return <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700"><XCircle size={11} /> Cancelled</span>;
     return <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"><Clock size={11} /> Pending</span>;
   };
@@ -203,7 +205,7 @@ export default function OrdersCMS({
                 <td className="px-5 py-3 text-xs text-[hsl(0,0%,50%)]">{new Date(order.created_at).toLocaleString()}</td>
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-1.5">
-                    {order.payment_status !== "confirmed" && (
+                    {order.payment_status !== "completed" && (
                       <Button
                         size="sm"
                         onClick={() => updateStatus(order.id, "confirmed")}
