@@ -342,12 +342,14 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {userCertificates.map((cert) => {
                     const typeColors: Record<string, string> = {
-                      phase1_passed: "from-blue-500/20 to-blue-600/5 border-blue-500/30",
+    phase1_passed: "from-blue-500/20 to-blue-600/5 border-blue-500/30",
+                      phase2_passed: "from-cyan-500/20 to-cyan-600/5 border-cyan-500/30",
                       funded: "from-green-500/20 to-green-600/5 border-green-500/30",
                       payout: "from-purple-500/20 to-purple-600/5 border-purple-500/30",
                     };
                     const typeLabels: Record<string, string> = {
                       phase1_passed: "Phase 1 Passed",
+                      phase2_passed: "Phase 2 Passed",
                       funded: "Funded",
                       payout: "Payout",
                     };
@@ -413,10 +415,14 @@ const Dashboard = () => {
               </div>
 
               <div className="glass-card p-6 sm:p-8">
-                <h2 className="font-display font-bold text-foreground mb-4">Payout Information</h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Payouts are processed once your commission is approved. Approved commissions are paid out within 5-7 business days via your preferred payment method. If you have questions, contact our support team.
-                </p>
+              <h2 className="font-display font-bold text-foreground mb-4">Payout Information</h2>
+                <div className="text-sm text-muted-foreground leading-relaxed space-y-2">
+                  <p>• <span className="text-foreground font-medium">Profit Split:</span> 90%</p>
+                  <p>• <span className="text-foreground font-medium">Scaling:</span> Up to $1,000,000</p>
+                  <p>• <span className="text-foreground font-medium">Minimum Trading Days:</span> 7 days before payout eligible</p>
+                  <p>• <span className="text-foreground font-medium">Payout Processing:</span> 24 – 48 hours</p>
+                  <p className="text-xs mt-3">If you have questions, contact our support team.</p>
+                </div>
                 <Button variant="outline" className="mt-5 rounded-xl" onClick={() => navigate("/help")}>
                   Contact Support
                 </Button>
