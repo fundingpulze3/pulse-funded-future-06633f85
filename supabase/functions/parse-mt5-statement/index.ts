@@ -24,7 +24,6 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify user is admin
     const userClient = createClient(supabaseUrl, supabaseAnon, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -100,6 +99,36 @@ Deno.serve(async (req) => {
     // ─── AUTO-EVALUATE ───
     const evaluation = evaluateAccount(parsed, challenge);
 
+    // If breached (drawdown violation) → FAIL immediately, no certificate
+    if (evaluation.breached) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          evaluation,
+          parsed,
+          message: "Account BREACHED — drawdown limit exceeded. This account is failed.",
+          violations: evaluation.violations,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // If profit target not yet reached → IN PROGRESS, not failed
+    if (!evaluation.targetReached) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          evaluation,
+          parsed,
+          status: "in_progress",
+          message: `Account is still in progress. Current profit: ${evaluation.profitPercent?.toFixed(2)}% — Target: ${evaluation.details.profitTarget}. No drawdown breach detected. Keep trading!`,
+          violations: [],
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── PASSED: target reached + no breach ───
     // Check existing certificates for this user + credential to determine stage
     const { data: existingCerts } = await adminClient
       .from("user_certificates")
@@ -110,16 +139,19 @@ Deno.serve(async (req) => {
 
     const existingTypes = (existingCerts || []).map(c => c.certificate_type);
     
-    // Determine what certificate to issue based on progression
     let certificateType: string;
     let title: string;
     let description: string;
 
-    if (!existingTypes.includes("phase1_passed") && evaluation.passedPhase1) {
+    if (!existingTypes.includes("phase1_passed")) {
       certificateType = "phase1_passed";
       title = "Phase 1 Challenge Passed ✅";
       description = `Account #${parsed.accountNumber} passed Phase 1 — Profit: $${evaluation.profitAmount?.toFixed(2) || "N/A"} (${evaluation.profitPercent?.toFixed(2) || "N/A"}%)`;
-    } else if (existingTypes.includes("phase1_passed") && !existingTypes.includes("funded") && evaluation.passedPhase1) {
+    } else if (!existingTypes.includes("phase2_passed")) {
+      certificateType = "phase2_passed";
+      title = "Phase 2 Verification Passed ✅";
+      description = `Account #${parsed.accountNumber} passed Phase 2 — Profit: $${evaluation.profitAmount?.toFixed(2) || "N/A"} (${evaluation.profitPercent?.toFixed(2) || "N/A"}%)`;
+    } else if (!existingTypes.includes("funded")) {
       certificateType = "funded";
       title = "Funded Account Certificate 🏆";
       description = `Account #${parsed.accountNumber} is now Funded — Balance: $${parsed.balance?.toLocaleString() || "N/A"}`;
@@ -127,18 +159,15 @@ Deno.serve(async (req) => {
       const payoutCount = existingTypes.filter(t => t === "payout").length + 1;
       certificateType = "payout";
       title = `Payout #${payoutCount} Certificate 💰`;
-      description = `Account #${parsed.accountNumber} — Payout: $${evaluation.profitAmount?.toFixed(2) || "N/A"}`;
+      description = `Account #${parsed.accountNumber} — Payout: $${evaluation.profitAmount?.toFixed(2) || "N/A"} (90% split)`;
     } else {
-      // Account didn't pass or already has this cert
       return new Response(
         JSON.stringify({
           success: false,
           evaluation,
           parsed,
-          message: evaluation.passedPhase1
-            ? "Certificate already exists for this stage. Upload a newer statement for the next stage."
-            : "Account has NOT passed. See evaluation details.",
-          violations: evaluation.violations,
+          message: "Certificate already exists for this stage. Upload a newer statement for the next stage.",
+          violations: [],
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -191,13 +220,22 @@ Deno.serve(async (req) => {
 });
 
 /**
- * Evaluate if the account passed based on challenge rules
+ * Evaluate account:
+ * - BREACH (fail) = only if drawdown limits exceeded
+ * - IN PROGRESS = profit target not yet reached but no breach
+ * - PASSED = profit target reached + no breach
+ * 
+ * Rules:
+ * Phase 1: Profit Target 8%, Max Daily Loss 5%, Max Overall Loss 10%, No min trading days
+ * Phase 2: Profit Target 5%, Max Daily Loss 5%, Max Overall Loss 10%, No min trading days
+ * Funded: 90% profit split, scaling up to $1M, min 7 trading days for payout, payout 24-48hrs
  */
 function evaluateAccount(
   stats: Record<string, any>,
   challenge: Record<string, any>
 ): {
-  passedPhase1: boolean;
+  breached: boolean;
+  targetReached: boolean;
   profitAmount: number | null;
   profitPercent: number | null;
   violations: string[];
@@ -212,26 +250,32 @@ function evaluateAccount(
   const profitAmount = profit > 0 ? profit : (balance > deposit ? balance - deposit : 0);
   const profitPercent = deposit > 0 ? (profitAmount / deposit) * 100 : 0;
 
-  // Parse profit target (e.g., "8%" or "10%")
+  // Parse profit target (e.g., "8%" or "5%")
   const targetMatch = challenge.profit_target?.match(/([\d.]+)/);
   const targetPercent = targetMatch ? parseFloat(targetMatch[1]) : 8;
   details.profitTarget = `${targetPercent}%`;
   details.actualProfit = `${profitPercent.toFixed(2)}%`;
+  details.profitSplit = "90%";
+  details.scalingUpTo = "$1,000,000";
+  details.payoutTime = "24-48 hrs";
 
-  if (profitPercent < targetPercent) {
-    violations.push(`Profit ${profitPercent.toFixed(2)}% below target ${targetPercent}%`);
-  }
+  const targetReached = profitPercent >= targetPercent;
 
-  // Parse max drawdown (e.g., "10%" or "12%")
+  // ─── DRAWDOWN CHECKS (these are the ONLY things that cause a breach/fail) ───
+
+  // Parse max drawdown (e.g., "10%")
   const maxDDMatch = challenge.max_drawdown?.match(/([\d.]+)/);
   const maxDDPercent = maxDDMatch ? parseFloat(maxDDMatch[1]) : 10;
   details.maxDrawdownLimit = `${maxDDPercent}%`;
+
+  let breached = false;
 
   if (stats.maxDrawdown && deposit > 0) {
     const ddPercent = (stats.maxDrawdown / deposit) * 100;
     details.actualMaxDrawdown = `${ddPercent.toFixed(2)}%`;
     if (ddPercent > maxDDPercent) {
-      violations.push(`Max drawdown ${ddPercent.toFixed(2)}% exceeded limit ${maxDDPercent}%`);
+      violations.push(`Max overall drawdown ${ddPercent.toFixed(2)}% exceeded limit ${maxDDPercent}%`);
+      breached = true;
     }
   }
 
@@ -240,18 +284,24 @@ function evaluateAccount(
   const dailyDDPercent = dailyDDMatch ? parseFloat(dailyDDMatch[1]) : 5;
   details.dailyDrawdownLimit = `${dailyDDPercent}%`;
 
-  // Parse min trading days (e.g., "5 days" or "3")
-  const minDaysMatch = challenge.min_trading_days?.match(/(\d+)/);
-  const minDays = minDaysMatch ? parseInt(minDaysMatch[1]) : 0;
-  details.minTradingDays = minDays;
-
-  if (stats.totalTrades != null && stats.totalTrades < minDays) {
-    // Using total trades as a proxy if trading days not available
-    details.note = "Using total trades as proxy for trading days";
+  // If we can detect daily drawdown from the statement
+  if (stats.dailyDrawdown && deposit > 0) {
+    const dailyDD = (stats.dailyDrawdown / deposit) * 100;
+    details.actualDailyDrawdown = `${dailyDD.toFixed(2)}%`;
+    if (dailyDD > dailyDDPercent) {
+      violations.push(`Daily drawdown ${dailyDD.toFixed(2)}% exceeded limit ${dailyDDPercent}%`);
+      breached = true;
+    }
   }
 
+  // Min trading days info (no minimum for phases, 7 days for payout)
+  details.minTradingDays = "No minimum (phases)";
+  details.payoutMinDays = "7 days";
+  details.timeLimit = "Unlimited";
+
   return {
-    passedPhase1: violations.length === 0 && profitAmount > 0,
+    breached,
+    targetReached,
     profitAmount,
     profitPercent,
     violations,

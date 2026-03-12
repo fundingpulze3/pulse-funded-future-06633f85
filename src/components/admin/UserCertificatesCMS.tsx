@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Award, Trash2, Eye, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Upload, FileText, Award, Trash2, Eye, CheckCircle2, XCircle, AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -64,8 +64,10 @@ const UserCertificatesCMS = () => {
       setLastResult(result);
 
       if (!res.ok || !result.success) {
-        if (result.violations?.length > 0) {
-          toast.error("Account did NOT pass. See details below.");
+        if (result.status === "in_progress") {
+          toast.info("Account still in progress — no breach detected. Keep trading!");
+        } else if (result.violations?.length > 0) {
+          toast.error("Account BREACHED — drawdown limit exceeded.");
         } else {
           toast.error(result.error || result.message || "Failed to process statement");
         }
@@ -91,6 +93,7 @@ const UserCertificatesCMS = () => {
 
   const typeLabels: Record<string, { label: string; color: string; emoji: string }> = {
     phase1_passed: { label: "Phase 1", color: "bg-blue-50 text-blue-600", emoji: "✅" },
+    phase2_passed: { label: "Phase 2", color: "bg-cyan-50 text-cyan-600", emoji: "✅" },
     funded: { label: "Funded", color: "bg-green-50 text-green-600", emoji: "🏆" },
     payout: { label: "Payout", color: "bg-purple-50 text-purple-600", emoji: "💰" },
   };
@@ -105,8 +108,8 @@ const UserCertificatesCMS = () => {
           <Upload size={32} className="mx-auto mb-3 text-[hsl(0,0%,50%)]" />
           <h3 className="font-semibold text-[hsl(0,0%,10%)] mb-1">Upload MT5 Statement</h3>
           <p className="text-xs text-[hsl(0,0%,50%)] mb-4 max-w-md mx-auto">
-            Upload an HTML statement from MetaTrader 5. The system will automatically extract stats,
-            evaluate pass/fail against the challenge rules, and issue the appropriate certificate.
+            Upload an HTML statement. The system evaluates against challenge rules — only drawdown breaches cause a fail.
+            If profit target isn't reached yet, it shows "in progress" so the trader can keep going.
           </p>
 
           <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[hsl(0,0%,0%)] text-white text-sm font-medium cursor-pointer hover:bg-[hsl(0,0%,15%)] transition-colors">
@@ -119,15 +122,29 @@ const UserCertificatesCMS = () => {
 
       {/* Last Result */}
       {lastResult && (
-        <div className={`rounded-xl p-5 border ${lastResult.success ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+        <div className={`rounded-xl p-5 border ${
+          lastResult.success 
+            ? "bg-green-50 border-green-200" 
+            : lastResult.status === "in_progress"
+              ? "bg-amber-50 border-amber-200"
+              : "bg-red-50 border-red-200"
+        }`}>
           <div className="flex items-start gap-3">
             {lastResult.success ? (
               <CheckCircle2 size={20} className="text-green-600 mt-0.5 shrink-0" />
+            ) : lastResult.status === "in_progress" ? (
+              <Clock size={20} className="text-amber-600 mt-0.5 shrink-0" />
             ) : (
               <XCircle size={20} className="text-red-600 mt-0.5 shrink-0" />
             )}
             <div className="flex-1 min-w-0">
-              <p className={`font-semibold text-sm ${lastResult.success ? "text-green-800" : "text-red-800"}`}>
+              <p className={`font-semibold text-sm ${
+                lastResult.success 
+                  ? "text-green-800" 
+                  : lastResult.status === "in_progress"
+                    ? "text-amber-800"
+                    : "text-red-800"
+              }`}>
                 {lastResult.success ? lastResult.message : (lastResult.message || lastResult.error || "Failed")}
               </p>
 
@@ -161,10 +178,10 @@ const UserCertificatesCMS = () => {
                 </div>
               )}
 
-              {/* Violations */}
+              {/* Violations (only drawdown breaches) */}
               {lastResult.violations?.length > 0 && (
                 <div className="mt-3 space-y-1">
-                  <p className="text-xs font-semibold text-red-700 uppercase tracking-wider">Violations</p>
+                  <p className="text-xs font-semibold text-red-700 uppercase tracking-wider">⚠️ Breach Violations</p>
                   {lastResult.violations.map((v: string, i: number) => (
                     <p key={i} className="text-xs text-red-700 flex items-center gap-1">
                       <XCircle size={12} /> {v}
@@ -190,14 +207,39 @@ const UserCertificatesCMS = () => {
       <div className="bg-blue-50 rounded-xl p-4 flex items-start gap-3">
         <AlertCircle size={16} className="text-blue-500 mt-0.5 shrink-0" />
         <div className="text-xs text-blue-700">
-          <p className="font-medium mb-1">How it works:</p>
-          <ol className="list-decimal list-inside space-y-1">
-            <li>Upload the MT5 HTML statement</li>
-            <li>System extracts account number &amp; stats automatically</li>
-            <li>Evaluates against challenge rules (profit target, drawdown limits)</li>
-            <li>If passed → issues the next certificate in progression (Phase 1 → Funded → Payout)</li>
-            <li>If failed → shows what violated and why</li>
-          </ol>
+          <p className="font-medium mb-1">Challenge Rules:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+            <div>
+              <p className="font-semibold">Phase 1 — Challenge</p>
+              <ul className="list-disc list-inside space-y-0.5 mt-1">
+                <li>Profit Target: 8%</li>
+                <li>Max Daily Loss: 5%</li>
+                <li>Max Overall Loss: 10%</li>
+                <li>Min Trading Days: None</li>
+                <li>Time Limit: Unlimited</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold">Phase 2 — Verification</p>
+              <ul className="list-disc list-inside space-y-0.5 mt-1">
+                <li>Profit Target: 5%</li>
+                <li>Max Daily Loss: 5%</li>
+                <li>Max Overall Loss: 10%</li>
+                <li>Min Trading Days: None</li>
+                <li>Time Limit: Unlimited</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold">Funded Account</p>
+              <ul className="list-disc list-inside space-y-0.5 mt-1">
+                <li>Profit Split: 90%</li>
+                <li>Scaling up to: $1M</li>
+                <li>Min 7 trading days for payout</li>
+                <li>Payout: 24-48 hrs</li>
+              </ul>
+            </div>
+          </div>
+          <p className="mt-2 font-medium text-amber-700">⚠️ Only drawdown breaches fail an account. Profit target not reached = "In Progress" (keep trading).</p>
         </div>
       </div>
 
@@ -290,10 +332,12 @@ const UserCertificatesCMS = () => {
                 <div>
                   <p className="text-xs font-semibold text-[hsl(0,0%,45%)] uppercase tracking-wider mb-2">Evaluation</p>
                   <div className="flex items-center gap-2 mb-2">
-                    {previewCert.stats.evaluation.passedPhase1 ? (
+                    {previewCert.stats.evaluation.breached === false && previewCert.stats.evaluation.targetReached ? (
                       <span className="text-xs text-green-600 font-medium flex items-center gap-1"><CheckCircle2 size={12} /> Passed</span>
+                    ) : previewCert.stats.evaluation.breached ? (
+                      <span className="text-xs text-red-600 font-medium flex items-center gap-1"><XCircle size={12} /> Breached</span>
                     ) : (
-                      <span className="text-xs text-red-600 font-medium flex items-center gap-1"><XCircle size={12} /> Failed</span>
+                      <span className="text-xs text-amber-600 font-medium flex items-center gap-1"><Clock size={12} /> In Progress</span>
                     )}
                   </div>
                   {previewCert.stats.evaluation.details && (
