@@ -71,6 +71,11 @@ type AccountFilter = "all" | "1-step" | "2-step" | "ongoing" | "breached" | "fun
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Ensure dark mode is always applied
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+  }, []);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
