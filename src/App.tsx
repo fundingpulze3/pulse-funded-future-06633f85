@@ -12,6 +12,7 @@ import BlogPost from "./pages/BlogPost";
 import Auth from "./pages/Auth";
 import AdminAuth from "./pages/AdminAuth";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
+import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import Checkout from "./pages/Checkout";
 import FAQ from "./pages/FAQ";
