@@ -342,7 +342,8 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {userCertificates.map((cert) => {
                     const typeColors: Record<string, string> = {
-                      phase1_passed: "from-blue-500/20 to-blue-600/5 border-blue-500/30",
+    phase1_passed: "from-blue-500/20 to-blue-600/5 border-blue-500/30",
+                      phase2_passed: "from-cyan-500/20 to-cyan-600/5 border-cyan-500/30",
                       funded: "from-green-500/20 to-green-600/5 border-green-500/30",
                       payout: "from-purple-500/20 to-purple-600/5 border-purple-500/30",
                     };
