@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
+import pulzexLogo from "@/assets/pulzex-logo.png";
 
 /* ─── Types ─── */
 interface Message {
@@ -452,9 +453,9 @@ const LiveChat = () => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setOpen(true)}
-            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg glow-box group"
+            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg glow-box group overflow-hidden"
           >
-            <Sparkles size={22} className="group-hover:rotate-12 transition-transform" />
+            <img src={pulzexLogo} alt="PULZEX" className="w-full h-full object-cover" />
             {unread > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                 {unread}
@@ -479,8 +480,8 @@ const LiveChat = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/30 bg-foreground text-background">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-background/15 flex items-center justify-center">
-                  <Sparkles size={16} />
+                <div className="w-8 h-8 rounded-full overflow-hidden">
+                  <img src={pulzexLogo} alt="PULZEX" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <span className="font-display font-semibold text-sm">PULZEX</span>
@@ -522,8 +523,8 @@ const LiveChat = () => {
                 {!infoCollected ? (
                   <div className="p-5 space-y-4">
                     <div className="text-center mb-2">
-                      <div className="w-12 h-12 rounded-full bg-foreground text-background flex items-center justify-center mx-auto mb-3">
-                        <Sparkles size={24} />
+                      <div className="w-12 h-12 rounded-full overflow-hidden mx-auto mb-3">
+                        <img src={pulzexLogo} alt="PULZEX" className="w-full h-full object-cover" />
                       </div>
                       <h3 className="font-display font-bold text-lg text-foreground">Meet PULZEX</h3>
                       <p className="text-xs text-muted-foreground mt-1">
