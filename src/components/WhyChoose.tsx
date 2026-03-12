@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Zap, Headphones, Banknote, ShieldCheck } from "lucide-react";
+import whyChooseBanner from "@/assets/why-choose-banner.jpg";
 
 const features = [
   { icon: Zap, title: "Tight Spreads", desc: "Raw institutional spreads from 0.0 pips" },
@@ -33,6 +34,16 @@ const WhyChoose = () => {
         <h2 className="wc-header font-display text-3xl sm:text-4xl font-bold text-center mb-12">
           Why Choose <span className="text-gradient">Funding Pulze</span>
         </h2>
+
+        {/* Banner image */}
+        <div className="mb-10 rounded-2xl overflow-hidden glow-border">
+          <img
+            src={whyChooseBanner}
+            alt="More Power, Less Risk — Up to $200K simulated capital"
+            className="w-full h-auto object-cover"
+            loading="lazy"
+          />
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {features.map(({ icon: Icon, title, desc }) => (
