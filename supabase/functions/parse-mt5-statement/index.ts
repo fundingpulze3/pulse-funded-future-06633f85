@@ -115,6 +115,9 @@ Deno.serve(async (req) => {
 
     // If profit target not yet reached → IN PROGRESS, not failed
     if (!evaluation.targetReached) {
+      // Still store the parsed stats for dashboard display even if in progress
+      await storeLatestStats(adminClient, credential, parsed);
+
       return new Response(
         JSON.stringify({
           success: false,
@@ -129,7 +132,6 @@ Deno.serve(async (req) => {
     }
 
     // ─── PASSED: target reached + no breach ───
-    // Check existing certificates for this user + credential to determine stage
     const { data: existingCerts } = await adminClient
       .from("user_certificates")
       .select("certificate_type")
@@ -177,7 +179,7 @@ Deno.serve(async (req) => {
     const fileName = `${parsed.accountNumber}_${certificateType}_${Date.now()}.html`;
     await adminClient.storage.from("mt5-statements").upload(fileName, file, { contentType: file.type, upsert: true });
 
-    // Create certificate
+    // Create certificate with rich stats
     const { data: cert, error: certError } = await adminClient
       .from("user_certificates")
       .insert({
@@ -220,15 +222,41 @@ Deno.serve(async (req) => {
 });
 
 /**
- * Evaluate account:
- * - BREACH (fail) = only if drawdown limits exceeded
- * - IN PROGRESS = profit target not yet reached but no breach
- * - PASSED = profit target reached + no breach
- * 
- * Rules:
- * Phase 1: Profit Target 8%, Max Daily Loss 5%, Max Overall Loss 10%, No min trading days
- * Phase 2: Profit Target 5%, Max Daily Loss 5%, Max Overall Loss 10%, No min trading days
- * Funded: 90% profit split, scaling up to $1M, min 7 trading days for payout, payout 24-48hrs
+ * Store latest parsed stats to the most recent certificate for dashboard display
+ */
+async function storeLatestStats(adminClient: any, credential: any, parsed: Record<string, any>) {
+  // Upsert a "latest_stats" type record so the dashboard always has fresh data
+  const { data: existing } = await adminClient
+    .from("user_certificates")
+    .select("id")
+    .eq("credential_id", credential.id)
+    .eq("user_id", credential.assigned_to)
+    .eq("certificate_type", "latest_stats")
+    .single();
+
+  if (existing) {
+    await adminClient
+      .from("user_certificates")
+      .update({ stats: parsed, title: "Latest Trading Stats", description: `Account #${parsed.accountNumber} — Latest statement upload` })
+      .eq("id", existing.id);
+  } else {
+    await adminClient
+      .from("user_certificates")
+      .insert({
+        user_id: credential.assigned_to,
+        purchase_id: credential.purchase_id,
+        credential_id: credential.id,
+        certificate_type: "latest_stats",
+        account_number: parsed.accountNumber,
+        stats: parsed,
+        title: "Latest Trading Stats",
+        description: `Account #${parsed.accountNumber} — Latest statement upload`,
+      });
+  }
+}
+
+/**
+ * Evaluate account
  */
 function evaluateAccount(
   stats: Record<string, any>,
@@ -250,7 +278,6 @@ function evaluateAccount(
   const profitAmount = profit > 0 ? profit : (balance > deposit ? balance - deposit : 0);
   const profitPercent = deposit > 0 ? (profitAmount / deposit) * 100 : 0;
 
-  // Parse profit target (e.g., "8%" or "5%")
   const targetMatch = challenge.profit_target?.match(/([\d.]+)/);
   const targetPercent = targetMatch ? parseFloat(targetMatch[1]) : 8;
   details.profitTarget = `${targetPercent}%`;
@@ -261,30 +288,26 @@ function evaluateAccount(
 
   const targetReached = profitPercent >= targetPercent;
 
-  // ─── DRAWDOWN CHECKS (these are the ONLY things that cause a breach/fail) ───
-
-  // Parse max drawdown (e.g., "10%")
   const maxDDMatch = challenge.max_drawdown?.match(/([\d.]+)/);
   const maxDDPercent = maxDDMatch ? parseFloat(maxDDMatch[1]) : 10;
   details.maxDrawdownLimit = `${maxDDPercent}%`;
 
   let breached = false;
 
-  if (stats.maxDrawdown && deposit > 0) {
-    const ddPercent = (stats.maxDrawdown / deposit) * 100;
-    details.actualMaxDrawdown = `${ddPercent.toFixed(2)}%`;
-    if (ddPercent > maxDDPercent) {
-      violations.push(`Max overall drawdown ${ddPercent.toFixed(2)}% exceeded limit ${maxDDPercent}%`);
+  // Use drawdown from parsed JSON report if available
+  const ddValue = stats.drawdownPercent ?? (stats.maxDrawdown && deposit > 0 ? (stats.maxDrawdown / deposit) * 100 : 0);
+  if (ddValue > 0) {
+    details.actualMaxDrawdown = `${ddValue.toFixed(2)}%`;
+    if (ddValue > maxDDPercent) {
+      violations.push(`Max overall drawdown ${ddValue.toFixed(2)}% exceeded limit ${maxDDPercent}%`);
       breached = true;
     }
   }
 
-  // Parse daily drawdown (e.g., "5%")
   const dailyDDMatch = challenge.daily_drawdown?.match(/([\d.]+)/);
   const dailyDDPercent = dailyDDMatch ? parseFloat(dailyDDMatch[1]) : 5;
   details.dailyDrawdownLimit = `${dailyDDPercent}%`;
 
-  // If we can detect daily drawdown from the statement
   if (stats.dailyDrawdown && deposit > 0) {
     const dailyDD = (stats.dailyDrawdown / deposit) * 100;
     details.actualDailyDrawdown = `${dailyDD.toFixed(2)}%`;
@@ -294,25 +317,192 @@ function evaluateAccount(
     }
   }
 
-  // Min trading days info (no minimum for phases, 7 days for payout)
   details.minTradingDays = "No minimum (phases)";
   details.payoutMinDays = "7 days";
   details.timeLimit = "Unlimited";
 
-  return {
-    breached,
-    targetReached,
-    profitAmount,
-    profitPercent,
-    violations,
-    details,
-  };
+  return { breached, targetReached, profitAmount, profitPercent, violations, details };
 }
 
 /**
- * Parse MT5 HTML statement
+ * Parse MT5 HTML statement — supports both JSON-embedded reports (window.__report)
+ * and plain HTML table-based statements
  */
 function parseMT5Statement(html: string): Record<string, any> {
+  // Try JSON-embedded report first (modern MT5 reports)
+  const jsonMatch = html.match(/window\.__report\s*=\s*\n?([\s\S]*?);\s*<\/script>/);
+  if (jsonMatch) {
+    try {
+      const report = JSON.parse(jsonMatch[1]);
+      return parseJsonReport(report);
+    } catch (e) {
+      console.error("Failed to parse JSON report, falling back to regex:", e);
+    }
+  }
+
+  // Fallback: regex-based parsing for plain HTML statements
+  return parseHtmlRegex(html);
+}
+
+/**
+ * Parse the rich JSON report from window.__report
+ */
+function parseJsonReport(report: any): Record<string, any> {
+  const result: Record<string, any> = {};
+
+  // Account info
+  const acc = report.account || {};
+  result.accountNumber = String(acc.account || "");
+  result.name = acc.name || "";
+  result.currency = acc.currency || "USD";
+  result.broker = acc.broker || "";
+  result.accountType = acc.type || "";
+
+  // Balance & equity
+  const bal = report.balance || {};
+  result.balance = bal.balance ?? 0;
+  result.equity = bal.equity ?? 0;
+
+  // Balance/equity chart data (time series for dashboard graph)
+  if (bal.chart && Array.isArray(bal.chart)) {
+    result.balanceChart = bal.chart.map((p: any) => ({
+      timestamp: p.x,
+      balance: p.y?.[0] ?? 0,
+      equity: p.y?.[1] ?? p.y?.[0] ?? 0,
+    }));
+  }
+
+  // Summary
+  const summary = report.summary || {};
+  result.gain = summary.gain ?? 0; // as decimal e.g. 0.00405 = 0.405%
+  result.gainPercent = (summary.gain ?? 0) * 100;
+  result.deposit = Array.isArray(summary.deposit) ? summary.deposit[0] : summary.deposit ?? 0;
+  result.depositCount = Array.isArray(summary.deposit) ? summary.deposit[1] : 1;
+  result.withdrawal = Array.isArray(summary.withdrawal) ? summary.withdrawal[0] : 0;
+  result.withdrawalCount = Array.isArray(summary.withdrawal) ? summary.withdrawal[1] : 0;
+
+  // Profit calculation
+  result.profit = (result.balance || 0) - (result.deposit || 0);
+
+  // Summary indicators
+  const indicators = report.summaryIndicators || {};
+  result.sharpeRatio = indicators.sharp_ratio ?? 0;
+  result.profitFactor = indicators.profit_factor ?? 0;
+  result.recoveryFactor = indicators.recovery_factor ?? 0;
+  result.drawdownPercent = (indicators.drawdown ?? 0) * 100;
+  result.depositLoad = (indicators.deposit_load ?? 0) * 100;
+  result.tradesPerWeek = indicators.trades_per_week ?? 0;
+  result.avgHoldTimeMinutes = indicators.hold_time ?? 0;
+
+  // Growth data
+  const growth = report.growth || {};
+  result.growthPercent = (growth.growth ?? 0) * 100;
+  result.maxDrawdownPercent = (growth.drawdown ?? 0) * 100;
+
+  // Growth chart (for growth % line)
+  if (growth.chart && Array.isArray(growth.chart) && growth.chart[0]) {
+    result.growthChart = growth.chart[0].map((p: any) => ({
+      timestamp: p.x,
+      growth: (p.y?.[0] ?? 0) * 100,
+    }));
+  }
+  // Drawdown chart
+  if (growth.chart && Array.isArray(growth.chart) && growth.chart[1]) {
+    result.drawdownChart = growth.chart[1].map((p: any) => ({
+      timestamp: p.x,
+      drawdown: (p.y?.[0] ?? 0) * 100,
+    }));
+  }
+
+  // Profit totals
+  const profitTotal = report.profitTotal || {};
+  result.grossProfit = profitTotal.profit_gross ?? profitTotal.profit ?? 0;
+  result.grossLoss = profitTotal.loss_gross ?? profitTotal.loss ?? 0;
+  result.swapTotal = profitTotal.profit_swap ?? 0;
+  result.commissionTotal = profitTotal.loss_commission ?? 0;
+
+  // Profit by day chart
+  if (report.profitDaily?.chart) {
+    result.profitByDay = report.profitDaily.chart;
+  }
+
+  // Long/Short breakdown
+  const ls = report.longShortTotal || {};
+  result.longTrades = ls.long ?? 0;
+  result.shortTrades = ls.short ?? 0;
+  result.totalTrades = (ls.long ?? 0) + (ls.short ?? 0);
+
+  // Long/Short detailed indicators
+  const lsi = report.longShortIndicators || {};
+  if (lsi.netto_pl) {
+    result.longNetPL = lsi.netto_pl[0] ?? 0;
+    result.shortNetPL = lsi.netto_pl[1] ?? 0;
+  }
+  if (lsi.average_pl) {
+    result.avgPLLong = lsi.average_pl[0] ?? 0;
+    result.avgPLShort = lsi.average_pl[1] ?? 0;
+  }
+  if (lsi.win_trades) {
+    result.winTradesLong = lsi.win_trades[0] ?? 0;
+    result.winTradesShort = lsi.win_trades[1] ?? 0;
+  }
+  if (lsi.trades) {
+    result.tradesLong = lsi.trades[0] ?? 0;
+    result.tradesShort = lsi.trades[1] ?? 0;
+  }
+
+  // Win rate calculation
+  const totalTrades = result.totalTrades || 0;
+  const winTrades = (result.winTradesLong || 0) + (result.winTradesShort || 0);
+  result.winRate = totalTrades > 0 ? (winTrades / totalTrades) * 100 : 0;
+
+  // Trade types
+  const tt = report.tradeTypeTotal || {};
+  result.robotTrades = tt.robots ?? 0;
+  result.manualTrades = tt.manual ?? 0;
+  result.signalTrades = tt.signals ?? 0;
+
+  // Symbols breakdown
+  if (report.symbolsTotal?.total) {
+    result.symbols = report.symbolsTotal.total.map((s: any) => ({
+      name: s.x,
+      profit: s.y?.[0] ?? 0,
+      trades: s.y?.[1] ?? 0,
+    }));
+  }
+
+  // Drawdown chart
+  if (report.drawdown?.chart) {
+    result.drawdownDetailChart = report.drawdown.chart;
+  }
+
+  // Risk indicators
+  const ri = report.risksIndicators || {};
+  if (ri.profit) {
+    result.bestTrade = ri.profit[0] ?? 0;
+    result.worstTrade = ri.profit[1] ?? 0;
+  }
+  if (ri.max_consecutive_trades) {
+    result.maxConsecutiveWins = ri.max_consecutive_trades[0] ?? 0;
+    result.maxConsecutiveLosses = ri.max_consecutive_trades[1] ?? 0;
+  }
+  if (ri.max_consecutive_profit) {
+    result.maxConsecutiveProfit = ri.max_consecutive_profit[0] ?? 0;
+    result.maxConsecutiveLoss = ri.max_consecutive_profit[1] ?? 0;
+  }
+
+  // Monthly P&L table
+  if (bal.table) {
+    result.monthlyPL = bal.table;
+  }
+
+  return result;
+}
+
+/**
+ * Fallback regex-based parser for plain HTML statements
+ */
+function parseHtmlRegex(html: string): Record<string, any> {
   const result: Record<string, any> = {};
 
   const accountPatterns = [
@@ -343,18 +533,6 @@ function parseMT5Statement(html: string): Record<string, any> {
 
   const tradesMatch = html.match(/Total\s*Trades?\s*[:#]?\s*(\d+)/i);
   if (tradesMatch) result.totalTrades = parseInt(tradesMatch[1]);
-
-  const profitTradesMatch = html.match(/Profit\s*Trades?\s*[:#]?\s*(\d+)/i);
-  if (profitTradesMatch) result.profitTrades = parseInt(profitTradesMatch[1]);
-
-  const lossTradesMatch = html.match(/Loss\s*Trades?\s*[:#]?\s*(\d+)/i);
-  if (lossTradesMatch) result.lossTrades = parseInt(lossTradesMatch[1]);
-
-  const grossProfitMatch = html.match(/Gross\s*Profit\s*[:#]?\s*([\d\s,.]+)/i);
-  if (grossProfitMatch) result.grossProfit = parseFloat(grossProfitMatch[1].replace(/[\s,]/g, ""));
-
-  const grossLossMatch = html.match(/Gross\s*Loss\s*[:#]?\s*([-\d\s,.]+)/i);
-  if (grossLossMatch) result.grossLoss = parseFloat(grossLossMatch[1].replace(/[\s,]/g, ""));
 
   const drawdownMatch = html.match(/(?:Max(?:imal)?\s*)?Drawdown\s*[:#]?\s*([\d\s,.]+)/i);
   if (drawdownMatch) result.maxDrawdown = parseFloat(drawdownMatch[1].replace(/[\s,]/g, ""));
