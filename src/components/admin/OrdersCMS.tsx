@@ -205,7 +205,7 @@ export default function OrdersCMS({
                 <td className="px-5 py-3 text-xs text-[hsl(0,0%,50%)]">{new Date(order.created_at).toLocaleString()}</td>
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-1.5">
-                    {order.payment_status !== "confirmed" && (
+                    {order.payment_status !== "completed" && (
                       <Button
                         size="sm"
                         onClick={() => updateStatus(order.id, "confirmed")}
