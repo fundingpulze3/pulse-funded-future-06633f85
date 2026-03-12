@@ -105,7 +105,7 @@ export default function OrdersCMS({
   const filters: { key: StatusFilter; label: string; color: string }[] = [
     { key: "all", label: "All", color: "" },
     { key: "pending", label: "Pending", color: "bg-amber-100 text-amber-700" },
-    { key: "confirmed", label: "Confirmed", color: "bg-emerald-100 text-emerald-700" },
+    { key: "completed", label: "Completed", color: "bg-emerald-100 text-emerald-700" },
     { key: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-700" },
   ];
 
