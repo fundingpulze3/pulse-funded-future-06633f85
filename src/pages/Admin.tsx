@@ -23,6 +23,7 @@ import SupportTicketsCMS from "@/components/admin/SupportTicketsCMS";
 import KnowledgeBaseCMS from "@/components/admin/KnowledgeBaseCMS";
 import Dashboard from "@/components/admin/Dashboard";
 import CredentialsManager from "@/components/admin/CredentialsManager";
+import OrdersCMS from "@/components/admin/OrdersCMS";
 import UserCertificatesCMS from "@/components/admin/UserCertificatesCMS";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import SEOManager from "@/components/admin/SEOManager";
@@ -30,7 +31,7 @@ import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
@@ -273,6 +274,7 @@ const Admin = () => {
       items: [
         { id: "users" as Tab, label: "Users", icon: <Users size={18} /> },
         { id: "challenges" as Tab, label: "Challenges", icon: <Trophy size={18} /> },
+        { id: "orders" as Tab, label: "Orders", icon: <ShoppingCart size={18} /> },
         { id: "credentials" as Tab, label: "Credentials", icon: <Key size={18} /> },
         { id: "referrals" as Tab, label: "Referrals", icon: <Link2 size={18} /> },
         { id: "coupons" as Tab, label: "Coupons", icon: <Ticket size={18} /> },
@@ -305,7 +307,7 @@ const Admin = () => {
 
   const tabLabels: Record<Tab, string> = {
     dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager",
-    users: "Users", challenges: "Challenges", referrals: "Referrals", coupons: "Coupons",
+    users: "Users", challenges: "Challenges", orders: "Orders", referrals: "Referrals", coupons: "Coupons",
     utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
     credentials: "Credentials", user_certificates: "User Certificates",
@@ -522,6 +524,18 @@ const Admin = () => {
                 </table>
               </div>
             </div>
+          )}
+
+          {/* ===== Orders Tab ===== */}
+          {tab === "orders" && (
+            <OrdersCMS
+              purchases={purchases}
+              profiles={profiles}
+              challenges={challenges}
+              getProfileName={getProfileName}
+              getChallengeNameById={getChallengeNameById}
+              onRefresh={fetchAll}
+            />
           )}
 
           {/* ===== Challenges Tab ===== */}
