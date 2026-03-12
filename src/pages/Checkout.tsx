@@ -113,7 +113,7 @@ const Checkout = () => {
         .eq("step_type", dbStepType)
         .eq("account_size", sizeNum)
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
       if (!challenge) {
         toast.error("Challenge not found. Please try again.");
