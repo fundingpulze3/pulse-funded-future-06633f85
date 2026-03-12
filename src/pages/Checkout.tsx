@@ -6,15 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   Shield,
   Check,
   Tag,
   X,
   Loader2,
   CreditCard,
-  Bitcoin,
-  Wallet,
 } from "lucide-react";
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 import Navbar from "@/components/Navbar";
