@@ -82,6 +82,7 @@ const Dashboard = () => {
   const [userCertificates, setUserCertificates] = useState<UserCertificate[]>([]);
   const [credentials, setCredentials] = useState<TradingCredential[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
