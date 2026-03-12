@@ -306,7 +306,7 @@ const Admin = () => {
 
   const tabLabels: Record<Tab, string> = {
     dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager",
-    users: "Users", challenges: "Challenges", referrals: "Referrals", coupons: "Coupons",
+    users: "Users", challenges: "Challenges", orders: "Orders", referrals: "Referrals", coupons: "Coupons",
     utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
     credentials: "Credentials", user_certificates: "User Certificates",
