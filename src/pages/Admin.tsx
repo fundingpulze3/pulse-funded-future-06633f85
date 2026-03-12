@@ -22,6 +22,8 @@ import PagesCMS from "@/components/admin/PagesCMS";
 import SupportTicketsCMS from "@/components/admin/SupportTicketsCMS";
 import KnowledgeBaseCMS from "@/components/admin/KnowledgeBaseCMS";
 import Dashboard from "@/components/admin/Dashboard";
+import CredentialsManager from "@/components/admin/CredentialsManager";
+import UserCertificatesCMS from "@/components/admin/UserCertificatesCMS";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import SEOManager from "@/components/admin/SEOManager";
 import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
