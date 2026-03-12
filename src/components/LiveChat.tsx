@@ -480,8 +480,8 @@ const LiveChat = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/30 bg-foreground text-background">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-background/15 flex items-center justify-center">
-                  <Sparkles size={16} />
+                <div className="w-8 h-8 rounded-full overflow-hidden">
+                  <img src={pulzexLogo} alt="PULZEX" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <span className="font-display font-semibold text-sm">PULZEX</span>
