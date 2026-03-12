@@ -526,6 +526,18 @@ const Admin = () => {
             </div>
           )}
 
+          {/* ===== Orders Tab ===== */}
+          {tab === "orders" && (
+            <OrdersCMS
+              purchases={purchases}
+              profiles={profiles}
+              challenges={challenges}
+              getProfileName={getProfileName}
+              getChallengeNameById={getChallengeNameById}
+              onRefresh={fetchAll}
+            />
+          )}
+
           {/* ===== Challenges Tab ===== */}
           {tab === "challenges" && (
             <div>
