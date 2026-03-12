@@ -163,6 +163,28 @@ const Dashboard = () => {
       symbols: stats.symbols,
       monthlyPL: stats.monthlyPL,
       accountSize,
+      // Additional fields from HTML parser
+      broker: stats.broker ?? "",
+      currency: stats.currency ?? "USD",
+      accountType: stats.accountType ?? "",
+      accountNumber: stats.accountNumber ?? "",
+      name: stats.name ?? "",
+      withdrawal: stats.withdrawal ?? 0,
+      withdrawalCount: stats.withdrawalCount ?? 0,
+      depositCount: stats.depositCount ?? 0,
+      growthPercent: stats.growthPercent ?? 0,
+      longNetPL: stats.longNetPL ?? 0,
+      shortNetPL: stats.shortNetPL ?? 0,
+      avgPLLong: stats.avgPLLong ?? 0,
+      avgPLShort: stats.avgPLShort ?? 0,
+      winTradesLong: stats.winTradesLong ?? 0,
+      winTradesShort: stats.winTradesShort ?? 0,
+      tradesLong: stats.tradesLong ?? 0,
+      tradesShort: stats.tradesShort ?? 0,
+      signalTrades: stats.signalTrades ?? 0,
+      maxConsecutiveProfit: stats.maxConsecutiveProfit ?? 0,
+      maxConsecutiveLoss: stats.maxConsecutiveLoss ?? 0,
+      drawdownDetailChart: stats.drawdownDetailChart,
     };
   }, [purchases, userCertificates, selectedAccount]);
 
