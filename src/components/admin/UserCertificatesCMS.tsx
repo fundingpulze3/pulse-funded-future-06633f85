@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Award, Trash2, Eye, CheckCircle2, XCircle, AlertCircle, Clock } from "lucide-react";
+import { Upload, FileText, Award, Trash2, Eye, CheckCircle2, XCircle, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -18,12 +19,21 @@ interface UserCertificate {
   created_at: string;
 }
 
+interface BulkResult {
+  fileName: string;
+  accountNumber?: string;
+  status: "success" | "in_progress" | "breached" | "error";
+  message: string;
+  certificateType?: string;
+}
+
 const UserCertificatesCMS = () => {
   const [certificates, setCertificates] = useState<UserCertificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [previewCert, setPreviewCert] = useState<UserCertificate | null>(null);
-  const [lastResult, setLastResult] = useState<Record<string, any> | null>(null);
+  const [bulkResults, setBulkResults] = useState<BulkResult[]>([]);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => { fetchCerts(); }, []);
 
@@ -36,49 +46,87 @@ const UserCertificatesCMS = () => {
     setLoading(false);
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
+    const fileArray = Array.from(files);
     setUploading(true);
-    setLastResult(null);
+    setBulkResults([]);
+    setBulkProgress({ current: 0, total: fileArray.length });
 
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast.error("Not authenticated"); setUploading(false); return; }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error("Not authenticated"); setUploading(false); return; }
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const results: BulkResult[] = [];
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/parse-mt5-statement`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: formData,
-        }
-      );
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      setBulkProgress({ current: i + 1, total: fileArray.length });
 
-      const result = await res.json();
-      setLastResult(result);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      if (!res.ok || !result.success) {
-        if (result.status === "in_progress") {
-          toast.info("Account still in progress — no breach detected. Keep trading!");
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/parse-mt5-statement`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: formData,
+          }
+        );
+
+        const result = await res.json();
+
+        if (result.success) {
+          results.push({
+            fileName: file.name,
+            accountNumber: result.parsed?.accountNumber,
+            status: "success",
+            message: result.message || "Certificate issued",
+            certificateType: result.certificateType,
+          });
+        } else if (result.status === "in_progress") {
+          results.push({
+            fileName: file.name,
+            accountNumber: result.parsed?.accountNumber,
+            status: "in_progress",
+            message: result.message || "In progress",
+          });
         } else if (result.violations?.length > 0) {
-          toast.error("Account BREACHED — drawdown limit exceeded.");
+          results.push({
+            fileName: file.name,
+            accountNumber: result.parsed?.accountNumber,
+            status: "breached",
+            message: result.message || "Breached",
+          });
         } else {
-          toast.error(result.error || result.message || "Failed to process statement");
+          results.push({
+            fileName: file.name,
+            accountNumber: result.parsed?.accountNumber,
+            status: "error",
+            message: result.error || result.message || "Failed",
+          });
         }
-      } else {
-        toast.success(result.message || "Certificate issued!");
-        fetchCerts();
+      } catch (err) {
+        results.push({
+          fileName: file.name,
+          status: "error",
+          message: String(err),
+        });
       }
-    } catch (err) {
-      toast.error("Upload failed: " + String(err));
+
+      setBulkResults([...results]);
     }
 
+    const successCount = results.filter(r => r.status === "success").length;
+    const progressCount = results.filter(r => r.status === "in_progress").length;
+    const failCount = results.filter(r => r.status === "error" || r.status === "breached").length;
+
+    toast.success(`Bulk upload complete: ${successCount} passed, ${progressCount} in progress, ${failCount} failed`);
+    fetchCerts();
     setUploading(false);
     e.target.value = "";
   };
@@ -98,107 +146,87 @@ const UserCertificatesCMS = () => {
     payout: { label: "Payout", color: "bg-purple-50 text-purple-600", emoji: "💰" },
   };
 
+  const statusIcon = (status: BulkResult["status"]) => {
+    switch (status) {
+      case "success": return <CheckCircle2 size={14} className="text-green-500" />;
+      case "in_progress": return <Clock size={14} className="text-amber-500" />;
+      case "breached": return <XCircle size={14} className="text-red-500" />;
+      case "error": return <AlertCircle size={14} className="text-red-500" />;
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center py-20"><div className="w-5 h-5 border-2 border-[hsl(0,0%,30%)] border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div className="space-y-4">
-      {/* Upload Section */}
+      {/* Bulk Upload Section */}
       <div className="bg-[hsl(0,0%,97%)] rounded-xl p-6 border border-dashed border-[hsl(0,0%,80%)]">
         <div className="text-center">
           <Upload size={32} className="mx-auto mb-3 text-[hsl(0,0%,50%)]" />
-          <h3 className="font-semibold text-[hsl(0,0%,10%)] mb-1">Upload MT5 Statement</h3>
+          <h3 className="font-semibold text-[hsl(0,0%,10%)] mb-1">Bulk Upload MT5 Statements</h3>
           <p className="text-xs text-[hsl(0,0%,50%)] mb-4 max-w-md mx-auto">
-            Upload an HTML statement. The system evaluates against challenge rules — only drawdown breaches cause a fail.
-            If profit target isn't reached yet, it shows "in progress" so the trader can keep going.
+            Select hundreds of HTML statements at once. Each file is parsed, matched to its account by MT5 login number, and evaluated automatically.
           </p>
 
           <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[hsl(0,0%,0%)] text-white text-sm font-medium cursor-pointer hover:bg-[hsl(0,0%,15%)] transition-colors">
-            <FileText size={14} />
-            {uploading ? "Analyzing..." : "Upload Statement"}
-            <input type="file" accept=".html,.htm,.txt" onChange={handleUpload} className="hidden" disabled={uploading} />
+            {uploading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+            {uploading ? `Processing ${bulkProgress.current}/${bulkProgress.total}...` : "Select Statements"}
+            <input type="file" accept=".html,.htm,.txt" multiple onChange={handleBulkUpload} className="hidden" disabled={uploading} />
           </label>
         </div>
+
+        {/* Progress Bar */}
+        {uploading && bulkProgress.total > 0 && (
+          <div className="mt-4 max-w-md mx-auto">
+            <Progress value={(bulkProgress.current / bulkProgress.total) * 100} className="h-2" />
+            <p className="text-xs text-center text-[hsl(0,0%,50%)] mt-1">
+              {bulkProgress.current} of {bulkProgress.total} files processed
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Last Result */}
-      {lastResult && (
-        <div className={`rounded-xl p-5 border ${
-          lastResult.success 
-            ? "bg-green-50 border-green-200" 
-            : lastResult.status === "in_progress"
-              ? "bg-amber-50 border-amber-200"
-              : "bg-red-50 border-red-200"
-        }`}>
-          <div className="flex items-start gap-3">
-            {lastResult.success ? (
-              <CheckCircle2 size={20} className="text-green-600 mt-0.5 shrink-0" />
-            ) : lastResult.status === "in_progress" ? (
-              <Clock size={20} className="text-amber-600 mt-0.5 shrink-0" />
-            ) : (
-              <XCircle size={20} className="text-red-600 mt-0.5 shrink-0" />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className={`font-semibold text-sm ${
-                lastResult.success 
-                  ? "text-green-800" 
-                  : lastResult.status === "in_progress"
-                    ? "text-amber-800"
-                    : "text-red-800"
-              }`}>
-                {lastResult.success ? lastResult.message : (lastResult.message || lastResult.error || "Failed")}
-              </p>
-
-              {/* Parsed Stats */}
-              {lastResult.parsed && (
-                <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {lastResult.parsed.accountNumber && (
-                    <StatPill label="Account" value={`#${lastResult.parsed.accountNumber}`} />
-                  )}
-                  {lastResult.parsed.balance != null && (
-                    <StatPill label="Balance" value={`$${Number(lastResult.parsed.balance).toLocaleString()}`} />
-                  )}
-                  {lastResult.parsed.profit != null && (
-                    <StatPill label="Profit" value={`$${Number(lastResult.parsed.profit).toLocaleString()}`} />
-                  )}
-                  {lastResult.parsed.deposit != null && (
-                    <StatPill label="Deposit" value={`$${Number(lastResult.parsed.deposit).toLocaleString()}`} />
-                  )}
-                </div>
-              )}
-
-              {/* Evaluation */}
-              {lastResult.evaluation && (
-                <div className="mt-3">
-                  <p className="text-xs font-semibold text-[hsl(0,0%,45%)] uppercase tracking-wider mb-1.5">Evaluation</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {lastResult.evaluation.details && Object.entries(lastResult.evaluation.details).map(([key, val]) => (
-                      <StatPill key={key} label={key.replace(/([A-Z])/g, " $1")} value={String(val)} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Violations (only drawdown breaches) */}
-              {lastResult.violations?.length > 0 && (
-                <div className="mt-3 space-y-1">
-                  <p className="text-xs font-semibold text-red-700 uppercase tracking-wider">⚠️ Breach Violations</p>
-                  {lastResult.violations.map((v: string, i: number) => (
-                    <p key={i} className="text-xs text-red-700 flex items-center gap-1">
-                      <XCircle size={12} /> {v}
-                    </p>
-                  ))}
-                </div>
-              )}
-
-              {/* Certificate Type Issued */}
-              {lastResult.certificateType && (
-                <div className="mt-3">
-                  <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${typeLabels[lastResult.certificateType]?.color || "bg-gray-50"}`}>
-                    {typeLabels[lastResult.certificateType]?.emoji} {typeLabels[lastResult.certificateType]?.label || lastResult.certificateType} Certificate Issued
-                  </span>
-                </div>
-              )}
+      {/* Bulk Results */}
+      {bulkResults.length > 0 && (
+        <div className="bg-white rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[hsl(0,0%,92%)] flex items-center justify-between">
+            <h3 className="font-semibold text-sm text-[hsl(0,0%,10%)]">
+              Upload Results ({bulkResults.length} files)
+            </h3>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-green-600 font-medium">{bulkResults.filter(r => r.status === "success").length} ✅ Passed</span>
+              <span className="text-amber-600 font-medium">{bulkResults.filter(r => r.status === "in_progress").length} ⏳ In Progress</span>
+              <span className="text-red-600 font-medium">{bulkResults.filter(r => r.status === "breached" || r.status === "error").length} ❌ Failed</span>
             </div>
+          </div>
+          <div className="max-h-64 overflow-y-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left text-xs text-[hsl(0,0%,50%)] border-b border-[hsl(0,0%,92%)] sticky top-0 bg-white">
+                  <th className="px-4 py-2 w-8"></th>
+                  <th className="px-4 py-2">File</th>
+                  <th className="px-4 py-2">Account</th>
+                  <th className="px-4 py-2">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bulkResults.map((r, i) => (
+                  <tr key={i} className="border-b border-[hsl(0,0%,95%)] last:border-0 text-sm">
+                    <td className="px-4 py-2">{statusIcon(r.status)}</td>
+                    <td className="px-4 py-2 font-mono text-xs text-[hsl(0,0%,30%)] truncate max-w-[200px]">{r.fileName}</td>
+                    <td className="px-4 py-2 font-mono text-[hsl(0,0%,20%)]">{r.accountNumber || "—"}</td>
+                    <td className="px-4 py-2 text-xs text-[hsl(0,0%,40%)]">
+                      {r.certificateType && (
+                        <span className={`inline-flex items-center gap-1 mr-2 text-xs font-medium px-2 py-0.5 rounded-full ${typeLabels[r.certificateType]?.color || "bg-gray-50"}`}>
+                          {typeLabels[r.certificateType]?.emoji} {typeLabels[r.certificateType]?.label}
+                        </span>
+                      )}
+                      {r.message}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -207,39 +235,13 @@ const UserCertificatesCMS = () => {
       <div className="bg-blue-50 rounded-xl p-4 flex items-start gap-3">
         <AlertCircle size={16} className="text-blue-500 mt-0.5 shrink-0" />
         <div className="text-xs text-blue-700">
-          <p className="font-medium mb-1">Challenge Rules:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
-            <div>
-              <p className="font-semibold">Phase 1 — Challenge</p>
-              <ul className="list-disc list-inside space-y-0.5 mt-1">
-                <li>Profit Target: 8%</li>
-                <li>Max Daily Loss: 5%</li>
-                <li>Max Overall Loss: 10%</li>
-                <li>Min Trading Days: None</li>
-                <li>Time Limit: Unlimited</li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-semibold">Phase 2 — Verification</p>
-              <ul className="list-disc list-inside space-y-0.5 mt-1">
-                <li>Profit Target: 5%</li>
-                <li>Max Daily Loss: 5%</li>
-                <li>Max Overall Loss: 10%</li>
-                <li>Min Trading Days: None</li>
-                <li>Time Limit: Unlimited</li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-semibold">Funded Account</p>
-              <ul className="list-disc list-inside space-y-0.5 mt-1">
-                <li>Profit Split: 90%</li>
-                <li>Scaling up to: $1M</li>
-                <li>Min 7 trading days for payout</li>
-                <li>Payout: 24-48 hrs</li>
-              </ul>
-            </div>
-          </div>
-          <p className="mt-2 font-medium text-amber-700">⚠️ Only drawdown breaches fail an account. Profit target not reached = "In Progress" (keep trading).</p>
+          <p className="font-medium mb-1">Bulk Processing Rules:</p>
+          <ul className="list-disc list-inside space-y-0.5">
+            <li>Each HTML file is matched to a user by the MT5 account number in the statement</li>
+            <li>The system auto-detects whether the account is Phase 1, Phase 2, Funded, or Payout stage</li>
+            <li>Only drawdown breaches fail an account — profit target not reached = "In Progress"</li>
+            <li>Stats are stored and visible on each user's dashboard immediately</li>
+          </ul>
         </div>
       </div>
 
@@ -309,13 +311,13 @@ const UserCertificatesCMS = () => {
                   <p className="font-medium text-[hsl(0,0%,10%)]">{typeLabels[previewCert.certificate_type]?.emoji} {typeLabels[previewCert.certificate_type]?.label || previewCert.certificate_type}</p>
                 </div>
               </div>
-
               {previewCert.stats && (
                 <div>
                   <p className="text-xs font-semibold text-[hsl(0,0%,45%)] uppercase tracking-wider mb-2">Stats</p>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(previewCert.stats)
-                      .filter(([k]) => !["accountNumber", "evaluation"].includes(k))
+                      .filter(([k]) => !["accountNumber", "evaluation", "balanceChart", "growthChart", "drawdownChart", "drawdownDetailChart", "profitByDay", "symbols"].includes(k))
+                      .slice(0, 12)
                       .map(([key, value]) => (
                         <div key={key} className="bg-[hsl(0,0%,97%)] rounded-lg px-3 py-2">
                           <p className="text-[10px] text-[hsl(0,0%,50%)] capitalize">{key.replace(/([A-Z])/g, " $1")}</p>
@@ -327,31 +329,6 @@ const UserCertificatesCMS = () => {
                   </div>
                 </div>
               )}
-
-              {previewCert.stats?.evaluation && (
-                <div>
-                  <p className="text-xs font-semibold text-[hsl(0,0%,45%)] uppercase tracking-wider mb-2">Evaluation</p>
-                  <div className="flex items-center gap-2 mb-2">
-                    {previewCert.stats.evaluation.breached === false && previewCert.stats.evaluation.targetReached ? (
-                      <span className="text-xs text-green-600 font-medium flex items-center gap-1"><CheckCircle2 size={12} /> Passed</span>
-                    ) : previewCert.stats.evaluation.breached ? (
-                      <span className="text-xs text-red-600 font-medium flex items-center gap-1"><XCircle size={12} /> Breached</span>
-                    ) : (
-                      <span className="text-xs text-amber-600 font-medium flex items-center gap-1"><Clock size={12} /> In Progress</span>
-                    )}
-                  </div>
-                  {previewCert.stats.evaluation.details && (
-                    <div className="grid grid-cols-2 gap-2">
-                      {Object.entries(previewCert.stats.evaluation.details).map(([key, val]) => (
-                        <div key={key} className="bg-[hsl(0,0%,97%)] rounded-lg px-3 py-2">
-                          <p className="text-[10px] text-[hsl(0,0%,50%)] capitalize">{key.replace(/([A-Z])/g, " $1")}</p>
-                          <p className="text-sm font-medium text-[hsl(0,0%,10%)]">{String(val)}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </DialogContent>
@@ -359,12 +336,5 @@ const UserCertificatesCMS = () => {
     </div>
   );
 };
-
-const StatPill = ({ label, value }: { label: string; value: string }) => (
-  <div className="bg-white/80 rounded-lg px-2.5 py-1.5 border border-[hsl(0,0%,90%)]">
-    <p className="text-[9px] text-[hsl(0,0%,50%)] capitalize">{label}</p>
-    <p className="text-xs font-semibold text-[hsl(0,0%,10%)]">{value}</p>
-  </div>
-);
 
 export default UserCertificatesCMS;
