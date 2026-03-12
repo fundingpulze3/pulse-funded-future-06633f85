@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap } from "lucide-react";
 import LiveTicker from "@/components/LiveTicker";
+import heroBg from "@/assets/hero-bg.png";
 
 const MagneticButton = ({ children, className }: { children: React.ReactNode; className?: string }) => {
   const btnRef = useRef<HTMLDivElement>(null);
@@ -204,13 +205,19 @@ const Hero = () => {
 
   return (
     <section ref={sectionRef} id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
+      {/* Background image */}
+      <div className="absolute inset-0 z-0">
+        <img src={heroBg} alt="" className="w-full h-full object-cover object-center" aria-hidden="true" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
+      </div>
+
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none z-[1]"
         aria-hidden="true"
       />
 
-      <div className="relative z-10 text-center max-w-4xl mx-auto px-6">
+      <div className="relative z-10 text-center max-w-4xl mx-auto px-6 drop-shadow-lg">
         <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full glow-border surface-elevated text-sm text-muted-foreground mb-8">
           <Zap size={14} className="text-primary" />
           <span>#1 TOP TRADING FIRM</span>
