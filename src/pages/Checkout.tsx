@@ -133,15 +133,15 @@ const Checkout = () => {
       // 2. Get stored UTM data
       const utm = getStoredUtm();
 
-      // 3. Create the purchase record
+      // 3. Create the purchase record as PENDING (manual payment bypass)
       const { data: purchase, error: purchaseError } = await supabase
         .from("challenge_purchases")
         .insert({
           user_id: user.id,
           challenge_id: challenge.id,
           amount_paid: total,
-          payment_status: "completed",
-          status: "active",
+          payment_status: "pending",
+          status: "pending",
           utm_source: utm.utm_source || null,
           utm_medium: utm.utm_medium || null,
           utm_campaign: utm.utm_campaign || null,
@@ -152,53 +152,12 @@ const Checkout = () => {
         .single();
 
       if (purchaseError) {
-        toast.error("Failed to create purchase: " + purchaseError.message);
+        toast.error("Failed to create order: " + purchaseError.message);
         setProcessing(false);
         return;
       }
 
-      // 4. Auto-assign a free credential for this challenge
-      const { data: freeCred } = await supabase
-        .from("trading_credentials")
-        .select("id")
-        .eq("challenge_id", challenge.id)
-        .eq("is_assigned", false)
-        .limit(1)
-        .single();
-
-      if (freeCred) {
-        await supabase
-          .from("trading_credentials")
-          .update({
-            is_assigned: true,
-            assigned_to: user.id,
-            purchase_id: purchase.id,
-            assigned_at: new Date().toISOString(),
-          })
-          .eq("id", freeCred.id)
-          .eq("is_assigned", false); // double-check to prevent race conditions
-      }
-
-      // 5. Send purchase confirmation email
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData?.session?.access_token) {
-          await supabase.functions.invoke("send-transactional-email", {
-            body: {
-              type: "purchase_confirmation",
-              data: {
-                challengeName: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge`,
-                accountSize,
-                amountPaid: `$${total}`,
-              },
-            },
-          });
-        }
-      } catch (emailErr) {
-        console.error("Failed to send confirmation email:", emailErr);
-      }
-
-      toast.success("Order placed! Check your dashboard for MT5 credentials.");
+      toast.success("Order placed! Your payment is being reviewed. You'll receive your credentials once confirmed.");
       setProcessing(false);
       navigate("/dashboard");
     } catch (err) {
