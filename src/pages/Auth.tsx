@@ -10,7 +10,7 @@ import { ArrowRight, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
-import { lovable } from "@/integrations/lovable/index";
+
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
