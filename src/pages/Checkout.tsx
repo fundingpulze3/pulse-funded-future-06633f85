@@ -112,12 +112,15 @@ const Checkout = () => {
     setProcessing(true);
 
     try {
-      // 1. Find the matching challenge
+      // 1. Parse account size (e.g. "$5K" -> 5000, "$50K" -> 50000, "$100K" -> 100000)
+      const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
+
+      // Find the matching challenge
       const { data: challenge } = await supabase
         .from("challenges")
         .select("id")
         .eq("step_type", stepType)
-        .eq("account_size", parseInt(accountSize.replace(/[$,K]/g, "")) * (accountSize.includes("K") ? 1000 : 1))
+        .eq("account_size", sizeNum)
         .eq("is_active", true)
         .single();
 
