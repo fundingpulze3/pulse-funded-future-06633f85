@@ -110,7 +110,7 @@ export default function OrdersCMS({
   ];
 
   const statusBadge = (status: string) => {
-    if (status === "confirmed") return <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"><CheckCircle2 size={11} /> Confirmed</span>;
+    if (status === "completed") return <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"><CheckCircle2 size={11} /> Completed</span>;
     if (status === "cancelled") return <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700"><XCircle size={11} /> Cancelled</span>;
     return <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"><Clock size={11} /> Pending</span>;
   };
