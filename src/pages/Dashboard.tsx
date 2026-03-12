@@ -278,10 +278,50 @@ const Dashboard = () => {
     }));
   }, [activeAccountStats]);
 
+  const monthlyPLRows = useMemo(() => {
+    const monthlyPL = activeAccountStats?.monthlyPL;
+    if (!monthlyPL || typeof monthlyPL !== "object") return [] as Array<{ year: string; months: number[]; total: number }>;
+
+    const normalizeMonths = (value: unknown): number[] => {
+      if (Array.isArray(value)) {
+        return Array.from({ length: 12 }, (_, i) => Number(value[i] ?? 0) || 0);
+      }
+
+      if (value && typeof value === "object") {
+        const monthsObj = value as Record<string, unknown>;
+        return Array.from({ length: 12 }, (_, i) => Number(monthsObj[String(i + 1)] ?? monthsObj[String(i)] ?? 0) || 0);
+      }
+
+      return Array(12).fill(0);
+    };
+
+    const rows: Array<{ year: string; months: number[]; total: number }> = [];
+    const typedMonthly = monthlyPL as Record<string, any>;
+
+    if (Array.isArray(typedMonthly.years)) {
+      typedMonthly.years.forEach((entry: any) => {
+        if (!entry || typeof entry !== "object") return;
+        const year = entry.year != null ? String(entry.year) : "Unknown";
+        const months = normalizeMonths(entry.months);
+        const total = Number(entry.yearly ?? months.reduce((sum, m) => sum + m, 0)) || 0;
+        rows.push({ year, months, total });
+      });
+    } else {
+      Object.entries(typedMonthly).forEach(([year, value]) => {
+        if (!/^\d{4}$/.test(year)) return;
+        const months = normalizeMonths(value?.months ?? value);
+        const total = Number(value?.total ?? value?.yearly ?? months.reduce((sum, m) => sum + m, 0)) || 0;
+        rows.push({ year, months, total });
+      });
+    }
+
+    return rows.sort((a, b) => Number(a.year) - Number(b.year));
+  }, [activeAccountStats]);
+
   const profitPercent = activeAccountStats
-    ? activeAccountStats.gainPercent || ((Number(activeAccountStats.profit) / activeAccountStats.accountSize) * 100)
+    ? Number(activeAccountStats.gainPercent || ((Number(activeAccountStats.profit) / activeAccountStats.accountSize) * 100))
     : 0;
-  const ddUsed = activeAccountStats?.maxDrawdownPercent || 0;
+  const ddUsed = Number(activeAccountStats?.maxDrawdownPercent || 0);
 
   // Loading
   if (authLoading || loading) {
@@ -855,7 +895,7 @@ const Dashboard = () => {
                   )}
 
                   {/* Monthly P&L */}
-                  {activeAccountStats.monthlyPL && typeof activeAccountStats.monthlyPL === "object" && (
+                  {monthlyPLRows.length > 0 && (
                     <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
                       <h3 className="font-display font-bold text-sm mb-4">Monthly P&L</h3>
                       <div className="overflow-x-auto">
@@ -870,16 +910,16 @@ const Dashboard = () => {
                             </tr>
                           </thead>
                           <tbody className="text-sm">
-                            {Object.entries(activeAccountStats.monthlyPL).map(([year, months]: [string, any]) => (
+                            {monthlyPLRows.map(({ year, months, total }) => (
                               <tr key={year} className="border-b border-[hsl(220,15%,8%)]">
                                 <td className="px-4 py-3 font-bold">{year}</td>
-                                {Array.isArray(months) ? months.slice(0, 12).map((val: number, i: number) => (
-                                  <td key={i} className={`px-2 py-3 text-center text-xs font-mono font-bold ${val > 0 ? "text-[hsl(142,60%,50%)]" : val < 0 ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,30%)]"}`}>
+                                {months.map((val: number, i: number) => (
+                                  <td key={`${year}-${i}`} className={`px-2 py-3 text-center text-xs font-mono font-bold ${val > 0 ? "text-[hsl(142,60%,50%)]" : val < 0 ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,30%)]"}`}>
                                     {val !== 0 ? `$${val.toFixed(0)}` : "—"}
                                   </td>
-                                )) : Array(12).fill(null).map((_, i) => <td key={i} className="px-2 py-3 text-center text-[hsl(220,15%,30%)]">—</td>)}
+                                ))}
                                 <td className="px-4 py-3 text-center font-bold">
-                                  {Array.isArray(months) ? `$${months.reduce((s: number, v: number) => s + (v || 0), 0).toFixed(0)}` : "—"}
+                                  {total !== 0 ? `$${total.toFixed(0)}` : "—"}
                                 </td>
                               </tr>
                             ))}
