@@ -239,6 +239,35 @@ const Dashboard = () => {
                   </div>
                 )}
               </div>
+
+              {/* MT5 Credentials */}
+              {credentials.length > 0 && (
+                <div className="glass-card overflow-hidden">
+                  <div className="p-5 border-b border-border">
+                    <h2 className="font-display font-bold text-foreground">Your MT5 Credentials</h2>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-left text-xs text-muted-foreground border-b border-border">
+                          <th className="px-5 py-3">Login</th>
+                          <th className="px-5 py-3">Password</th>
+                          <th className="px-5 py-3">Server</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {credentials.map((c) => (
+                          <tr key={c.id} className="border-b border-border last:border-0 text-sm">
+                            <td className="px-5 py-4 font-mono text-foreground font-medium">{c.mt5_login}</td>
+                            <td className="px-5 py-4 font-mono text-foreground">{c.mt5_password}</td>
+                            <td className="px-5 py-4 text-muted-foreground">{c.mt5_server}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </TabsContent>
 
