@@ -349,6 +349,7 @@ const Dashboard = () => {
                     };
                     const typeLabels: Record<string, string> = {
                       phase1_passed: "Phase 1 Passed",
+                      phase2_passed: "Phase 2 Passed",
                       funded: "Funded",
                       payout: "Payout",
                     };
