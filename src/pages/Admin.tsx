@@ -104,13 +104,14 @@ const Admin = () => {
   }, [user, authLoading, isAdmin, adminLoading, userRole]);
 
   const fetchAll = async () => {
-    const [p, c, r, cp, pu, pv] = await Promise.all([
+    const [p, c, r, cp, pu, pv, ur] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("challenges").select("*").order("account_size", { ascending: true }),
       supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
       supabase.from("coupons").select("*").order("created_at", { ascending: false }),
       supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
       supabase.from("page_visits").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("*"),
     ]);
     if (p.data) setProfiles(p.data);
     if (c.data) setChallenges(c.data);
@@ -118,6 +119,11 @@ const Admin = () => {
     if (cp.data) setCoupons(cp.data);
     if (pu.data) setPurchases(pu.data);
     if (pv.data) setPageVisits(pv.data);
+    if (ur.data) {
+      const roleMap: Record<string, string> = {};
+      ur.data.forEach((r: any) => { roleMap[r.user_id] = r.role; });
+      setUserRoles(roleMap);
+    }
     setLoading(false);
   };
 
