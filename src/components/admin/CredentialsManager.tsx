@@ -197,6 +197,13 @@ const CredentialsManager = () => {
                   <span className="text-[hsl(0,0%,50%)]">{total} total</span>
                   <span className="text-green-600">{available} free</span>
                   <span className="text-blue-600">{assigned} assigned</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setForm(f => ({ ...f, challenge_id: challenge.id, mt5_server: "" })); setDialogOpen(true); }}
+                    className="ml-1 p-1 rounded-md hover:bg-[hsl(0,0%,92%)] text-[hsl(0,0%,40%)] hover:text-[hsl(0,0%,10%)] transition-colors"
+                    title="Add credential to this folder"
+                  >
+                    <Plus size={14} />
+                  </button>
                 </div>
               </button>
 
@@ -271,8 +278,8 @@ const CredentialsManager = () => {
             <div>
               <Label className="text-xs text-[hsl(0,0%,45%)]">Challenge Folder</Label>
               <select value={form.challenge_id} onChange={e => setForm({ ...form, challenge_id: e.target.value })}
-                className="mt-1 w-full rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,88%)] px-3 py-2 text-sm">
-                {challenges.map(c => <option key={c.id} value={c.id}>{getChallengeLabel(c)}</option>)}
+                className="mt-1 w-full rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,88%)] px-3 py-2 text-sm text-[hsl(0,0%,10%)]">
+                {challenges.map(c => <option key={c.id} value={c.id} className="text-[hsl(0,0%,10%)]">{getChallengeLabel(c)}</option>)}
               </select>
             </div>
             <div>
@@ -309,8 +316,8 @@ const CredentialsManager = () => {
             <div>
               <Label className="text-xs text-[hsl(0,0%,45%)]">Challenge Folder</Label>
               <select value={bulkChallengeId} onChange={e => setBulkChallengeId(e.target.value)}
-                className="mt-1 w-full rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,88%)] px-3 py-2 text-sm">
-                {challenges.map(c => <option key={c.id} value={c.id}>{getChallengeLabel(c)}</option>)}
+                className="mt-1 w-full rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,88%)] px-3 py-2 text-sm text-[hsl(0,0%,10%)]">
+                {challenges.map(c => <option key={c.id} value={c.id} className="text-[hsl(0,0%,10%)]">{getChallengeLabel(c)}</option>)}
               </select>
             </div>
             <div>
