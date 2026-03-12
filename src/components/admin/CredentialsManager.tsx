@@ -205,9 +205,6 @@ const CredentialsManager = () => {
                     <Plus size={14} />
                   </button>
                 </div>
-                  <span className="text-green-600">{available} free</span>
-                  <span className="text-blue-600">{assigned} assigned</span>
-                </div>
               </button>
 
               {/* Expanded Content */}
