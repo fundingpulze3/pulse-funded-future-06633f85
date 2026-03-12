@@ -39,6 +39,7 @@ interface Referral {
 
 interface Purchase {
   id: string;
+  challenge_id: string;
   amount_paid: number;
   status: string;
   payment_status: string;
@@ -101,6 +102,20 @@ const Dashboard = () => {
     if (user) fetchAllData();
   }, [user, authLoading]);
 
+  useEffect(() => {
+    if (purchases.length === 0) {
+      setSelectedAccount(null);
+      return;
+    }
+
+    setSelectedAccount((prev) => {
+      if (prev && purchases.some((purchase) => purchase.id === prev)) {
+        return prev;
+      }
+      return purchases[0].id;
+    });
+  }, [purchases]);
+
   const withTimeout = <T,>(promise: Promise<T>, ms = 12000): Promise<T> =>
     new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error("Dashboard request timeout")), ms);
@@ -108,26 +123,38 @@ const Dashboard = () => {
     });
 
   const fetchAllData = async () => {
+    if (!user) return;
+
     try {
       setLoading(true);
       setLoadError(null);
+
       const [profileRes, referralsRes, purchasesRes, certsRes, credsRes] = await withTimeout(
         Promise.all([
-          supabase.from("profiles").select("referral_code, display_name, email, avatar_url, created_at").eq("user_id", user!.id).single(),
-          supabase.from("affiliate_referrals").select("*").eq("referrer_id", user!.id),
-          supabase.from("challenge_purchases").select("*, challenges(name, account_size, profit_target, daily_drawdown, max_drawdown, step_type)").eq("user_id", user!.id).order("created_at", { ascending: false }),
-          supabase.from("user_certificates").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }),
-          supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id").eq("assigned_to", user!.id),
+          supabase.from("profiles").select("referral_code, display_name, email, avatar_url, created_at").eq("user_id", user.id).maybeSingle(),
+          supabase.from("affiliate_referrals").select("*").eq("referrer_id", user.id),
+          supabase.from("challenge_purchases").select("*, challenges(name, account_size, profit_target, daily_drawdown, max_drawdown, step_type)").eq("user_id", user.id).order("created_at", { ascending: false }),
+          supabase.from("user_certificates").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+          supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id").eq("assigned_to", user.id),
         ])
       );
-      if (profileRes.data) setProfile(profileRes.data);
-      if (referralsRes.data) setReferrals(referralsRes.data);
-      if (purchasesRes.data) setPurchases(purchasesRes.data as unknown as Purchase[]);
-      if (certsRes.data) setUserCertificates(certsRes.data as any);
-      if (credsRes.data) setCredentials(credsRes.data as any);
-      if (!selectedAccount && purchasesRes.data && purchasesRes.data.length > 0) {
-        setSelectedAccount((purchasesRes.data as any)[0].id);
+
+      const fatalError = purchasesRes.error;
+      const nonFatalErrors = [profileRes.error, referralsRes.error, certsRes.error, credsRes.error].filter(Boolean);
+
+      if (fatalError) {
+        throw fatalError;
       }
+
+      if (nonFatalErrors.length > 0) {
+        console.error("Dashboard partial query failures:", nonFatalErrors);
+      }
+
+      setProfile(profileRes.data ?? null);
+      setReferrals(referralsRes.data ?? []);
+      setPurchases((purchasesRes.data as unknown as Purchase[]) ?? []);
+      setUserCertificates((certsRes.data as any) ?? []);
+      setCredentials((credsRes.data as any) ?? []);
     } catch (error) {
       console.error("Dashboard load failed:", error);
       setLoadError("Could not load dashboard data. Please retry.");
@@ -285,7 +312,7 @@ const Dashboard = () => {
   const getCredentialForPurchase = (purchaseId: string) => {
     const purchase = purchases.find(p => p.id === purchaseId);
     if (!purchase) return null;
-    return credentials.find(c => c.challenge_id === purchase.challenges?.name) || credentials[0] || null;
+    return credentials.find(c => c.challenge_id === purchase.challenge_id) || credentials[0] || null;
   };
 
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -442,12 +469,12 @@ const Dashboard = () => {
 
           {/* Account Cards */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-[hsl(220,15%,15%)] scrollbar-track-transparent">
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence>
               {filteredPurchases.map((p, i) => {
                 const isActive = selectedAccount === p.id;
                 const status = getAccountStatus(p);
                 const sc = statusConfig[status] || statusConfig.ongoing;
-                const cred = credentials.find(c => c.challenge_id === p.challenges?.name);
+                const cred = credentials.find(c => c.challenge_id === p.challenge_id);
                 const challengeName = p.challenges?.name || "Account";
                 const stepType = p.challenges?.step_type || "—";
 
@@ -552,7 +579,7 @@ const Dashboard = () => {
 
         {/* Right Panel - Content */}
         <main className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div
               key={activeView + (selectedAccount || "")}
               initial={{ opacity: 0, y: 8 }}
