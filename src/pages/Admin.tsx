@@ -266,6 +266,8 @@ const Admin = () => {
       items: [
         { id: "users" as Tab, label: "Users", icon: <Users size={18} /> },
         { id: "challenges" as Tab, label: "Challenges", icon: <Trophy size={18} /> },
+        { id: "credentials" as Tab, label: "Credentials", icon: <Key size={18} /> },
+        { id: "user_certificates" as Tab, label: "User Certs", icon: <Award size={18} /> },
         { id: "referrals" as Tab, label: "Referrals", icon: <Link2 size={18} /> },
         { id: "coupons" as Tab, label: "Coupons", icon: <Ticket size={18} /> },
         { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
