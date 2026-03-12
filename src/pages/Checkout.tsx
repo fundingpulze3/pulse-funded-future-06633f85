@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,12 +16,21 @@ import {
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 import Navbar from "@/components/Navbar";
 
+declare global {
+  interface Window {
+    paypal?: any;
+  }
+}
+
 const Checkout = () => {
   useUtmTracking();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const paypalRef = useRef<HTMLDivElement>(null);
+  const [paypalReady, setPaypalReady] = useState(false);
+  const [purchaseId, setPurchaseId] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -51,6 +60,137 @@ const Checkout = () => {
     }
   }
   const total = subtotal - discount;
+
+  // PayPal SDK init
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (window.paypal) {
+        setPaypalReady(true);
+        clearInterval(interval);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Render PayPal buttons
+  useEffect(() => {
+    if (!paypalReady || !paypalRef.current || !user) return;
+
+    // Clear previous buttons
+    paypalRef.current.innerHTML = "";
+
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+
+    window.paypal.Buttons({
+      style: {
+        layout: "vertical",
+        color: "black",
+        shape: "rect",
+        label: "pay",
+        height: 48,
+      },
+      createOrder: async () => {
+        // First create the DB purchase record
+        const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
+        const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
+
+        const { data: challenge } = await supabase
+          .from("challenges")
+          .select("id")
+          .eq("step_type", dbStepType)
+          .eq("account_size", sizeNum)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (!challenge) throw new Error("Challenge not found");
+
+        const utm = getStoredUtm();
+        const { data: purchase, error } = await supabase
+          .from("challenge_purchases")
+          .insert({
+            user_id: user.id,
+            challenge_id: challenge.id,
+            amount_paid: total,
+            payment_status: "pending",
+            status: "pending",
+            utm_source: utm.utm_source || null,
+            utm_medium: utm.utm_medium || null,
+            utm_campaign: utm.utm_campaign || null,
+            utm_term: utm.utm_term || null,
+            utm_content: utm.utm_content || null,
+          })
+          .select()
+          .single();
+
+        if (error || !purchase) throw new Error("Failed to create order");
+        setPurchaseId(purchase.id);
+
+        // Create PayPal order via edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/verify-paypal-order`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${session!.access_token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action: "create",
+              orderData: {
+                amount: total.toFixed(2),
+                currency: "USD",
+                description: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge — ${accountSize}`,
+              },
+            }),
+          }
+        );
+
+        const data = await res.json();
+        if (!data.orderID) throw new Error(data.error || "Failed to create PayPal order");
+        return data.orderID;
+      },
+      onApprove: async (data: any) => {
+        setProcessing(true);
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const res = await fetch(
+            `https://${projectId}.supabase.co/functions/v1/verify-paypal-order`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${session!.access_token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                action: "capture",
+                orderID: data.orderID,
+                purchaseId,
+              }),
+            }
+          );
+
+          const result = await res.json();
+          if (result.success) {
+            toast.success("Payment successful! Your account is being activated.");
+            navigate("/dashboard");
+          } else {
+            toast.error(result.error || "Payment verification failed.");
+          }
+        } catch (err) {
+          toast.error("Payment failed: " + String(err));
+        }
+        setProcessing(false);
+      },
+      onError: (err: any) => {
+        console.error("PayPal error:", err);
+        toast.error("PayPal payment failed. Please try again.");
+      },
+      onCancel: () => {
+        toast.info("Payment cancelled.");
+      },
+    }).render(paypalRef.current);
+  }, [paypalReady, user, total, stepType, accountSize, purchaseId]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -94,7 +234,8 @@ const Checkout = () => {
     setCouponCode("");
   };
 
-  const handlePayment = async () => {
+  // Manual payment fallback
+  const handleManualPayment = async () => {
     if (!user) {
       toast.error("Please sign in to continue.");
       navigate("/auth");
@@ -102,7 +243,6 @@ const Checkout = () => {
     }
 
     setProcessing(true);
-
     try {
       const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
       const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
@@ -116,14 +256,13 @@ const Checkout = () => {
         .maybeSingle();
 
       if (!challenge) {
-        toast.error("Challenge not found. Please try again.");
+        toast.error("Challenge not found.");
         setProcessing(false);
         return;
       }
 
       const utm = getStoredUtm();
-
-      const { error: purchaseError } = await supabase
+      const { error } = await supabase
         .from("challenge_purchases")
         .insert({
           user_id: user.id,
@@ -136,24 +275,20 @@ const Checkout = () => {
           utm_campaign: utm.utm_campaign || null,
           utm_term: utm.utm_term || null,
           utm_content: utm.utm_content || null,
-        })
-        .select()
-        .single();
+        });
 
-      if (purchaseError) {
-        toast.error("Failed to create order: " + purchaseError.message);
+      if (error) {
+        toast.error("Failed to create order.");
         setProcessing(false);
         return;
       }
 
-      toast.success("Order placed! Your payment is being reviewed. You'll receive your credentials once confirmed.");
-      setProcessing(false);
+      toast.success("Order placed! Payment is being reviewed.");
       navigate("/dashboard");
-    } catch (err) {
-      console.error("Checkout error:", err);
-      toast.error("Something went wrong. Please try again.");
-      setProcessing(false);
+    } catch {
+      toast.error("Something went wrong.");
     }
+    setProcessing(false);
   };
 
   return (
@@ -235,19 +370,60 @@ const Checkout = () => {
               )}
             </div>
 
-            {/* Manual Payment Info */}
+            {/* PayPal Payment */}
             <div className="glass-card p-6">
               <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
-                <CreditCard size={18} /> Manual Payment
+                <CreditCard size={18} /> Pay with PayPal
+              </h3>
+              {!user ? (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground mb-3">Please sign in to proceed with payment</p>
+                  <Button onClick={() => navigate("/auth")} variant="outline" className="rounded-xl">
+                    Sign In
+                  </Button>
+                </div>
+              ) : !paypalReady ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+                  <Loader2 size={18} className="animate-spin" />
+                  <span className="text-sm">Loading PayPal...</span>
+                </div>
+              ) : (
+                <div ref={paypalRef} className="min-h-[60px]" />
+              )}
+
+              {processing && (
+                <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 size={16} className="animate-spin" />
+                  Verifying payment...
+                </div>
+              )}
+            </div>
+
+            {/* Manual Payment Fallback */}
+            <div className="glass-card p-6">
+              <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                <CreditCard size={18} /> Manual Payment (Crypto / Bank Transfer)
               </h3>
               <div className="bg-secondary/50 border border-border rounded-xl p-4 space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Complete your payment via crypto or bank transfer, then click <strong>"I Have Paid"</strong> below. Our team will verify and activate your account within 24 hours.
+                  Pay via crypto or bank transfer, then click <strong>"I Have Paid"</strong>. Our team will verify and activate within 24 hours.
                 </p>
-                <div className="flex items-center gap-2 text-xs text-primary">
-                  <Check size={14} />
-                  <span>Your order will be marked as pending until confirmed by admin</span>
-                </div>
+                <Button
+                  onClick={handleManualPayment}
+                  disabled={processing}
+                  variant="outline"
+                  className="w-full rounded-xl py-5"
+                >
+                  {processing ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={16} className="animate-spin" /> Processing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Check size={16} /> I Have Paid — ${total}
+                    </span>
+                  )}
+                </Button>
               </div>
             </div>
           </div>
@@ -280,26 +456,7 @@ const Checkout = () => {
                 </div>
               </div>
 
-              <Button
-                onClick={handlePayment}
-                disabled={processing}
-                className="w-full mt-6 rounded-xl py-6 text-base font-semibold glow-box"
-                size="lg"
-              >
-                {processing ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 size={18} className="animate-spin" />
-                    Processing...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Check size={18} />
-                    I Have Paid — ${total}
-                  </span>
-                )}
-              </Button>
-
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <Shield size={14} />
                 <span>256-bit SSL encrypted payment</span>
               </div>
