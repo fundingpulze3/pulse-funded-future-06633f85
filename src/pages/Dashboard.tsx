@@ -78,16 +78,18 @@ const Dashboard = () => {
   }, [user, authLoading]);
 
   const fetchAllData = async () => {
-    const [profileRes, referralsRes, purchasesRes, certsRes] = await Promise.all([
+    const [profileRes, referralsRes, purchasesRes, certsRes, credsRes] = await Promise.all([
       supabase.from("profiles").select("referral_code, display_name, email, avatar_url, created_at").eq("user_id", user!.id).single(),
       supabase.from("affiliate_referrals").select("*").eq("referrer_id", user!.id),
       supabase.from("challenge_purchases").select("*, challenges(name, account_size)").eq("user_id", user!.id).order("created_at", { ascending: false }),
-      supabase.from("certificates").select("*").eq("is_visible", true).order("sort_order"),
+      supabase.from("user_certificates").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }),
+      supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id").eq("assigned_to", user!.id),
     ]);
     if (profileRes.data) setProfile(profileRes.data);
     if (referralsRes.data) setReferrals(referralsRes.data);
     if (purchasesRes.data) setPurchases(purchasesRes.data as unknown as Purchase[]);
-    if (certsRes.data) setCertificates(certsRes.data);
+    if (certsRes.data) setUserCertificates(certsRes.data as any);
+    if (credsRes.data) setCredentials(credsRes.data as any);
     setLoading(false);
   };
 
