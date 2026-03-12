@@ -274,6 +274,7 @@ const Admin = () => {
       items: [
         { id: "users" as Tab, label: "Users", icon: <Users size={18} /> },
         { id: "challenges" as Tab, label: "Challenges", icon: <Trophy size={18} /> },
+        { id: "orders" as Tab, label: "Orders", icon: <ShoppingCart size={18} /> },
         { id: "credentials" as Tab, label: "Credentials", icon: <Key size={18} /> },
         { id: "referrals" as Tab, label: "Referrals", icon: <Link2 size={18} /> },
         { id: "coupons" as Tab, label: "Coupons", icon: <Ticket size={18} /> },
