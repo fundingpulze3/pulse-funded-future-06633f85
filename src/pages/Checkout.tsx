@@ -105,11 +105,12 @@ const Checkout = () => {
 
     try {
       const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
+      const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
 
       const { data: challenge } = await supabase
         .from("challenges")
         .select("id")
-        .eq("step_type", stepType)
+        .eq("step_type", dbStepType)
         .eq("account_size", sizeNum)
         .eq("is_active", true)
         .single();
