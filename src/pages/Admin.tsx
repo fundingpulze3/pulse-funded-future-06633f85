@@ -96,10 +96,12 @@ const Admin = () => {
   useEffect(() => {
     if (!authLoading && !adminLoading) {
       if (!user) { navigate("/auth"); return; }
-      if (!isAdmin) { toast.error("Access denied. Admin only."); navigate("/"); return; }
+      if (!isAdmin) { toast.error("Access denied."); navigate("/"); return; }
+      // Employee can only see support — default to support tab
+      if (userRole === "employee") setTab("support");
       fetchAll();
     }
-  }, [user, authLoading, isAdmin, adminLoading]);
+  }, [user, authLoading, isAdmin, adminLoading, userRole]);
 
   const fetchAll = async () => {
     const [p, c, r, cp, pu, pv] = await Promise.all([
