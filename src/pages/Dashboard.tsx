@@ -39,6 +39,7 @@ interface Referral {
 
 interface Purchase {
   id: string;
+  challenge_id: string;
   amount_paid: number;
   status: string;
   payment_status: string;
