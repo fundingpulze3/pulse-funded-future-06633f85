@@ -11,3 +11,9 @@ project_id = "rpshiyvndmnogbhbgmfm"
     verify_jwt = false
   [functions.parse-mt5-statement]
     verify_jwt = false
+  [functions.verify-paypal-order]
+    verify_jwt = false
+  [functions.nowpayments-create]
+    verify_jwt = false
+  [functions.nowpayments-webhook]
+    verify_jwt = false
