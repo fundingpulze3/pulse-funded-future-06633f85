@@ -38,12 +38,22 @@ interface Purchase {
   challenges: { name: string; account_size: number } | null;
 }
 
-interface Certificate {
+interface UserCertificate {
   id: string;
+  certificate_type: string;
+  account_number: string | null;
+  stats: Record<string, any>;
   title: string;
   description: string | null;
-  image_url: string;
   created_at: string;
+}
+
+interface TradingCredential {
+  id: string;
+  mt5_login: string;
+  mt5_password: string;
+  mt5_server: string;
+  challenge_id: string;
 }
 
 const REFERRAL_DOMAIN = "https://fundingpulze.com";
