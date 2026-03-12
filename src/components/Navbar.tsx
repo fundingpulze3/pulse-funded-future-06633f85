@@ -19,7 +19,7 @@ const navLinks = [
   { label: "Help Center", href: "/help", route: "/help" },
   { label: "FAQ", href: "/faq", route: "/faq" },
   { label: "About", href: "/about", route: "/about" },
-  { label: "Affiliate", href: "/affiliate", route: "/affiliate" },
+  { label: "Dashboard", href: "/dashboard", route: "/dashboard" },
 ];
 
 const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
