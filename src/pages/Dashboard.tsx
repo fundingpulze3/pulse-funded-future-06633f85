@@ -64,7 +64,8 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [userCertificates, setUserCertificates] = useState<UserCertificate[]>([]);
+  const [credentials, setCredentials] = useState<TradingCredential[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
 
