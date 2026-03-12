@@ -519,7 +519,7 @@ const Dashboard = () => {
                 </div>
 
                 <div className="glass-card p-5">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Streaks</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Streaks & Risk</p>
                   <div className="space-y-2.5">
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Max Consecutive Wins</span>
@@ -528,6 +528,14 @@ const Dashboard = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Max Consecutive Losses</span>
                       <span className="text-sm font-bold text-red-400">{activeAccountStats?.maxConsecutiveLosses || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Max Consec. Profit</span>
+                      <span className="text-sm font-bold text-green-400">${Number(activeAccountStats?.maxConsecutiveProfit || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Max Consec. Loss</span>
+                      <span className="text-sm font-bold text-red-400">${Number(activeAccountStats?.maxConsecutiveLoss || 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Recovery Factor</span>
