@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Moon, Sun, User, LogOut, Shield, Menu, X } from "lucide-react";
+import { User, LogOut, Shield, Menu, X } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,7 +19,7 @@ const navLinks = [
   { label: "Help Center", href: "/help", route: "/help" },
   { label: "FAQ", href: "/faq", route: "/faq" },
   { label: "About", href: "/about", route: "/about" },
-  { label: "Affiliate", href: "/affiliate", route: "/affiliate" },
+  { label: "Dashboard", href: "/dashboard", route: "/dashboard" },
 ];
 
 const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
@@ -116,13 +116,6 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={onToggleTheme}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Toggle theme"
-            >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
 
             {user ? (
               <div className="hidden sm:flex items-center gap-2">

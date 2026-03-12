@@ -12,6 +12,7 @@ import BlogPost from "./pages/BlogPost";
 import Auth from "./pages/Auth";
 import AdminAuth from "./pages/AdminAuth";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
+import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import Checkout from "./pages/Checkout";
 import FAQ from "./pages/FAQ";
@@ -53,6 +54,7 @@ const AppRoutes = () => {
       <Route path="/blog/:slug" element={<BlogPost />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/about" element={<About />} />
