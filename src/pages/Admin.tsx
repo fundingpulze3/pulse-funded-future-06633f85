@@ -446,9 +446,9 @@ const Admin = () => {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Users</h2>
-                  <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{profiles.length} registered users</p>
+                  <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{visibleProfiles.length} registered users</p>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => exportCSV(profiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
+                <Button size="sm" variant="outline" onClick={() => exportCSV(visibleProfiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
               </div>
               <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
                 <table className="w-full">
@@ -456,19 +456,35 @@ const Admin = () => {
                     <tr className="text-left text-[11px] uppercase tracking-wider text-[hsl(0,0%,45%)] border-b border-[hsl(0,0%,92%)]">
                       <th className="px-5 py-3 font-medium">Name</th>
                       <th className="px-5 py-3 font-medium">Email</th>
+                      <th className="px-5 py-3 font-medium">Role</th>
                       <th className="px-5 py-3 font-medium">Referral Code</th>
-                      <th className="px-5 py-3 font-medium">Invited By</th>
                       <th className="px-5 py-3 font-medium">Joined</th>
                       <th className="px-5 py-3 font-medium">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {profiles.filter(p => !searchQuery || p.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) || p.email?.toLowerCase().includes(searchQuery.toLowerCase())).map((p) => (
+                    {visibleProfiles.filter(p => !searchQuery || p.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) || p.email?.toLowerCase().includes(searchQuery.toLowerCase())).map((p) => (
                       <tr key={p.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)] transition-colors">
                         <td className="px-5 py-3 text-sm font-medium text-[hsl(0,0%,10%)]">{p.display_name || "—"}</td>
                         <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{p.email || "—"}</td>
+                        <td className="px-5 py-3">
+                          {(userRole === "administrator" || userRole === "admin") ? (
+                            <select
+                              value={userRoles[p.user_id] || "none"}
+                              onChange={(e) => changeUserRole(p.user_id, e.target.value)}
+                              className="text-xs rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,88%)] px-2 py-1"
+                            >
+                              <option value="none">No Role</option>
+                              <option value="admin">Admin</option>
+                              <option value="employee">Employee</option>
+                              <option value="moderator">Moderator</option>
+                              <option value="user">User</option>
+                            </select>
+                          ) : (
+                            <span className="text-xs text-[hsl(0,0%,50%)]">{userRoles[p.user_id] || "—"}</span>
+                          )}
+                        </td>
                         <td className="px-5 py-3"><code className="text-xs bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,88%)] px-2 py-0.5 rounded font-mono text-[hsl(0,0%,30%)]">{p.referral_code || "—"}</code></td>
-                        <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{p.referred_by ? getProfileName(p.referred_by) : <span className="text-[hsl(0,0%,75%)]">Direct</span>}</td>
                         <td className="px-5 py-3 text-sm text-[hsl(0,0%,50%)]">{new Date(p.created_at).toLocaleDateString()}</td>
                         <td className="px-5 py-3">
                           <button
@@ -490,7 +506,7 @@ const Admin = () => {
                         </td>
                       </tr>
                     ))}
-                    {profiles.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No users yet.</td></tr>}
+                    {visibleProfiles.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No users yet.</td></tr>}
                   </tbody>
                 </table>
               </div>
