@@ -101,6 +101,16 @@ Deno.serve(async (req) => {
 
     // If breached (drawdown violation) → FAIL immediately, no certificate
     if (evaluation.breached) {
+      // Send breach email to user
+      try {
+        const isDailyBreach = evaluation.violations.some((v: string) => v.toLowerCase().includes("daily"));
+        await sendEmailNotification(adminClient, supabaseUrl, credential.assigned_to, isDailyBreach ? "daily_dd_breach" : "max_dd_breach", {
+          accountNumber: parsed.accountNumber,
+          breachValue: isDailyBreach ? evaluation.details.actualDailyDrawdown : evaluation.details.actualMaxDrawdown,
+          limit: isDailyBreach ? evaluation.details.dailyDrawdownLimit : evaluation.details.maxDrawdownLimit,
+        });
+      } catch (e) { console.error("Failed to send breach email:", e); }
+
       return new Response(
         JSON.stringify({
           success: false,
