@@ -237,42 +237,19 @@ const Checkout = () => {
               )}
             </div>
 
-            {/* Payment Methods */}
+            {/* Manual Payment Info */}
             <div className="glass-card p-6">
               <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
-                <CreditCard size={18} /> Payment Method
+                <CreditCard size={18} /> Manual Payment
               </h3>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {gateways.map((gw) => (
-                  <button
-                    key={gw.id}
-                    onClick={() => setSelectedGateway(gw.id)}
-                    className={`relative flex items-center gap-4 p-5 rounded-xl border-2 transition-all duration-300 text-left group ${
-                      selectedGateway === gw.id
-                        ? "border-primary bg-primary/5 shadow-[0_0_30px_-10px_hsl(var(--glow-primary)/0.3)]"
-                        : "border-border hover:border-muted-foreground/30 hover:bg-secondary/50"
-                    }`}
-                  >
-                    {selectedGateway === gw.id && (
-                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                        <Check size={12} className="text-primary-foreground" />
-                      </div>
-                    )}
-                    <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        selectedGateway === gw.id
-                          ? "bg-primary/20 text-primary"
-                          : "bg-muted text-muted-foreground"
-                      } transition-colors`}
-                    >
-                      {gw.icon}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">{gw.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{gw.tag}</p>
-                    </div>
-                  </button>
-                ))}
+              <div className="bg-secondary/50 border border-border rounded-xl p-4 space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Complete your payment via crypto or bank transfer, then click <strong>"I Have Paid"</strong> below. Our team will verify and activate your account within 24 hours.
+                </p>
+                <div className="flex items-center gap-2 text-xs text-primary">
+                  <Check size={14} />
+                  <span>Your order will be marked as pending until confirmed by admin</span>
+                </div>
               </div>
             </div>
           </div>
@@ -307,7 +284,7 @@ const Checkout = () => {
 
               <Button
                 onClick={handlePayment}
-                disabled={processing || !selectedGateway}
+                disabled={processing}
                 className="w-full mt-6 rounded-xl py-6 text-base font-semibold glow-box"
                 size="lg"
               >
@@ -317,7 +294,10 @@ const Checkout = () => {
                     Processing...
                   </span>
                 ) : (
-                  `Pay $${total}`
+                  <span className="flex items-center gap-2">
+                    <Check size={18} />
+                    I Have Paid — ${total}
+                  </span>
                 )}
               </Button>
 
