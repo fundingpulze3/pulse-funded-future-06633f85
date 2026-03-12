@@ -179,21 +179,6 @@ const Auth = () => {
                     {loading ? <Spinner /> : isLogin ? "Login" : "Create Account"}
                   </Button>
 
-                  <div className="relative flex items-center gap-4 my-2">
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-xs text-muted-foreground">or</span>
-                    <div className="flex-1 h-px bg-border" />
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-12 rounded-xl font-medium gap-2"
-                    onClick={handleGoogleSignIn}
-                  >
-                    <GoogleIcon />
-                    Continue with Google
-                  </Button>
                 </form>
               </motion.div>
             </AnimatePresence>
