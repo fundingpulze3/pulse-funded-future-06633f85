@@ -413,10 +413,14 @@ const Dashboard = () => {
               </div>
 
               <div className="glass-card p-6 sm:p-8">
-                <h2 className="font-display font-bold text-foreground mb-4">Payout Information</h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Payouts are processed once your commission is approved. Approved commissions are paid out within 5-7 business days via your preferred payment method. If you have questions, contact our support team.
-                </p>
+              <h2 className="font-display font-bold text-foreground mb-4">Payout Information</h2>
+                <div className="text-sm text-muted-foreground leading-relaxed space-y-2">
+                  <p>• <span className="text-foreground font-medium">Profit Split:</span> 90%</p>
+                  <p>• <span className="text-foreground font-medium">Scaling:</span> Up to $1,000,000</p>
+                  <p>• <span className="text-foreground font-medium">Minimum Trading Days:</span> 7 days before payout eligible</p>
+                  <p>• <span className="text-foreground font-medium">Payout Processing:</span> 24 – 48 hours</p>
+                  <p className="text-xs mt-3">If you have questions, contact our support team.</p>
+                </div>
                 <Button variant="outline" className="mt-5 rounded-xl" onClick={() => navigate("/help")}>
                   Contact Support
                 </Button>
