@@ -895,7 +895,7 @@ const Dashboard = () => {
                   )}
 
                   {/* Monthly P&L */}
-                  {activeAccountStats.monthlyPL && typeof activeAccountStats.monthlyPL === "object" && (
+                  {monthlyPLRows.length > 0 && (
                     <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
                       <h3 className="font-display font-bold text-sm mb-4">Monthly P&L</h3>
                       <div className="overflow-x-auto">
@@ -910,16 +910,16 @@ const Dashboard = () => {
                             </tr>
                           </thead>
                           <tbody className="text-sm">
-                            {Object.entries(activeAccountStats.monthlyPL).map(([year, months]: [string, any]) => (
+                            {monthlyPLRows.map(({ year, months, total }) => (
                               <tr key={year} className="border-b border-[hsl(220,15%,8%)]">
                                 <td className="px-4 py-3 font-bold">{year}</td>
-                                {Array.isArray(months) ? months.slice(0, 12).map((val: number, i: number) => (
-                                  <td key={i} className={`px-2 py-3 text-center text-xs font-mono font-bold ${val > 0 ? "text-[hsl(142,60%,50%)]" : val < 0 ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,30%)]"}`}>
+                                {months.map((val: number, i: number) => (
+                                  <td key={`${year}-${i}`} className={`px-2 py-3 text-center text-xs font-mono font-bold ${val > 0 ? "text-[hsl(142,60%,50%)]" : val < 0 ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,30%)]"}`}>
                                     {val !== 0 ? `$${val.toFixed(0)}` : "—"}
                                   </td>
-                                )) : Array(12).fill(null).map((_, i) => <td key={i} className="px-2 py-3 text-center text-[hsl(220,15%,30%)]">—</td>)}
+                                ))}
                                 <td className="px-4 py-3 text-center font-bold">
-                                  {Array.isArray(months) ? `$${months.reduce((s: number, v: number) => s + (v || 0), 0).toFixed(0)}` : "—"}
+                                  {total !== 0 ? `$${total.toFixed(0)}` : "—"}
                                 </td>
                               </tr>
                             ))}
