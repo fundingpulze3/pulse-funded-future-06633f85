@@ -12,7 +12,9 @@ import {
   BarChart3, Mail, Calendar, ChevronRight, TrendingUp, TrendingDown,
   Target, Activity, Shield, Upload, ArrowUpRight, ArrowDownRight,
   Eye, EyeOff, Percent, Crosshair, Zap, LineChart, Filter,
-  CheckCircle2, XCircle, AlertCircle, PlayCircle, CreditCard
+  CheckCircle2, XCircle, AlertCircle, PlayCircle, CreditCard,
+  Key, LayoutDashboard, ChevronDown, Settings, LogOut, HelpCircle,
+  Home, PieChart, Menu, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -67,15 +69,16 @@ interface TradingCredential {
 const REFERRAL_DOMAIN = "https://fundingpulze.com";
 
 type AccountFilter = "all" | "1-step" | "2-step" | "ongoing" | "breached" | "funded" | "completed";
+type SidebarTab = "overview" | "credentials" | "affiliate" | "certificates" | "payout";
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
-  // Ensure dark mode is always applied
   useEffect(() => {
     document.documentElement.classList.add("dark");
   }, []);
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -83,10 +86,12 @@ const Dashboard = () => {
   const [credentials, setCredentials] = useState<TradingCredential[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [accountFilter, setAccountFilter] = useState<AccountFilter>("all");
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [activeView, setActiveView] = useState<SidebarTab>("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -99,22 +104,13 @@ const Dashboard = () => {
   const withTimeout = <T,>(promise: Promise<T>, ms = 12000): Promise<T> =>
     new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error("Dashboard request timeout")), ms);
-      promise
-        .then((value) => {
-          clearTimeout(timer);
-          resolve(value);
-        })
-        .catch((error) => {
-          clearTimeout(timer);
-          reject(error);
-        });
+      promise.then(v => { clearTimeout(timer); resolve(v); }).catch(e => { clearTimeout(timer); reject(e); });
     });
 
   const fetchAllData = async () => {
     try {
       setLoading(true);
       setLoadError(null);
-
       const [profileRes, referralsRes, purchasesRes, certsRes, credsRes] = await withTimeout(
         Promise.all([
           supabase.from("profiles").select("referral_code, display_name, email, avatar_url, created_at").eq("user_id", user!.id).single(),
@@ -124,13 +120,11 @@ const Dashboard = () => {
           supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id").eq("assigned_to", user!.id),
         ])
       );
-
       if (profileRes.data) setProfile(profileRes.data);
       if (referralsRes.data) setReferrals(referralsRes.data);
       if (purchasesRes.data) setPurchases(purchasesRes.data as unknown as Purchase[]);
       if (certsRes.data) setUserCertificates(certsRes.data as any);
       if (credsRes.data) setCredentials(credsRes.data as any);
-
       if (!selectedAccount && purchasesRes.data && purchasesRes.data.length > 0) {
         setSelectedAccount((purchasesRes.data as any)[0].id);
       }
@@ -153,27 +147,22 @@ const Dashboard = () => {
   const totalEarnings = referrals.reduce((sum, r) => sum + (r.commission_amount || 0), 0);
   const pendingEarnings = referrals.filter(r => r.commission_status === "pending").reduce((sum, r) => sum + (r.commission_amount || 0), 0);
 
-  // Derive account status for filtering
   const getAccountStatus = (purchase: Purchase): string => {
     const status = purchase.status.toLowerCase();
     if (status === "breached" || status === "failed") return "breached";
     if (status === "funded") return "funded";
     if (status === "completed" || status === "passed") return "completed";
-    return "ongoing"; // active, pending, etc.
+    return "ongoing";
   };
 
-  const getStepType = (purchase: Purchase): string => {
-    return purchase.challenges?.step_type?.toLowerCase() || "";
-  };
+  const getStepType = (purchase: Purchase): string => purchase.challenges?.step_type?.toLowerCase() || "";
 
-  // Filtered purchases for the account switcher
   const filteredPurchases = useMemo(() => {
     return purchases.filter(p => {
       if (accountFilter === "all") return true;
       if (accountFilter === "1-step") return getStepType(p).includes("1");
       if (accountFilter === "2-step") return getStepType(p).includes("2");
-      const status = getAccountStatus(p);
-      return status === accountFilter;
+      return getAccountStatus(p) === accountFilter;
     });
   }, [purchases, accountFilter]);
 
@@ -187,81 +176,41 @@ const Dashboard = () => {
     completed: purchases.filter(p => getAccountStatus(p) === "completed").length,
   }), [purchases]);
 
-  // Active account stats
   const activeAccountStats = useMemo(() => {
-    const activePurchase = selectedAccount
-      ? purchases.find(p => p.id === selectedAccount)
-      : purchases[0];
-
+    const activePurchase = selectedAccount ? purchases.find(p => p.id === selectedAccount) : purchases[0];
     if (!activePurchase) return null;
-
     const latestStats = userCertificates.find(c => c.certificate_type === "latest_stats" && c.stats && Object.keys(c.stats).length > 0);
     const anyCert = userCertificates.find(c => c.stats && Object.keys(c.stats).length > 0 && c.certificate_type !== "latest_stats");
     const cert = latestStats || anyCert;
     const accountSize = activePurchase.challenges?.account_size || 0;
     const stats = cert?.stats || {};
-
     return {
       purchase: activePurchase,
-      stats,
-      balance: stats.balance ?? accountSize,
-      equity: stats.equity ?? stats.balance ?? accountSize,
-      profit: stats.profit ?? 0,
-      deposit: stats.deposit ?? accountSize,
-      totalTrades: stats.totalTrades ?? 0,
-      winRate: stats.winRate ?? 0,
-      profitFactor: stats.profitFactor ?? 0,
-      sharpeRatio: stats.sharpeRatio ?? 0,
-      recoveryFactor: stats.recoveryFactor ?? 0,
-      maxDrawdownPercent: stats.maxDrawdownPercent ?? stats.drawdownPercent ?? 0,
-      gainPercent: stats.gainPercent ?? 0,
-      grossProfit: stats.grossProfit ?? 0,
-      grossLoss: stats.grossLoss ?? 0,
-      bestTrade: stats.bestTrade ?? 0,
-      worstTrade: stats.worstTrade ?? 0,
-      longTrades: stats.longTrades ?? 0,
-      shortTrades: stats.shortTrades ?? 0,
-      avgHoldTimeMinutes: stats.avgHoldTimeMinutes ?? 0,
-      tradesPerWeek: stats.tradesPerWeek ?? 0,
-      depositLoad: stats.depositLoad ?? 0,
-      maxConsecutiveWins: stats.maxConsecutiveWins ?? 0,
-      maxConsecutiveLosses: stats.maxConsecutiveLosses ?? 0,
-      manualTrades: stats.manualTrades ?? 0,
-      robotTrades: stats.robotTrades ?? 0,
-      swapTotal: stats.swapTotal ?? 0,
-      commissionTotal: stats.commissionTotal ?? 0,
-      balanceChart: stats.balanceChart,
-      growthChart: stats.growthChart,
-      drawdownChart: stats.drawdownChart,
-      profitByDay: stats.profitByDay,
-      symbols: stats.symbols,
-      monthlyPL: stats.monthlyPL,
-      accountSize,
-      broker: stats.broker ?? "",
-      currency: stats.currency ?? "USD",
-      accountType: stats.accountType ?? "",
-      accountNumber: stats.accountNumber ?? "",
-      name: stats.name ?? "",
-      withdrawal: stats.withdrawal ?? 0,
-      withdrawalCount: stats.withdrawalCount ?? 0,
-      depositCount: stats.depositCount ?? 0,
-      growthPercent: stats.growthPercent ?? 0,
-      longNetPL: stats.longNetPL ?? 0,
-      shortNetPL: stats.shortNetPL ?? 0,
-      avgPLLong: stats.avgPLLong ?? 0,
-      avgPLShort: stats.avgPLShort ?? 0,
-      winTradesLong: stats.winTradesLong ?? 0,
-      winTradesShort: stats.winTradesShort ?? 0,
-      tradesLong: stats.tradesLong ?? 0,
-      tradesShort: stats.tradesShort ?? 0,
-      signalTrades: stats.signalTrades ?? 0,
-      maxConsecutiveProfit: stats.maxConsecutiveProfit ?? 0,
-      maxConsecutiveLoss: stats.maxConsecutiveLoss ?? 0,
-      drawdownDetailChart: stats.drawdownDetailChart,
+      stats, balance: stats.balance ?? accountSize, equity: stats.equity ?? stats.balance ?? accountSize,
+      profit: stats.profit ?? 0, deposit: stats.deposit ?? accountSize, totalTrades: stats.totalTrades ?? 0,
+      winRate: stats.winRate ?? 0, profitFactor: stats.profitFactor ?? 0, sharpeRatio: stats.sharpeRatio ?? 0,
+      recoveryFactor: stats.recoveryFactor ?? 0, maxDrawdownPercent: stats.maxDrawdownPercent ?? stats.drawdownPercent ?? 0,
+      gainPercent: stats.gainPercent ?? 0, grossProfit: stats.grossProfit ?? 0, grossLoss: stats.grossLoss ?? 0,
+      bestTrade: stats.bestTrade ?? 0, worstTrade: stats.worstTrade ?? 0,
+      longTrades: stats.longTrades ?? 0, shortTrades: stats.shortTrades ?? 0,
+      avgHoldTimeMinutes: stats.avgHoldTimeMinutes ?? 0, tradesPerWeek: stats.tradesPerWeek ?? 0,
+      depositLoad: stats.depositLoad ?? 0, maxConsecutiveWins: stats.maxConsecutiveWins ?? 0,
+      maxConsecutiveLosses: stats.maxConsecutiveLosses ?? 0, manualTrades: stats.manualTrades ?? 0,
+      robotTrades: stats.robotTrades ?? 0, swapTotal: stats.swapTotal ?? 0, commissionTotal: stats.commissionTotal ?? 0,
+      balanceChart: stats.balanceChart, growthChart: stats.growthChart, drawdownChart: stats.drawdownChart,
+      profitByDay: stats.profitByDay, symbols: stats.symbols, monthlyPL: stats.monthlyPL, accountSize,
+      broker: stats.broker ?? "", currency: stats.currency ?? "USD", accountType: stats.accountType ?? "",
+      accountNumber: stats.accountNumber ?? "", name: stats.name ?? "", withdrawal: stats.withdrawal ?? 0,
+      withdrawalCount: stats.withdrawalCount ?? 0, depositCount: stats.depositCount ?? 0,
+      growthPercent: stats.growthPercent ?? 0, longNetPL: stats.longNetPL ?? 0, shortNetPL: stats.shortNetPL ?? 0,
+      avgPLLong: stats.avgPLLong ?? 0, avgPLShort: stats.avgPLShort ?? 0,
+      winTradesLong: stats.winTradesLong ?? 0, winTradesShort: stats.winTradesShort ?? 0,
+      tradesLong: stats.tradesLong ?? 0, tradesShort: stats.tradesShort ?? 0,
+      signalTrades: stats.signalTrades ?? 0, maxConsecutiveProfit: stats.maxConsecutiveProfit ?? 0,
+      maxConsecutiveLoss: stats.maxConsecutiveLoss ?? 0, drawdownDetailChart: stats.drawdownDetailChart,
     };
   }, [purchases, userCertificates, selectedAccount]);
 
-  // Chart data
   const chartData = useMemo(() => {
     if (!activeAccountStats?.balanceChart || !Array.isArray(activeAccountStats.balanceChart)) {
       if (!activeAccountStats) return [];
@@ -302,955 +251,881 @@ const Dashboard = () => {
     }));
   }, [activeAccountStats]);
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          className="flex flex-col items-center gap-4"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <div className="w-10 h-10 border-2 border-highlight border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-foreground/80 font-medium">Loading dashboard...</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navbar isDark={true} onToggleTheme={() => {}} />
-        <div className="max-w-7xl mx-auto pt-28 pb-16 px-4 sm:px-6">
-          <div className="glass-card p-8 text-center">
-            <p className="text-lg font-display font-bold mb-2">Dashboard unavailable</p>
-            <p className="text-muted-foreground mb-5">{loadError}</p>
-            <Button className="rounded-xl" onClick={fetchAllData}>Retry</Button>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  const tabItems = [
-    { value: "overview", label: "Overview", icon: Activity },
-    { value: "accounts", label: "Accounts", icon: BarChart3 },
-    { value: "affiliate", label: "Affiliate", icon: Users },
-    { value: "certificates", label: "Certificates", icon: Award },
-    { value: "payout", label: "Payout", icon: Wallet },
-  ];
-
   const profitPercent = activeAccountStats
     ? activeAccountStats.gainPercent || ((Number(activeAccountStats.profit) / activeAccountStats.accountSize) * 100)
     : 0;
-
   const ddUsed = activeAccountStats?.maxDrawdownPercent || 0;
 
-  const filterTabs: { key: AccountFilter; label: string; icon: any }[] = [
-    { key: "all", label: "All", icon: Filter },
-    { key: "ongoing", label: "Ongoing", icon: PlayCircle },
-    { key: "funded", label: "Funded", icon: CheckCircle2 },
-    { key: "breached", label: "Breached", icon: XCircle },
-    { key: "1-step", label: "1-Step", icon: Zap },
-    { key: "2-step", label: "2-Step", icon: Target },
+  // Loading
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-[hsl(220,20%,4%)] flex items-center justify-center">
+        <motion.div className="flex flex-col items-center gap-4" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+          <div className="w-10 h-10 border-2 border-[hsl(210,80%,55%)] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-[hsl(210,20%,70%)] font-medium">Loading dashboard...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Error
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[hsl(220,20%,4%)] text-white flex items-center justify-center">
+        <div className="text-center p-8">
+          <p className="text-lg font-bold mb-2">Dashboard unavailable</p>
+          <p className="text-[hsl(210,20%,60%)] mb-5">{loadError}</p>
+          <Button className="rounded-xl bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)]" onClick={fetchAllData}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Get credential for a purchase
+  const getCredentialForPurchase = (purchaseId: string) => {
+    const purchase = purchases.find(p => p.id === purchaseId);
+    if (!purchase) return null;
+    return credentials.find(c => c.challenge_id === purchase.challenges?.name) || credentials[0] || null;
+  };
+
+  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+    ongoing: { label: "Active", color: "text-[hsl(210,80%,55%)]", bg: "bg-[hsl(210,80%,55%)]/15" },
+    funded: { label: "Funded", color: "text-[hsl(142,60%,50%)]", bg: "bg-[hsl(142,60%,50%)]/15" },
+    breached: { label: "Not Passed", color: "text-[hsl(0,70%,55%)]", bg: "bg-[hsl(0,70%,55%)]/15" },
+    completed: { label: "Passed", color: "text-[hsl(142,60%,50%)]", bg: "bg-[hsl(142,60%,50%)]/15" },
+  };
+
+  const filterTabs: { key: AccountFilter; label: string }[] = [
+    { key: "all", label: "All" },
+    { key: "ongoing", label: "Active" },
+    { key: "funded", label: "Funded" },
+    { key: "breached", label: "Not Passed" },
+    { key: "completed", label: "Passed" },
+    { key: "1-step", label: "1-Step" },
+    { key: "2-step", label: "2-Step" },
+  ];
+
+  const navItems: { key: SidebarTab; label: string; icon: any }[] = [
+    { key: "overview", label: "Dashboard", icon: Home },
+    { key: "credentials", label: "Credentials", icon: Key },
+    { key: "affiliate", label: "Affiliate", icon: Users },
+    { key: "certificates", label: "Certificates", icon: Award },
+    { key: "payout", label: "Payout", icon: Wallet },
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar isDark={true} onToggleTheme={() => {}} />
-
-      <div className="max-w-7xl mx-auto pt-28 pb-16 px-4 sm:px-6">
-        {/* Header */}
-        <motion.div
-          className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-10 gap-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+    <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
+      {/* Top Bar */}
+      <header className="h-14 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,20%,6%)] flex items-center px-4 lg:px-6 z-50 sticky top-0">
+        <button
+          onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+          className="lg:hidden mr-3 p-1.5 rounded-lg hover:bg-[hsl(220,15%,12%)] transition-colors"
         >
-          <div>
-            <motion.p
-              className="text-muted-foreground text-sm mb-1 flex items-center gap-2"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"},
-            </motion.p>
-            <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
-              {profile?.display_name || "Trader"}
-            </h1>
-          </div>
-          <motion.div
-            className="flex gap-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Button variant="outline" size="sm" className="rounded-xl border-border/40 text-muted-foreground hover:text-foreground hover:border-border transition-all" onClick={() => navigate("/help")}>
-              Support
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-xl border-border/40 text-muted-foreground hover:text-foreground hover:border-border transition-all" onClick={async () => { await signOut(); navigate("/"); }}>
-              Sign Out
-            </Button>
-          </motion.div>
-        </motion.div>
+          {mobileSidebarOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
 
-        {/* ─── Account Switcher ─── */}
-        {purchases.length > 0 && (
-          <motion.div
-            className="mb-8"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {/* Filter pills */}
-            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[hsl(210,80%,55%)] flex items-center justify-center">
+            <Zap size={16} className="text-white" />
+          </div>
+          <span className="font-display font-bold text-sm tracking-wide hidden sm:inline">FUNDING PULZE</span>
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Nav items - desktop */}
+        <nav className="hidden lg:flex items-center gap-1 mr-4">
+          {navItems.map(item => (
+            <button
+              key={item.key}
+              onClick={() => setActiveView(item.key)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeView === item.key
+                  ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
+                  : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
+              }`}
+            >
+              <item.icon size={14} />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate("/help")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
+            <HelpCircle size={16} />
+          </button>
+          <button onClick={() => navigate("/")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
+            <Settings size={16} />
+          </button>
+          <button onClick={async () => { await signOut(); navigate("/"); }} className="p-2 rounded-lg hover:bg-[hsl(0,70%,55%)]/10 text-[hsl(220,15%,50%)] hover:text-[hsl(0,70%,55%)] transition-colors">
+            <LogOut size={16} />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* Mobile sidebar overlay */}
+        <AnimatePresence>
+          {mobileSidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Left Panel - Account List */}
+        <aside className={`
+          fixed lg:static z-50 lg:z-auto top-14 bottom-0 left-0
+          w-[340px] lg:w-[360px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
+          flex flex-col overflow-hidden transition-transform duration-300
+          ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}>
+          {/* Mobile nav */}
+          <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)]">
+            <div className="flex flex-wrap gap-1">
+              {navItems.map(item => (
+                <button
+                  key={item.key}
+                  onClick={() => { setActiveView(item.key); setMobileSidebarOpen(false); }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    activeView === item.key
+                      ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
+                      : "text-[hsl(220,15%,50%)] hover:bg-[hsl(220,15%,10%)]"
+                  }`}
+                >
+                  <item.icon size={12} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* User info */}
+          <div className="p-4 border-b border-[hsl(220,15%,12%)]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(210,80%,55%)] to-[hsl(210,80%,40%)] flex items-center justify-center text-white font-bold text-sm">
+                {(profile?.display_name || "T")[0].toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{profile?.display_name || "Trader"}</p>
+                <p className="text-[11px] text-[hsl(220,15%,45%)] truncate">{profile?.email || ""}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter pills */}
+          <div className="px-3 py-3 border-b border-[hsl(220,15%,12%)]">
+            <div className="flex flex-wrap gap-1.5">
               {filterTabs.map(f => (
                 <button
                   key={f.key}
                   onClick={() => setAccountFilter(f.key)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap border ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
                     accountFilter === f.key
-                      ? "bg-highlight/15 text-highlight border-highlight/30"
-                      : "bg-secondary/30 text-muted-foreground border-border/30 hover:bg-secondary/50 hover:text-foreground"
+                      ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)] shadow-[0_0_8px_hsl(210,80%,55%,0.15)]"
+                      : "text-[hsl(220,15%,45%)] hover:text-[hsl(0,0%,80%)] hover:bg-[hsl(220,15%,10%)]"
                   }`}
                 >
-                  <f.icon size={12} />
                   {f.label}
                   {filterCounts[f.key] > 0 && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                      accountFilter === f.key ? "bg-highlight/20" : "bg-secondary/50"
-                    }`}>
-                      {filterCounts[f.key]}
-                    </span>
+                    <span className="ml-1 text-[10px] opacity-70">({filterCounts[f.key]})</span>
                   )}
                 </button>
               ))}
             </div>
+          </div>
 
-            {/* Account cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              <AnimatePresence mode="popLayout">
-                {filteredPurchases.map((p, i) => {
-                  const isActive = selectedAccount === p.id;
-                  const status = getAccountStatus(p);
-                  const statusConfig: Record<string, { color: string; bgColor: string; borderColor: string; icon: any }> = {
-                    ongoing: { color: "text-highlight", bgColor: "bg-highlight/10", borderColor: "border-highlight/30", icon: PlayCircle },
-                    funded: { color: "text-green-400", bgColor: "bg-green-500/10", borderColor: "border-green-500/30", icon: CheckCircle2 },
-                    breached: { color: "text-red-400", bgColor: "bg-red-500/10", borderColor: "border-red-500/30", icon: XCircle },
-                    completed: { color: "text-cyan-400", bgColor: "bg-cyan-500/10", borderColor: "border-cyan-500/30", icon: Award },
-                  };
-                  const sc = statusConfig[status] || statusConfig.ongoing;
-                  const StatusIcon = sc.icon;
+          {/* Account Cards */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-[hsl(220,15%,15%)] scrollbar-track-transparent">
+            <AnimatePresence mode="popLayout">
+              {filteredPurchases.map((p, i) => {
+                const isActive = selectedAccount === p.id;
+                const status = getAccountStatus(p);
+                const sc = statusConfig[status] || statusConfig.ongoing;
+                const cred = credentials.find(c => c.challenge_id === p.challenges?.name);
+                const challengeName = p.challenges?.name || "Account";
+                const stepType = p.challenges?.step_type || "—";
 
-                  return (
-                    <motion.button
-                      key={p.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.25, delay: i * 0.03 }}
-                      onClick={() => setSelectedAccount(p.id)}
-                      className={`relative text-left p-4 rounded-2xl border transition-all duration-300 group ${
-                        isActive
-                          ? `bg-highlight/5 border-highlight/40 shadow-[0_0_20px_-5px_hsl(var(--highlight)/0.2)]`
-                          : "bg-secondary/20 border-border/30 hover:bg-secondary/40 hover:border-border/50"
-                      }`}
-                    >
-                      {/* Active indicator */}
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeAccountIndicator"
-                          className="absolute -top-px -left-px -right-px h-0.5 bg-gradient-to-r from-transparent via-highlight to-transparent rounded-t-2xl"
-                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                        />
-                      )}
-
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? "bg-highlight/15" : "bg-secondary/50"}`}>
-                            <CreditCard size={14} className={isActive ? "text-highlight" : "text-muted-foreground"} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-foreground leading-tight">{p.challenges?.name || "Account"}</p>
-                            <p className="text-[10px] text-muted-foreground">{p.challenges?.step_type || "—"}</p>
-                          </div>
-                        </div>
-                        <div className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${sc.bgColor} ${sc.color} ${sc.borderColor}`}>
-                          <StatusIcon size={10} />
-                          {status}
-                        </div>
-                      </div>
-
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <p className="text-xl font-bold font-display text-foreground">${(p.challenges?.account_size || 0).toLocaleString()}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {new Date(p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                          </p>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground font-mono">${p.amount_paid}</p>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-
-            {filteredPurchases.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-8 text-muted-foreground text-sm"
-              >
-                No accounts match this filter.
-              </motion.div>
-            )}
-          </motion.div>
-        )}
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full flex overflow-x-auto bg-secondary/20 rounded-2xl p-1.5 mb-8 gap-1 border border-border/20">
-            {tabItems.map((tab) => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                className="flex-1 min-w-[100px] flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all text-muted-foreground hover:text-foreground/70"
-              >
-                <tab.icon size={15} />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {/* ─── Overview ─── */}
-          <TabsContent value="overview">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="space-y-6"
-            >
-              {/* Top Stats Row */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { label: "Balance", value: `$${Number(activeAccountStats?.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign, trend: Number(activeAccountStats?.profit || 0) >= 0 ? "up" as const : "down" as const },
-                  { label: "Equity", value: `$${Number(activeAccountStats?.equity || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: Activity },
-                  { label: "Profit", value: `$${Number(activeAccountStats?.profit || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, subValue: `${profitPercent >= 0 ? "+" : ""}${profitPercent.toFixed(2)}%`, icon: TrendingUp, trend: Number(activeAccountStats?.profit || 0) >= 0 ? "up" as const : "down" as const, highlight: true },
-                  { label: "Max Drawdown", value: `${ddUsed.toFixed(2)}%`, subValue: `/ ${activeAccountStats?.purchase?.challenges?.max_drawdown || "10%"}`, icon: Shield, trend: ddUsed > 5 ? "down" as const : "up" as const },
-                ].map((stat, i) => (
+                return (
                   <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05, duration: 0.4 }}
-                  >
-                    <GlowStatCard {...stat} />
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Balance/Equity Chart */}
-              <motion.div
-                className="glass-card p-6 hover:shadow-lg transition-shadow duration-500"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
-                    <LineChart size={18} className="text-highlight" />
-                    Balance / Equity
-                  </h2>
-                </div>
-                <div className="h-[320px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="balanceGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(210, 70%, 55%)" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(210, 70%, 55%)" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(270, 60%, 60%)" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="hsl(270, 60%, 60%)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 16%)" />
-                      <XAxis dataKey="date" tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 10 }} axisLine={{ stroke: "hsl(0, 0%, 16%)" }} tickLine={false} interval="preserveStartEnd" />
-                      <YAxis tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toLocaleString()}`} domain={['dataMin - 20', 'dataMax + 20']} />
-                      <Tooltip contentStyle={{ background: "hsl(0, 0%, 6%)", border: "1px solid hsl(0, 0%, 16%)", borderRadius: "12px", color: "hsl(0, 0%, 96%)", fontSize: "13px" }} formatter={(value: number) => [`$${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, undefined]} />
-                      <Legend wrapperStyle={{ paddingTop: 12, fontSize: 12 }} iconType="circle" iconSize={8} />
-                      <Area type="monotone" dataKey="balance" stroke="hsl(210, 70%, 55%)" strokeWidth={2.5} fill="url(#balanceGrad)" name="Balance" dot={false} activeDot={{ r: 4, fill: "hsl(210, 70%, 55%)" }} />
-                      <Area type="monotone" dataKey="equity" stroke="hsl(270, 60%, 60%)" strokeWidth={2} fill="url(#equityGrad)" name="Equity" dot={false} activeDot={{ r: 4, fill: "hsl(270, 60%, 60%)" }} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </motion.div>
-
-              {/* Growth & Drawdown */}
-              {(growthData.length > 0 || drawdownData.length > 0) && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {growthData.length > 0 && (
-                    <div className="glass-card p-5 hover:shadow-lg transition-shadow duration-500">
-                      <h3 className="font-display font-bold text-sm text-foreground mb-4 flex items-center gap-2">
-                        <TrendingUp size={16} className="text-green-400" /> Growth %
-                      </h3>
-                      <div className="h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={growthData}>
-                            <defs>
-                              <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 16%)" />
-                            <XAxis dataKey="date" tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 9 }} tickLine={false} interval="preserveStartEnd" />
-                            <YAxis tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-                            <Tooltip contentStyle={{ background: "hsl(0, 0%, 6%)", border: "1px solid hsl(0, 0%, 16%)", borderRadius: "8px", color: "hsl(0, 0%, 96%)", fontSize: "12px" }} formatter={(v: number) => [`${v.toFixed(3)}%`]} />
-                            <Area type="monotone" dataKey="growth" stroke="hsl(142, 71%, 45%)" strokeWidth={2} fill="url(#growthGrad)" dot={false} />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  )}
-                  {drawdownData.length > 0 && (
-                    <div className="glass-card p-5 hover:shadow-lg transition-shadow duration-500">
-                      <h3 className="font-display font-bold text-sm text-foreground mb-4 flex items-center gap-2">
-                        <TrendingDown size={16} className="text-red-400" /> Drawdown %
-                      </h3>
-                      <div className="h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={drawdownData}>
-                            <defs>
-                              <linearGradient id="ddGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 16%)" />
-                            <XAxis dataKey="date" tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 9 }} tickLine={false} interval="preserveStartEnd" />
-                            <YAxis tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-                            <Tooltip contentStyle={{ background: "hsl(0, 0%, 6%)", border: "1px solid hsl(0, 0%, 16%)", borderRadius: "8px", color: "hsl(0, 0%, 96%)", fontSize: "12px" }} formatter={(v: number) => [`${v.toFixed(3)}%`]} />
-                            <Area type="monotone" dataKey="drawdown" stroke="hsl(0, 84%, 60%)" strokeWidth={2} fill="url(#ddGrad)" dot={false} />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Trading Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {[
-                  { icon: Crosshair, label: "Win Rate", value: `${Number(activeAccountStats?.winRate || 0).toFixed(1)}%`, color: "text-highlight" },
-                  { icon: BarChart3, label: "Profit Factor", value: Number(activeAccountStats?.profitFactor) === -1 ? "∞" : String(activeAccountStats?.profitFactor ?? "—"), color: "text-foreground" },
-                  { icon: Zap, label: "Sharpe Ratio", value: Number(activeAccountStats?.sharpeRatio || 0).toFixed(2), color: "text-foreground" },
-                  { icon: TrendingUp, label: "Best Trade", value: `$${Number(activeAccountStats?.bestTrade || 0).toFixed(2)}`, color: "text-green-400" },
-                  { icon: TrendingDown, label: "Worst Trade", value: `$${Number(activeAccountStats?.worstTrade || 0).toFixed(2)}`, color: "text-red-400" },
-                  { icon: Activity, label: "Total Trades", value: String(activeAccountStats?.totalTrades || 0), color: "text-foreground" },
-                ].map((stat, i) => (
-                  <motion.div
-                    key={stat.label}
+                    key={p.id}
+                    layout
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + i * 0.03 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2, delay: i * 0.02 }}
+                    onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); setMobileSidebarOpen(false); }}
+                    className={`group cursor-pointer rounded-xl p-3.5 transition-all duration-200 border ${
+                      isActive
+                        ? "bg-[hsl(220,20%,9%)] border-[hsl(210,80%,55%)]/30 shadow-[0_0_20px_-5px_hsl(210,80%,55%,0.2)]"
+                        : "bg-[hsl(220,20%,7%)] border-[hsl(220,15%,12%)] hover:bg-[hsl(220,20%,8%)] hover:border-[hsl(220,15%,18%)]"
+                    }`}
                   >
-                    <TradingStatCard {...stat} />
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Breakdown Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="glass-card p-5">
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 font-semibold">P&L Breakdown</p>
-                  <div className="space-y-2.5">
-                    {[
-                      { label: "Gross Profit", value: `$${Number(activeAccountStats?.grossProfit || 0).toFixed(2)}`, cls: "text-green-400" },
-                      { label: "Gross Loss", value: `$${Number(activeAccountStats?.grossLoss || 0).toFixed(2)}`, cls: "text-red-400" },
-                      { label: "Swap", value: `$${Number(activeAccountStats?.swapTotal || 0).toFixed(2)}`, cls: "text-foreground" },
-                      { label: "Commission", value: `$${Number(activeAccountStats?.commissionTotal || 0).toFixed(2)}`, cls: "text-foreground" },
-                    ].map(r => (
-                      <div key={r.label} className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">{r.label}</span>
-                        <span className={`text-sm font-bold ${r.cls}`}>{r.value}</span>
+                    {/* Header row */}
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                          isActive ? "bg-[hsl(210,80%,55%)]/15" : "bg-[hsl(220,15%,12%)]"
+                        }`}>
+                          <User size={16} className={isActive ? "text-[hsl(210,80%,55%)]" : "text-[hsl(220,15%,40%)]"} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold leading-tight">Mt5 {cred?.mt5_login || "—"}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[11px] text-[hsl(220,15%,50%)]">{challengeName}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(210,80%,55%)]/10 text-[hsl(210,80%,55%)] font-medium">{stepType}</span>
+                          </div>
+                        </div>
                       </div>
-                    ))}
-                    <div className="h-px bg-border/50" />
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-semibold text-foreground">Net Profit</span>
-                      <span className={`text-sm font-bold ${Number(activeAccountStats?.profit || 0) >= 0 ? "text-green-400" : "text-red-400"}`}>
-                        ${Number(activeAccountStats?.profit || 0).toFixed(2)}
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${sc.bg} ${sc.color}`}>
+                        {sc.label}
                       </span>
                     </div>
-                  </div>
-                </div>
 
-                <div className="glass-card p-5">
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 font-semibold">Direction</p>
-                  <div className="space-y-3">
-                    {[
-                      { label: "Long", count: activeAccountStats?.longTrades || 0, color: "bg-highlight" },
-                      { label: "Short", count: activeAccountStats?.shortTrades || 0, color: "bg-purple-500" },
-                    ].map(d => (
-                      <div key={d.label}>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-muted-foreground">{d.label}</span>
-                          <span className="text-foreground font-medium">{d.count}</span>
-                        </div>
-                        <div className="h-2 bg-secondary/50 rounded-full overflow-hidden">
-                          <motion.div
-                            className={`h-full ${d.color} rounded-full`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${activeAccountStats?.totalTrades ? (d.count / activeAccountStats.totalTrades) * 100 : 0}%` }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                          />
+                    {/* Stats row */}
+                    <div className="flex items-center gap-4 mt-1">
+                      <div className="flex items-center gap-1.5">
+                        <Activity size={12} className="text-[hsl(220,15%,35%)]" />
+                        <div>
+                          <p className="text-[10px] text-[hsl(220,15%,40%)]">No. of trades</p>
+                          <p className="text-sm font-bold">{activeAccountStats?.totalTrades || 0}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="glass-card p-5">
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 font-semibold">Activity</p>
-                  <div className="space-y-2.5">
-                    {[
-                      { label: "Trades/Week", value: activeAccountStats?.tradesPerWeek || 0 },
-                      { label: "Avg Hold", value: `${activeAccountStats?.avgHoldTimeMinutes || 0}m` },
-                      { label: "Manual", value: activeAccountStats?.manualTrades || 0 },
-                      { label: "Robot/EA", value: activeAccountStats?.robotTrades || 0 },
-                    ].map(r => (
-                      <div key={r.label} className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">{r.label}</span>
-                        <span className="text-sm font-bold text-foreground">{r.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="glass-card p-5">
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 font-semibold">Streaks & Risk</p>
-                  <div className="space-y-2.5">
-                    {[
-                      { label: "Consec. Wins", value: activeAccountStats?.maxConsecutiveWins || 0, cls: "text-green-400" },
-                      { label: "Consec. Losses", value: activeAccountStats?.maxConsecutiveLosses || 0, cls: "text-red-400" },
-                      { label: "Consec. Profit", value: `$${Number(activeAccountStats?.maxConsecutiveProfit || 0).toFixed(2)}`, cls: "text-green-400" },
-                      { label: "Consec. Loss", value: `$${Number(activeAccountStats?.maxConsecutiveLoss || 0).toFixed(2)}`, cls: "text-red-400" },
-                      { label: "Recovery Factor", value: Number(activeAccountStats?.recoveryFactor || 0).toFixed(2), cls: "text-foreground" },
-                      { label: "Deposit Load", value: `${Number(activeAccountStats?.depositLoad || 0).toFixed(1)}%`, cls: "text-foreground" },
-                    ].map(r => (
-                      <div key={r.label} className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">{r.label}</span>
-                        <span className={`text-sm font-bold ${r.cls}`}>{r.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Daily Profit */}
-              {dailyProfitData.length > 0 && (
-                <div className="glass-card p-5">
-                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Profit by Day of Week</h3>
-                  <div className="h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dailyProfitData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 16%)" />
-                        <XAxis dataKey="day" tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 11 }} tickLine={false} />
-                        <YAxis tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
-                        <Tooltip contentStyle={{ background: "hsl(0, 0%, 6%)", border: "1px solid hsl(0, 0%, 16%)", borderRadius: "8px", color: "hsl(0, 0%, 96%)", fontSize: "12px" }} />
-                        <Bar dataKey="profit" radius={[6, 6, 0, 0]}>
-                          {dailyProfitData.map((entry, index) => (
-                            <Cell key={index} fill={entry.profit >= 0 ? "hsl(142, 71%, 45%)" : "hsl(0, 84%, 60%)"} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-
-              {/* Account Info */}
-              {activeAccountStats && (activeAccountStats.broker || activeAccountStats.accountNumber) && (
-                <div className="glass-card p-5">
-                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Account Information</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                    {[
-                      activeAccountStats.accountNumber && { label: "Account #", value: activeAccountStats.accountNumber, mono: true },
-                      activeAccountStats.broker && { label: "Broker", value: activeAccountStats.broker },
-                      activeAccountStats.currency && { label: "Currency", value: activeAccountStats.currency },
-                      activeAccountStats.accountType && { label: "Type", value: activeAccountStats.accountType },
-                      { label: "Deposit", value: `$${Number(activeAccountStats.deposit).toLocaleString()} (${activeAccountStats.depositCount}x)` },
-                      activeAccountStats.withdrawal > 0 && { label: "Withdrawal", value: `$${Number(activeAccountStats.withdrawal).toLocaleString()} (${activeAccountStats.withdrawalCount}x)` },
-                    ].filter(Boolean).map((item: any) => (
-                      <div key={item.label} className="bg-secondary/30 rounded-xl px-3 py-2.5">
-                        <p className="text-[10px] text-muted-foreground">{item.label}</p>
-                        <p className={`text-sm font-bold text-foreground ${item.mono ? "font-mono" : ""}`}>{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Long/Short Detailed */}
-              {activeAccountStats && (activeAccountStats.tradesLong > 0 || activeAccountStats.tradesShort > 0) && (
-                <div className="glass-card p-5">
-                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Long / Short Breakdown</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="text-left text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border/50">
-                          <th className="px-4 py-2">Metric</th>
-                          <th className="px-4 py-2 text-center">Long</th>
-                          <th className="px-4 py-2 text-center">Short</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-sm">
-                        {[
-                          { metric: "Total Trades", long: activeAccountStats.tradesLong, short: activeAccountStats.tradesShort },
-                          { metric: "Win Trades", long: activeAccountStats.winTradesLong, short: activeAccountStats.winTradesShort, cls: "text-green-400" },
-                          { metric: "Net P&L", long: `$${Number(activeAccountStats.longNetPL).toFixed(2)}`, short: `$${Number(activeAccountStats.shortNetPL).toFixed(2)}`, longCls: activeAccountStats.longNetPL >= 0 ? "text-green-400" : "text-red-400", shortCls: activeAccountStats.shortNetPL >= 0 ? "text-green-400" : "text-red-400" },
-                          { metric: "Avg P&L", long: `$${Number(activeAccountStats.avgPLLong).toFixed(2)}`, short: `$${Number(activeAccountStats.avgPLShort).toFixed(2)}`, longCls: activeAccountStats.avgPLLong >= 0 ? "text-green-400" : "text-red-400", shortCls: activeAccountStats.avgPLShort >= 0 ? "text-green-400" : "text-red-400" },
-                        ].map(row => (
-                          <tr key={row.metric} className="border-b border-border/20">
-                            <td className="px-4 py-3 text-muted-foreground">{row.metric}</td>
-                            <td className={`px-4 py-3 text-center font-bold ${row.longCls || row.cls || "text-foreground"}`}>{row.long}</td>
-                            <td className={`px-4 py-3 text-center font-bold ${row.shortCls || row.cls || "text-foreground"}`}>{row.short}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Trade Execution Type */}
-              {activeAccountStats && (activeAccountStats.manualTrades > 0 || activeAccountStats.robotTrades > 0 || activeAccountStats.signalTrades > 0) && (
-                <div className="glass-card p-5">
-                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Trade Execution Type</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[
-                      { label: "Manual", value: activeAccountStats.manualTrades },
-                      { label: "Robot / EA", value: activeAccountStats.robotTrades },
-                      { label: "Signal", value: activeAccountStats.signalTrades },
-                    ].map(t => (
-                      <div key={t.label} className="text-center p-4 rounded-xl bg-secondary/30 border border-border/30">
-                        <p className="text-2xl font-bold font-display text-foreground">{t.value}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{t.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Symbols */}
-              {activeAccountStats?.symbols && activeAccountStats.symbols.length > 0 && (
-                <div className="glass-card p-5">
-                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Symbols Traded</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="text-left text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border/50">
-                          <th className="px-4 py-2">Symbol</th>
-                          <th className="px-4 py-2">Trades</th>
-                          <th className="px-4 py-2">Profit</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeAccountStats.symbols.map((s: any, i: number) => (
-                          <tr key={i} className="border-b border-border/20 text-sm hover:bg-secondary/20 transition-colors">
-                            <td className="px-4 py-3 font-mono font-medium text-foreground">{s.name}</td>
-                            <td className="px-4 py-3 text-foreground">{s.trades}</td>
-                            <td className={`px-4 py-3 font-bold ${s.profit >= 0 ? "text-green-400" : "text-red-400"}`}>${Number(s.profit).toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Challenge Rules */}
-              {activeAccountStats?.purchase?.challenges && (
-                <div className="glass-card p-6">
-                  <h2 className="font-display font-bold text-lg text-foreground mb-5">Challenge Rules</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    <RuleCard
-                      label="Profit Target"
-                      value={activeAccountStats.purchase.challenges.profit_target}
-                      current={`${profitPercent >= 0 ? "+" : ""}${profitPercent.toFixed(2)}%`}
-                      status={profitPercent >= parseFloat(activeAccountStats.purchase.challenges.profit_target) ? "passed" : "in_progress"}
-                    />
-                    <RuleCard
-                      label="Daily Drawdown"
-                      value={activeAccountStats.purchase.challenges.daily_drawdown}
-                      current={`${ddUsed.toFixed(2)}%`}
-                      status={ddUsed < parseFloat(activeAccountStats.purchase.challenges.daily_drawdown) ? "safe" : "breached"}
-                    />
-                    <RuleCard
-                      label="Max Drawdown"
-                      value={activeAccountStats.purchase.challenges.max_drawdown}
-                      current={`${ddUsed.toFixed(2)}%`}
-                      status={ddUsed < parseFloat(activeAccountStats.purchase.challenges.max_drawdown) ? "safe" : "breached"}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Monthly P&L */}
-              {activeAccountStats?.monthlyPL && typeof activeAccountStats.monthlyPL === "object" && (
-                <div className="glass-card p-5">
-                  <h3 className="font-display font-bold text-sm text-foreground mb-4">Monthly P&L</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="text-left text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border/50">
-                          <th className="px-4 py-2">Year</th>
-                          {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map(m => (
-                            <th key={m} className="px-2 py-2 text-center">{m}</th>
-                          ))}
-                          <th className="px-4 py-2 text-center">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-sm">
-                        {Object.entries(activeAccountStats.monthlyPL).map(([year, months]: [string, any]) => (
-                          <tr key={year} className="border-b border-border/20">
-                            <td className="px-4 py-3 font-bold text-foreground">{year}</td>
-                            {Array.isArray(months) ? months.slice(0, 12).map((val: number, i: number) => (
-                              <td key={i} className={`px-2 py-3 text-center text-xs font-mono font-bold ${val > 0 ? "text-green-400" : val < 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                                {val !== 0 ? `$${val.toFixed(0)}` : "—"}
-                              </td>
-                            )) : Array(12).fill(null).map((_, i) => <td key={i} className="px-2 py-3 text-center text-muted-foreground">—</td>)}
-                            <td className="px-4 py-3 text-center font-bold text-foreground">
-                              {Array.isArray(months) ? `$${months.reduce((s: number, v: number) => s + (v || 0), 0).toFixed(0)}` : "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* MT5 Credentials */}
-              {credentials.length > 0 && (
-                <div className="glass-card p-6">
-                  <h2 className="font-display font-bold text-lg text-foreground mb-4">MT5 Credentials</h2>
-                  <div className="space-y-3">
-                    {credentials.map((c) => (
-                      <div key={c.id} className="flex flex-wrap items-center gap-4 p-4 rounded-xl bg-secondary/30 border border-border/30 hover:border-border/50 transition-colors">
-                        <div className="flex-1 min-w-[120px]">
-                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Login</p>
-                          <p className="font-mono text-sm font-semibold text-foreground">{c.mt5_login}</p>
-                        </div>
-                        <div className="flex-1 min-w-[120px]">
-                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Password</p>
-                          <div className="flex items-center gap-2">
-                            <p className="font-mono text-sm text-foreground">
-                              {showPasswords[c.id] ? c.mt5_password : "••••••••"}
-                            </p>
-                            <button onClick={() => setShowPasswords(prev => ({ ...prev, [c.id]: !prev[c.id] }))} className="hover:opacity-70 transition-opacity">
-                              {showPasswords[c.id] ? <EyeOff size={14} className="text-muted-foreground" /> : <Eye size={14} className="text-muted-foreground" />}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-[120px]">
-                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Server</p>
-                          <p className="text-sm text-foreground">{c.mt5_server}</p>
+                      <div className="flex items-center gap-1.5">
+                        <Calendar size={12} className="text-[hsl(220,15%,35%)]" />
+                        <div>
+                          <p className="text-[10px] text-[hsl(220,15%,40%)]">Days traded</p>
+                          <p className="text-sm font-bold">{activeAccountStats?.profitByDay ? activeAccountStats.profitByDay.filter((d: any) => (typeof d === "number" ? d : d?.y?.[0]) !== 0).length : 0}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          {/* ─── Accounts ─── */}
-          <TabsContent value="accounts">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                <GlowStatCard icon={BarChart3} value={purchases.length.toString()} label="Total Accounts" />
-                <GlowStatCard icon={DollarSign} value={`$${purchases.reduce((s, p) => s + p.amount_paid, 0)}`} label="Total Invested" />
-                <GlowStatCard icon={Award} value={purchases.filter(p => p.status === "active").length.toString()} label="Active Accounts" />
-              </div>
-              <div className="glass-card overflow-hidden">
-                <div className="p-5 border-b border-border/50">
-                  <h2 className="font-display font-bold text-foreground">Your Accounts</h2>
-                </div>
-                {purchases.length === 0 ? (
-                  <div className="p-10 text-center text-muted-foreground">
-                    <BarChart3 size={32} className="mx-auto mb-3 opacity-40" />
-                    <p>No accounts yet.</p>
-                    <Button variant="outline" className="mt-4 rounded-xl" onClick={() => navigate("/#rules")}>Browse Challenges</Button>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="text-left text-[11px] uppercase tracking-widest text-muted-foreground border-b border-border/50">
-                          <th className="px-5 py-3">Challenge</th>
-                          <th className="px-5 py-3">Size</th>
-                          <th className="px-5 py-3">Paid</th>
-                          <th className="px-5 py-3">Status</th>
-                          <th className="px-5 py-3">Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {purchases.map((p) => (
-                          <tr key={p.id} className="border-b border-border/30 last:border-0 text-sm hover:bg-secondary/20 transition-colors">
-                            <td className="px-5 py-4 text-foreground font-medium">{p.challenges?.name || "—"}</td>
-                            <td className="px-5 py-4 text-foreground">${(p.challenges?.account_size || 0).toLocaleString()}</td>
-                            <td className="px-5 py-4 text-foreground">${p.amount_paid}</td>
-                            <td className="px-5 py-4"><StatusBadge status={p.status} /></td>
-                            <td className="px-5 py-4 text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </TabsContent>
-
-          {/* ─── Affiliate ─── */}
-          <TabsContent value="affiliate">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              <div className="glass-card p-6">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3 font-semibold">Your Referral Link</p>
-                <div className="flex items-center gap-3">
-                  <code className="flex-1 bg-secondary/30 border border-border/30 rounded-xl px-4 py-3 text-sm text-foreground truncate font-mono">
-                    {REFERRAL_DOMAIN}?ref={profile?.referral_code}
-                  </code>
-                  <Button onClick={copyReferralLink} variant="outline" size="sm" className="rounded-xl shrink-0 border-highlight/30 text-highlight hover:bg-highlight/10">
-                    <Copy size={16} className="mr-2" /> Copy
-                  </Button>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <GlowStatCard icon={Users} value={referrals.length.toString()} label="Total Referrals" />
-                <GlowStatCard icon={DollarSign} value={`$${totalEarnings.toFixed(2)}`} label="Total Earnings" />
-                <GlowStatCard icon={Clock} value={`$${pendingEarnings.toFixed(2)}`} label="Pending" />
-              </div>
-              <div className="glass-card overflow-hidden">
-                <div className="p-5 border-b border-border/50">
-                  <h2 className="font-display font-bold text-foreground">Referral History</h2>
-                </div>
-                {referrals.length === 0 ? (
-                  <div className="p-10 text-center text-muted-foreground">No referrals yet. Share your link to start earning!</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="text-left text-[11px] uppercase tracking-widest text-muted-foreground border-b border-border/50">
-                          <th className="px-5 py-3">Date</th>
-                          <th className="px-5 py-3">Commission</th>
-                          <th className="px-5 py-3">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {referrals.map((r) => (
-                          <tr key={r.id} className="border-b border-border/30 last:border-0 text-sm">
-                            <td className="px-5 py-4 text-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
-                            <td className="px-5 py-4 text-foreground">${(r.commission_amount || 0).toFixed(2)}</td>
-                            <td className="px-5 py-4"><StatusBadge status={r.commission_status} /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </TabsContent>
-
-          {/* ─── Certificates ─── */}
-          <TabsContent value="certificates">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-              {userCertificates.filter(c => c.certificate_type !== "latest_stats").length === 0 ? (
-                <div className="glass-card p-10 text-center text-muted-foreground">
-                  <Award size={32} className="mx-auto mb-3 opacity-40" />
-                  <p>No certificates earned yet.</p>
-                  <p className="text-xs mt-2">Complete challenges to earn certificates!</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {userCertificates.filter(c => c.certificate_type !== "latest_stats").map((cert) => {
-                    const typeColors: Record<string, string> = {
-                      phase1_passed: "border-blue-500/30",
-                      phase2_passed: "border-cyan-500/30",
-                      funded: "border-green-500/30",
-                      payout: "border-purple-500/30",
-                    };
-                    const typeLabels: Record<string, string> = {
-                      phase1_passed: "Phase 1 Passed",
-                      phase2_passed: "Phase 2 Passed",
-                      funded: "Funded",
-                      payout: "Payout",
-                    };
-                    return (
-                      <motion.div
-                        key={cert.id}
-                        className={`glass-card overflow-hidden border ${typeColors[cert.certificate_type] || "border-border/50"} hover:shadow-lg transition-shadow duration-500`}
-                        whileHover={{ y: -2 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="p-5">
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-highlight/10 flex items-center justify-center">
-                              <Award size={20} className="text-highlight" />
-                            </div>
-                            <div>
-                              <h3 className="font-display font-bold text-foreground text-sm">{cert.title}</h3>
-                              <span className="text-xs text-muted-foreground">{typeLabels[cert.certificate_type] || cert.certificate_type}</span>
-                            </div>
-                          </div>
-                          {cert.account_number && (
-                            <p className="text-xs text-muted-foreground mb-3">Account: <span className="font-mono text-foreground">{cert.account_number}</span></p>
-                          )}
-                          {cert.stats && Object.keys(cert.stats).length > 0 && (
-                            <div className="grid grid-cols-2 gap-2">
-                              {cert.stats.balance != null && <MiniStat label="Balance" value={`$${Number(cert.stats.balance).toLocaleString()}`} />}
-                              {cert.stats.profit != null && <MiniStat label="Profit" value={`$${Number(cert.stats.profit).toFixed(2)}`} positive={Number(cert.stats.profit) >= 0} />}
-                              {cert.stats.totalTrades != null && <MiniStat label="Trades" value={cert.stats.totalTrades} />}
-                              {cert.stats.profitFactor != null && <MiniStat label="PF" value={Number(cert.stats.profitFactor) === -1 ? "∞" : cert.stats.profitFactor} />}
-                            </div>
-                          )}
-                          <p className="text-[10px] text-muted-foreground mt-3">{new Date(cert.created_at).toLocaleDateString()}</p>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          {/* ─── Payout ─── */}
-          <TabsContent value="payout">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <GlowStatCard icon={DollarSign} value={`$${totalEarnings.toFixed(2)}`} label="Lifetime Earnings" highlight />
-                <GlowStatCard icon={Clock} value={`$${pendingEarnings.toFixed(2)}`} label="Pending Payout" />
-              </div>
-              <div className="glass-card p-6 sm:p-8">
-                <h2 className="font-display font-bold text-foreground mb-5">Payout Information</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    { icon: Percent, label: "Profit Split", value: "90%" },
-                    { icon: Target, label: "Scaling", value: "Up to $1M" },
-                    { icon: Calendar, label: "Min Trading Days", value: "7 Days" },
-                    { icon: Clock, label: "Processing Time", value: "24 – 48 hrs" },
-                  ].map(item => (
-                    <div key={item.label} className="flex items-center gap-3 p-4 rounded-xl bg-secondary/30 border border-border/30">
-                      <item.icon size={18} className="text-highlight shrink-0" />
-                      <div><p className="text-xs text-muted-foreground">{item.label}</p><p className="text-lg font-bold text-foreground">{item.value}</p></div>
                     </div>
-                  ))}
-                </div>
-                <Button variant="outline" className="mt-6 rounded-xl border-highlight/30 text-highlight hover:bg-highlight/10" onClick={() => navigate("/help")}>
-                  Contact Support
-                </Button>
-              </div>
-            </motion.div>
-          </TabsContent>
-        </Tabs>
-      </div>
 
-      <Footer />
+                    {/* Actions - only on active */}
+                    {isActive && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="flex gap-2 mt-3 pt-3 border-t border-[hsl(220,15%,12%)]"
+                      >
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setActiveView("credentials"); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[hsl(220,15%,12%)] hover:bg-[hsl(220,15%,15%)] text-xs font-medium text-[hsl(220,15%,60%)] hover:text-white transition-colors"
+                        >
+                          <Key size={12} /> Credentials
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setActiveView("overview"); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] text-xs font-bold text-white transition-colors"
+                        >
+                          <LayoutDashboard size={12} /> Dashboard
+                        </button>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+
+            {filteredPurchases.length === 0 && (
+              <div className="text-center py-12 text-[hsl(220,15%,40%)]">
+                <BarChart3 size={28} className="mx-auto mb-3 opacity-40" />
+                <p className="text-sm">No accounts match this filter.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Buy challenge CTA */}
+          <div className="p-3 border-t border-[hsl(220,15%,12%)]">
+            <button
+              onClick={() => navigate("/#rules")}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[hsl(210,80%,55%)] to-[hsl(210,90%,45%)] text-white text-xs font-bold hover:opacity-90 transition-opacity"
+            >
+              + New Challenge
+            </button>
+          </div>
+        </aside>
+
+        {/* Right Panel - Content */}
+        <main className="flex-1 overflow-y-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeView + (selectedAccount || "")}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+              className="p-4 lg:p-6 space-y-5 max-w-[1200px]"
+            >
+
+              {/* ═══ OVERVIEW ═══ */}
+              {activeView === "overview" && activeAccountStats && (
+                <>
+                  {/* Account Overview Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <h1 className="font-display text-xl font-bold">Account Overview</h1>
+                      <p className="text-xs text-[hsl(220,15%,45%)]">
+                        {activeAccountStats.accountNumber || activeAccountStats.purchase.id.slice(0, 8)} · Created: {new Date(activeAccountStats.purchase.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Balance Chart */}
+                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(210,80%,55%)" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="hsl(210,80%,55%)" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,12%)" />
+                          <XAxis dataKey="date" tick={{ fill: "hsl(220,15%,40%)", fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                          <YAxis tick={{ fill: "hsl(220,15%,40%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toLocaleString()}`} domain={["dataMin - 20", "dataMax + 20"]} />
+                          <Tooltip contentStyle={{ background: "hsl(220,20%,8%)", border: "1px solid hsl(220,15%,15%)", borderRadius: "8px", color: "white", fontSize: "12px" }} formatter={(value: number) => [`$${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, undefined]} />
+                          <Area type="monotone" dataKey="balance" stroke="hsl(210,80%,55%)" strokeWidth={2} fill="url(#balGrad)" dot={false} activeDot={{ r: 4, fill: "hsl(210,80%,55%)" }} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Key Stats Bar */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { label: "Account balance", value: `$${Number(activeAccountStats.balance).toLocaleString(undefined, { minimumFractionDigits: 1 })}`, color: "" },
+                      { label: "Average win", value: `$${Number(activeAccountStats.bestTrade || 0).toFixed(2)}`, color: "text-[hsl(142,60%,50%)]" },
+                      { label: "Average loss", value: `$${Math.abs(Number(activeAccountStats.worstTrade || 0)).toFixed(2)}`, color: "text-[hsl(0,70%,55%)]" },
+                      { label: "Win ratio", value: `${Number(activeAccountStats.winRate || 0).toFixed(1)}%`, color: "" },
+                    ].map(s => (
+                      <div key={s.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-4 text-center">
+                        <p className="text-[11px] text-[hsl(220,15%,45%)] mb-1">{s.label}</p>
+                        <p className={`text-lg font-bold font-display ${s.color}`}>{s.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Top Stats Row */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    {[
+                      { label: "Balance", value: `$${Number(activeAccountStats.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, icon: DollarSign, trend: Number(activeAccountStats.profit) >= 0 ? "up" as const : "down" as const },
+                      { label: "Equity", value: `$${Number(activeAccountStats.equity).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, icon: Activity },
+                      { label: "Profit", value: `$${Number(activeAccountStats.profit).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, subValue: `${profitPercent >= 0 ? "+" : ""}${profitPercent.toFixed(2)}%`, icon: TrendingUp, trend: Number(activeAccountStats.profit) >= 0 ? "up" as const : "down" as const, highlight: true },
+                      { label: "Max Drawdown", value: `${ddUsed.toFixed(2)}%`, subValue: `/ ${activeAccountStats.purchase.challenges?.max_drawdown || "10%"}`, icon: Shield, trend: ddUsed > 5 ? "down" as const : "up" as const },
+                    ].map((stat) => (
+                      <DashStatCard key={stat.label} {...stat} />
+                    ))}
+                  </div>
+
+                  {/* Growth & Drawdown */}
+                  {(growthData.length > 0 || drawdownData.length > 0) && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {growthData.length > 0 && (
+                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                          <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                            <TrendingUp size={14} className="text-[hsl(142,60%,50%)]" /> Growth %
+                          </h3>
+                          <div className="h-[200px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={growthData}>
+                                <defs>
+                                  <linearGradient id="gGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="hsl(142,60%,50%)" stopOpacity={0.25} />
+                                    <stop offset="95%" stopColor="hsl(142,60%,50%)" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,12%)" />
+                                <XAxis dataKey="date" tick={{ fill: "hsl(220,15%,40%)", fontSize: 9 }} tickLine={false} interval="preserveStartEnd" />
+                                <YAxis tick={{ fill: "hsl(220,15%,40%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                                <Tooltip contentStyle={{ background: "hsl(220,20%,8%)", border: "1px solid hsl(220,15%,15%)", borderRadius: "8px", color: "white", fontSize: "12px" }} formatter={(v: number) => [`${v.toFixed(3)}%`]} />
+                                <Area type="monotone" dataKey="growth" stroke="hsl(142,60%,50%)" strokeWidth={2} fill="url(#gGrad)" dot={false} />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )}
+                      {drawdownData.length > 0 && (
+                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                          <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                            <TrendingDown size={14} className="text-[hsl(0,70%,55%)]" /> Drawdown %
+                          </h3>
+                          <div className="h-[200px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={drawdownData}>
+                                <defs>
+                                  <linearGradient id="dGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="hsl(0,70%,55%)" stopOpacity={0.25} />
+                                    <stop offset="95%" stopColor="hsl(0,70%,55%)" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,12%)" />
+                                <XAxis dataKey="date" tick={{ fill: "hsl(220,15%,40%)", fontSize: 9 }} tickLine={false} interval="preserveStartEnd" />
+                                <YAxis tick={{ fill: "hsl(220,15%,40%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                                <Tooltip contentStyle={{ background: "hsl(220,20%,8%)", border: "1px solid hsl(220,15%,15%)", borderRadius: "8px", color: "white", fontSize: "12px" }} formatter={(v: number) => [`${v.toFixed(3)}%`]} />
+                                <Area type="monotone" dataKey="drawdown" stroke="hsl(0,70%,55%)" strokeWidth={2} fill="url(#dGrad)" dot={false} />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Trading Metrics Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                    {[
+                      { label: "Win Rate", value: `${Number(activeAccountStats.winRate).toFixed(1)}%`, color: "text-[hsl(210,80%,55%)]" },
+                      { label: "Profit Factor", value: Number(activeAccountStats.profitFactor) === -1 ? "∞" : String(activeAccountStats.profitFactor ?? "—"), color: "" },
+                      { label: "Sharpe Ratio", value: Number(activeAccountStats.sharpeRatio).toFixed(2), color: "" },
+                      { label: "Best Trade", value: `$${Number(activeAccountStats.bestTrade).toFixed(2)}`, color: "text-[hsl(142,60%,50%)]" },
+                      { label: "Worst Trade", value: `$${Number(activeAccountStats.worstTrade).toFixed(2)}`, color: "text-[hsl(0,70%,55%)]" },
+                      { label: "Total Trades", value: String(activeAccountStats.totalTrades), color: "" },
+                    ].map(stat => (
+                      <div key={stat.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3">
+                        <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">{stat.label}</p>
+                        <p className={`text-base font-bold font-display ${stat.color}`}>{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* P&L + Direction + Activity + Streaks */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <InfoCard title="P&L Breakdown">
+                      {[
+                        { label: "Gross Profit", value: `$${Number(activeAccountStats.grossProfit).toFixed(2)}`, cls: "text-[hsl(142,60%,50%)]" },
+                        { label: "Gross Loss", value: `$${Number(activeAccountStats.grossLoss).toFixed(2)}`, cls: "text-[hsl(0,70%,55%)]" },
+                        { label: "Swap", value: `$${Number(activeAccountStats.swapTotal).toFixed(2)}`, cls: "" },
+                        { label: "Commission", value: `$${Number(activeAccountStats.commissionTotal).toFixed(2)}`, cls: "" },
+                      ].map(r => (
+                        <div key={r.label} className="flex justify-between items-center">
+                          <span className="text-xs text-[hsl(220,15%,45%)]">{r.label}</span>
+                          <span className={`text-sm font-bold ${r.cls}`}>{r.value}</span>
+                        </div>
+                      ))}
+                      <div className="h-px bg-[hsl(220,15%,12%)]" />
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-semibold">Net Profit</span>
+                        <span className={`text-sm font-bold ${Number(activeAccountStats.profit) >= 0 ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`}>${Number(activeAccountStats.profit).toFixed(2)}</span>
+                      </div>
+                    </InfoCard>
+
+                    <InfoCard title="Direction">
+                      {[
+                        { label: "Long", count: activeAccountStats.longTrades, color: "bg-[hsl(210,80%,55%)]" },
+                        { label: "Short", count: activeAccountStats.shortTrades, color: "bg-purple-500" },
+                      ].map(d => (
+                        <div key={d.label}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-[hsl(220,15%,45%)]">{d.label}</span>
+                            <span className="font-medium">{d.count}</span>
+                          </div>
+                          <div className="h-1.5 bg-[hsl(220,15%,12%)] rounded-full overflow-hidden">
+                            <motion.div
+                              className={`h-full ${d.color} rounded-full`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${activeAccountStats.totalTrades ? (d.count / activeAccountStats.totalTrades) * 100 : 0}%` }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </InfoCard>
+
+                    <InfoCard title="Activity">
+                      {[
+                        { label: "Trades/Week", value: activeAccountStats.tradesPerWeek },
+                        { label: "Avg Hold", value: `${activeAccountStats.avgHoldTimeMinutes}m` },
+                        { label: "Manual", value: activeAccountStats.manualTrades },
+                        { label: "Robot/EA", value: activeAccountStats.robotTrades },
+                      ].map(r => (
+                        <div key={r.label} className="flex justify-between items-center">
+                          <span className="text-xs text-[hsl(220,15%,45%)]">{r.label}</span>
+                          <span className="text-sm font-bold">{r.value}</span>
+                        </div>
+                      ))}
+                    </InfoCard>
+
+                    <InfoCard title="Streaks & Risk">
+                      {[
+                        { label: "Consec. Wins", value: activeAccountStats.maxConsecutiveWins, cls: "text-[hsl(142,60%,50%)]" },
+                        { label: "Consec. Losses", value: activeAccountStats.maxConsecutiveLosses, cls: "text-[hsl(0,70%,55%)]" },
+                        { label: "Recovery Factor", value: Number(activeAccountStats.recoveryFactor).toFixed(2), cls: "" },
+                        { label: "Deposit Load", value: `${Number(activeAccountStats.depositLoad).toFixed(1)}%`, cls: "" },
+                      ].map(r => (
+                        <div key={r.label} className="flex justify-between items-center">
+                          <span className="text-xs text-[hsl(220,15%,45%)]">{r.label}</span>
+                          <span className={`text-sm font-bold ${r.cls}`}>{r.value}</span>
+                        </div>
+                      ))}
+                    </InfoCard>
+                  </div>
+
+                  {/* Daily Profit */}
+                  {dailyProfitData.length > 0 && (
+                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                      <h3 className="font-display font-bold text-sm mb-4">Profit by Day of Week</h3>
+                      <div className="h-[180px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dailyProfitData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,12%)" />
+                            <XAxis dataKey="day" tick={{ fill: "hsl(220,15%,45%)", fontSize: 11 }} tickLine={false} />
+                            <YAxis tick={{ fill: "hsl(220,15%,45%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
+                            <Tooltip contentStyle={{ background: "hsl(220,20%,8%)", border: "1px solid hsl(220,15%,15%)", borderRadius: "8px", color: "white", fontSize: "12px" }} />
+                            <Bar dataKey="profit" radius={[4, 4, 0, 0]}>
+                              {dailyProfitData.map((entry, index) => (
+                                <Cell key={index} fill={entry.profit >= 0 ? "hsl(142,60%,50%)" : "hsl(0,70%,55%)"} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Challenge Rules */}
+                  {activeAccountStats.purchase.challenges && (
+                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                      <h3 className="font-display font-bold text-sm mb-4">Challenge Rules</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <RuleCard label="Profit Target" value={activeAccountStats.purchase.challenges.profit_target} current={`${profitPercent >= 0 ? "+" : ""}${profitPercent.toFixed(2)}%`} status={profitPercent >= parseFloat(activeAccountStats.purchase.challenges.profit_target) ? "passed" : "in_progress"} />
+                        <RuleCard label="Daily Drawdown" value={activeAccountStats.purchase.challenges.daily_drawdown} current={`${ddUsed.toFixed(2)}%`} status={ddUsed < parseFloat(activeAccountStats.purchase.challenges.daily_drawdown) ? "safe" : "breached"} />
+                        <RuleCard label="Max Drawdown" value={activeAccountStats.purchase.challenges.max_drawdown} current={`${ddUsed.toFixed(2)}%`} status={ddUsed < parseFloat(activeAccountStats.purchase.challenges.max_drawdown) ? "safe" : "breached"} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Symbols */}
+                  {activeAccountStats.symbols && activeAccountStats.symbols.length > 0 && (
+                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                      <h3 className="font-display font-bold text-sm mb-4">Symbols Traded</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="text-left text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] border-b border-[hsl(220,15%,12%)]">
+                              <th className="px-4 py-2">Symbol</th>
+                              <th className="px-4 py-2">Trades</th>
+                              <th className="px-4 py-2">Profit</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {activeAccountStats.symbols.map((s: any, i: number) => (
+                              <tr key={i} className="border-b border-[hsl(220,15%,8%)] text-sm hover:bg-[hsl(220,15%,9%)] transition-colors">
+                                <td className="px-4 py-3 font-mono font-medium">{s.name}</td>
+                                <td className="px-4 py-3">{s.trades}</td>
+                                <td className={`px-4 py-3 font-bold ${s.profit >= 0 ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`}>${Number(s.profit).toFixed(2)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Monthly P&L */}
+                  {activeAccountStats.monthlyPL && typeof activeAccountStats.monthlyPL === "object" && (
+                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                      <h3 className="font-display font-bold text-sm mb-4">Monthly P&L</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="text-left text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] border-b border-[hsl(220,15%,12%)]">
+                              <th className="px-4 py-2">Year</th>
+                              {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map(m => (
+                                <th key={m} className="px-2 py-2 text-center">{m}</th>
+                              ))}
+                              <th className="px-4 py-2 text-center">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-sm">
+                            {Object.entries(activeAccountStats.monthlyPL).map(([year, months]: [string, any]) => (
+                              <tr key={year} className="border-b border-[hsl(220,15%,8%)]">
+                                <td className="px-4 py-3 font-bold">{year}</td>
+                                {Array.isArray(months) ? months.slice(0, 12).map((val: number, i: number) => (
+                                  <td key={i} className={`px-2 py-3 text-center text-xs font-mono font-bold ${val > 0 ? "text-[hsl(142,60%,50%)]" : val < 0 ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,30%)]"}`}>
+                                    {val !== 0 ? `$${val.toFixed(0)}` : "—"}
+                                  </td>
+                                )) : Array(12).fill(null).map((_, i) => <td key={i} className="px-2 py-3 text-center text-[hsl(220,15%,30%)]">—</td>)}
+                                <td className="px-4 py-3 text-center font-bold">
+                                  {Array.isArray(months) ? `$${months.reduce((s: number, v: number) => s + (v || 0), 0).toFixed(0)}` : "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {activeView === "overview" && !activeAccountStats && (
+                <div className="flex items-center justify-center py-20">
+                  <div className="text-center">
+                    <BarChart3 size={40} className="mx-auto mb-4 text-[hsl(220,15%,25%)]" />
+                    <p className="text-lg font-bold mb-2">No account selected</p>
+                    <p className="text-sm text-[hsl(220,15%,40%)] mb-4">Select an account from the left panel or purchase a challenge.</p>
+                    <Button onClick={() => navigate("/#rules")} className="rounded-xl bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)]">
+                      Browse Challenges
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* ═══ CREDENTIALS ═══ */}
+              {activeView === "credentials" && (
+                <div className="space-y-5">
+                  <h1 className="font-display text-xl font-bold">MT5 Credentials</h1>
+                  {credentials.length === 0 ? (
+                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-10 text-center">
+                      <Key size={32} className="mx-auto mb-3 text-[hsl(220,15%,25%)]" />
+                      <p className="text-sm text-[hsl(220,15%,45%)]">No credentials assigned yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {credentials.map((c) => (
+                        <div key={c.id} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5 hover:border-[hsl(220,15%,18%)] transition-colors">
+                          <div className="flex flex-wrap items-center gap-6">
+                            <div className="min-w-[120px]">
+                              <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">Login</p>
+                              <p className="font-mono text-sm font-bold">{c.mt5_login}</p>
+                            </div>
+                            <div className="min-w-[120px]">
+                              <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">Password</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-mono text-sm">{showPasswords[c.id] ? c.mt5_password : "••••••••"}</p>
+                                <button onClick={() => setShowPasswords(prev => ({ ...prev, [c.id]: !prev[c.id] }))} className="hover:opacity-70 transition-opacity">
+                                  {showPasswords[c.id] ? <EyeOff size={14} className="text-[hsl(220,15%,40%)]" /> : <Eye size={14} className="text-[hsl(220,15%,40%)]" />}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="min-w-[120px]">
+                              <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">Server</p>
+                              <p className="text-sm">{c.mt5_server}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ═══ AFFILIATE ═══ */}
+              {activeView === "affiliate" && (
+                <div className="space-y-5">
+                  <h1 className="font-display text-xl font-bold">Affiliate Program</h1>
+                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                    <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-2 font-semibold">Your Referral Link</p>
+                    <div className="flex items-center gap-3">
+                      <code className="flex-1 bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] rounded-lg px-4 py-3 text-sm truncate font-mono text-[hsl(210,80%,55%)]">
+                        {REFERRAL_DOMAIN}?ref={profile?.referral_code}
+                      </code>
+                      <Button onClick={copyReferralLink} size="sm" className="rounded-lg bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] text-white shrink-0">
+                        <Copy size={14} className="mr-1.5" /> Copy
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <DashStatCard icon={Users} value={referrals.length.toString()} label="Total Referrals" />
+                    <DashStatCard icon={DollarSign} value={`$${totalEarnings.toFixed(2)}`} label="Total Earnings" highlight />
+                    <DashStatCard icon={Clock} value={`$${pendingEarnings.toFixed(2)}`} label="Pending" />
+                  </div>
+                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] overflow-hidden">
+                    <div className="p-4 border-b border-[hsl(220,15%,12%)]">
+                      <h2 className="font-display font-bold text-sm">Referral History</h2>
+                    </div>
+                    {referrals.length === 0 ? (
+                      <div className="p-10 text-center text-[hsl(220,15%,40%)] text-sm">No referrals yet. Share your link to start earning!</div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="text-left text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] border-b border-[hsl(220,15%,12%)]">
+                              <th className="px-5 py-3">Date</th>
+                              <th className="px-5 py-3">Commission</th>
+                              <th className="px-5 py-3">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {referrals.map((r) => (
+                              <tr key={r.id} className="border-b border-[hsl(220,15%,8%)] text-sm">
+                                <td className="px-5 py-4">{new Date(r.created_at).toLocaleDateString()}</td>
+                                <td className="px-5 py-4">${(r.commission_amount || 0).toFixed(2)}</td>
+                                <td className="px-5 py-4"><StatusBadge status={r.commission_status} /></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ═══ CERTIFICATES ═══ */}
+              {activeView === "certificates" && (
+                <div className="space-y-5">
+                  <h1 className="font-display text-xl font-bold">Certificates</h1>
+                  {userCertificates.filter(c => c.certificate_type !== "latest_stats").length === 0 ? (
+                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-10 text-center">
+                      <Award size={32} className="mx-auto mb-3 text-[hsl(220,15%,25%)]" />
+                      <p className="text-sm text-[hsl(220,15%,45%)]">No certificates earned yet.</p>
+                      <p className="text-xs text-[hsl(220,15%,35%)] mt-1">Complete challenges to earn certificates!</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {userCertificates.filter(c => c.certificate_type !== "latest_stats").map((cert) => {
+                        const typeColors: Record<string, string> = {
+                          phase1_passed: "border-[hsl(210,80%,55%)]/30",
+                          phase2_passed: "border-[hsl(180,60%,50%)]/30",
+                          funded: "border-[hsl(142,60%,50%)]/30",
+                          payout: "border-purple-500/30",
+                        };
+                        return (
+                          <div key={cert.id} className={`rounded-xl bg-[hsl(220,20%,7%)] border ${typeColors[cert.certificate_type] || "border-[hsl(220,15%,12%)]"} p-5 hover:shadow-lg transition-shadow`}>
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 rounded-lg bg-[hsl(210,80%,55%)]/10 flex items-center justify-center">
+                                <Award size={18} className="text-[hsl(210,80%,55%)]" />
+                              </div>
+                              <div>
+                                <h3 className="font-display font-bold text-sm">{cert.title}</h3>
+                                <span className="text-xs text-[hsl(220,15%,45%)]">{cert.certificate_type}</span>
+                              </div>
+                            </div>
+                            {cert.stats && Object.keys(cert.stats).length > 0 && (
+                              <div className="grid grid-cols-2 gap-2">
+                                {cert.stats.balance != null && <MiniStat label="Balance" value={`$${Number(cert.stats.balance).toLocaleString()}`} />}
+                                {cert.stats.profit != null && <MiniStat label="Profit" value={`$${Number(cert.stats.profit).toFixed(2)}`} positive={Number(cert.stats.profit) >= 0} />}
+                                {cert.stats.totalTrades != null && <MiniStat label="Trades" value={cert.stats.totalTrades} />}
+                                {cert.stats.profitFactor != null && <MiniStat label="PF" value={Number(cert.stats.profitFactor) === -1 ? "∞" : cert.stats.profitFactor} />}
+                              </div>
+                            )}
+                            <p className="text-[10px] text-[hsl(220,15%,35%)] mt-3">{new Date(cert.created_at).toLocaleDateString()}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ═══ PAYOUT ═══ */}
+              {activeView === "payout" && (
+                <div className="space-y-5">
+                  <h1 className="font-display text-xl font-bold">Payout</h1>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <DashStatCard icon={DollarSign} value={`$${totalEarnings.toFixed(2)}`} label="Lifetime Earnings" highlight />
+                    <DashStatCard icon={Clock} value={`$${pendingEarnings.toFixed(2)}`} label="Pending Payout" />
+                  </div>
+                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                    <h2 className="font-display font-bold text-sm mb-4">Payout Information</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { icon: Percent, label: "Profit Split", value: "90%" },
+                        { icon: Target, label: "Scaling", value: "Up to $1M" },
+                        { icon: Calendar, label: "Min Trading Days", value: "7 Days" },
+                        { icon: Clock, label: "Processing Time", value: "24 – 48 hrs" },
+                      ].map(item => (
+                        <div key={item.label} className="flex items-center gap-3 p-4 rounded-xl bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,14%)]">
+                          <item.icon size={18} className="text-[hsl(210,80%,55%)] shrink-0" />
+                          <div><p className="text-[11px] text-[hsl(220,15%,45%)]">{item.label}</p><p className="text-base font-bold">{item.value}</p></div>
+                        </div>
+                      ))}
+                    </div>
+                    <Button className="mt-5 rounded-xl bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] text-white" onClick={() => navigate("/help")}>
+                      Contact Support
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
     </div>
   );
 };
 
 /* ─── Sub-components ─── */
 
-const GlowStatCard = ({ icon: Icon, value, label, subValue, trend, highlight }: {
+const DashStatCard = ({ icon: Icon, value, label, subValue, trend, highlight }: {
   icon: any; value: string; label: string; subValue?: string; trend?: "up" | "down"; highlight?: boolean;
 }) => (
-  <div className={`glass-card p-5 transition-all duration-300 hover:shadow-lg ${highlight ? "border-highlight/20" : "border-border/30"}`}>
-    <div className="flex items-center justify-between mb-3">
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${highlight ? "bg-highlight/10" : "bg-secondary/50"}`}>
-        <Icon size={18} className={highlight ? "text-highlight" : "text-muted-foreground"} />
+  <div className={`rounded-xl bg-[hsl(220,20%,7%)] border p-4 transition-all ${
+    highlight ? "border-[hsl(210,80%,55%)]/20" : "border-[hsl(220,15%,12%)]"
+  }`}>
+    <div className="flex items-center justify-between mb-2">
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${highlight ? "bg-[hsl(210,80%,55%)]/10" : "bg-[hsl(220,15%,12%)]"}`}>
+        <Icon size={16} className={highlight ? "text-[hsl(210,80%,55%)]" : "text-[hsl(220,15%,40%)]"} />
       </div>
       {trend && (
-        <div className={`flex items-center gap-1 text-xs font-medium ${trend === "up" ? "text-green-400" : "text-red-400"}`}>
+        <div className={`flex items-center gap-0.5 text-xs font-medium ${trend === "up" ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`}>
           {trend === "up" ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
         </div>
       )}
     </div>
-    <p className="text-2xl font-bold font-display text-foreground">{value}</p>
-    <div className="flex items-center gap-2 mt-1">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      {subValue && <span className={`text-xs font-medium ${trend === "up" ? "text-green-400" : trend === "down" ? "text-red-400" : "text-muted-foreground"}`}>{subValue}</span>}
+    <p className="text-xl font-bold font-display">{value}</p>
+    <div className="flex items-center gap-2 mt-0.5">
+      <p className="text-[11px] text-[hsl(220,15%,45%)]">{label}</p>
+      {subValue && <span className={`text-xs font-medium ${trend === "up" ? "text-[hsl(142,60%,50%)]" : trend === "down" ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,45%)]"}`}>{subValue}</span>}
     </div>
   </div>
 );
 
-const TradingStatCard = ({ icon: Icon, label, value, color }: { icon: any; label: string; value: string; color: string }) => (
-  <div className="glass-card p-4 hover:shadow-md transition-shadow duration-300">
-    <div className="flex items-center gap-2 mb-1.5">
-      <Icon size={14} className="text-muted-foreground" />
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
-    </div>
-    <p className={`text-lg font-bold font-display ${color}`}>{value}</p>
+const InfoCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-4">
+    <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-3 font-semibold">{title}</p>
+    <div className="space-y-2.5">{children}</div>
   </div>
 );
 
 const RuleCard = ({ label, value, current, status }: { label: string; value: string; current: string; status: string }) => {
   const statusColors: Record<string, string> = {
-    passed: "text-green-400 bg-green-500/10 border-green-500/20",
-    safe: "text-green-400 bg-green-500/10 border-green-500/20",
-    in_progress: "text-highlight bg-highlight/10 border-highlight/20",
-    breached: "text-red-400 bg-red-500/10 border-red-500/20",
+    passed: "text-[hsl(142,60%,50%)] bg-[hsl(142,60%,50%)]/10 border-[hsl(142,60%,50%)]/20",
+    safe: "text-[hsl(142,60%,50%)] bg-[hsl(142,60%,50%)]/10 border-[hsl(142,60%,50%)]/20",
+    in_progress: "text-[hsl(210,80%,55%)] bg-[hsl(210,80%,55%)]/10 border-[hsl(210,80%,55%)]/20",
+    breached: "text-[hsl(0,70%,55%)] bg-[hsl(0,70%,55%)]/10 border-[hsl(0,70%,55%)]/20",
   };
-  const statusLabels: Record<string, string> = {
-    passed: "Passed ✓",
-    safe: "Safe ✓",
-    in_progress: "In Progress",
-    breached: "Breached ✕",
-  };
+  const statusLabels: Record<string, string> = { passed: "Passed ✓", safe: "Safe ✓", in_progress: "In Progress", breached: "Breached ✕" };
   return (
-    <div className="p-4 rounded-xl bg-secondary/30 border border-border/30">
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <p className="text-lg font-bold text-foreground mb-2">Target: {value}</p>
+    <div className="p-4 rounded-xl bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,14%)]">
+      <p className="text-xs text-[hsl(220,15%,45%)] mb-1">{label}</p>
+      <p className="text-lg font-bold mb-2">Target: {value}</p>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-mono text-foreground">Current: {current}</span>
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${statusColors[status] || ""}`}>
-          {statusLabels[status] || status}
-        </span>
+        <span className="text-sm font-mono">Current: {current}</span>
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${statusColors[status] || ""}`}>{statusLabels[status] || status}</span>
       </div>
     </div>
   );
 };
 
 const MiniStat = ({ label, value, positive }: { label: string; value: any; positive?: boolean }) => (
-  <div className="bg-secondary/30 rounded-lg px-3 py-2">
-    <p className="text-[10px] text-muted-foreground">{label}</p>
-    <p className={`text-sm font-bold ${positive === true ? "text-green-400" : positive === false ? "text-red-400" : "text-foreground"}`}>{value}</p>
+  <div className="bg-[hsl(220,15%,10%)] rounded-lg px-3 py-2">
+    <p className="text-[10px] text-[hsl(220,15%,40%)]">{label}</p>
+    <p className={`text-sm font-bold ${positive === true ? "text-[hsl(142,60%,50%)]" : positive === false ? "text-[hsl(0,70%,55%)]" : ""}`}>{value}</p>
   </div>
 );
 
 const StatusBadge = ({ status }: { status: string }) => {
   const colors: Record<string, string> = {
-    paid: "bg-green-500/15 text-green-400 border-green-500/20",
-    approved: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-    active: "bg-green-500/15 text-green-400 border-green-500/20",
-    pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-    completed: "bg-green-500/15 text-green-400 border-green-500/20",
-    breached: "bg-red-500/15 text-red-400 border-red-500/20",
-    funded: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
-    failed: "bg-red-500/15 text-red-400 border-red-500/20",
+    paid: "bg-[hsl(142,60%,50%)]/15 text-[hsl(142,60%,50%)] border-[hsl(142,60%,50%)]/20",
+    approved: "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)] border-[hsl(210,80%,55%)]/20",
+    active: "bg-[hsl(142,60%,50%)]/15 text-[hsl(142,60%,50%)] border-[hsl(142,60%,50%)]/20",
+    pending: "bg-[hsl(45,80%,55%)]/15 text-[hsl(45,80%,55%)] border-[hsl(45,80%,55%)]/20",
+    completed: "bg-[hsl(142,60%,50%)]/15 text-[hsl(142,60%,50%)] border-[hsl(142,60%,50%)]/20",
+    breached: "bg-[hsl(0,70%,55%)]/15 text-[hsl(0,70%,55%)] border-[hsl(0,70%,55%)]/20",
+    funded: "bg-[hsl(180,60%,50%)]/15 text-[hsl(180,60%,50%)] border-[hsl(180,60%,50%)]/20",
+    failed: "bg-[hsl(0,70%,55%)]/15 text-[hsl(0,70%,55%)] border-[hsl(0,70%,55%)]/20",
   };
   return (
-    <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${colors[status] || "bg-secondary text-muted-foreground border-border/30"}`}>
+    <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${colors[status] || "bg-[hsl(220,15%,12%)] text-[hsl(220,15%,45%)] border-[hsl(220,15%,15%)]"}`}>
       {status}
     </span>
   );
