@@ -523,8 +523,8 @@ const LiveChat = () => {
                 {!infoCollected ? (
                   <div className="p-5 space-y-4">
                     <div className="text-center mb-2">
-                      <div className="w-12 h-12 rounded-full bg-foreground text-background flex items-center justify-center mx-auto mb-3">
-                        <Sparkles size={24} />
+                      <div className="w-12 h-12 rounded-full overflow-hidden mx-auto mb-3">
+                        <img src={pulzexLogo} alt="PULZEX" className="w-full h-full object-cover" />
                       </div>
                       <h3 className="font-display font-bold text-lg text-foreground">Meet PULZEX</h3>
                       <p className="text-xs text-muted-foreground mt-1">
