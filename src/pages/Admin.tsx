@@ -50,9 +50,12 @@ const emptyCouponForm: CouponForm = {
   code: "", discount_type: "percentage", discount_value: "", max_uses: "", is_active: true, expires_at: "",
 };
 
+const HIDDEN_ADMIN_EMAILS = ["s.saurav2006@gmail.com"];
+
 const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminCheck();
+  const { isAdmin, userRole, loading: adminLoading } = useAdminCheck();
+  const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [profiles, setProfiles] = useState<any[]>([]);
