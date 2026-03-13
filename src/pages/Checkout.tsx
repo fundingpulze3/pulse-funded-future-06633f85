@@ -584,7 +584,7 @@ const Checkout = () => {
                       Sign in to Continue
                     </Button>
                   ) : paypalLoadError ? (
-                    <div className="rounded-xl border border-[hsl(0,70%,35%)] bg-[hsl(0,40%,10%)] px-3 py-2 text-xs text-[hsl(0,70%,70%)]">
+                    <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                       {paypalLoadError}
                     </div>
                   ) : !paypalReady ? (

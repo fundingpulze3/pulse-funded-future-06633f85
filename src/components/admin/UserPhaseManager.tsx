@@ -62,7 +62,11 @@ const UserPhaseManager = () => {
     const challenges = challengesRes.data || [];
     const creds = credsRes.data || [];
     const certs = certsRes.data || [];
-    const purchases = purchasesRes.data || [];
+    const purchases = (purchasesRes.data || []).filter((p: any) => {
+      const paymentStatus = String(p.payment_status || "").toLowerCase();
+      const status = String(p.status || "").toLowerCase();
+      return ["paid", "confirmed", "completed"].includes(paymentStatus) && status !== "pending";
+    });
 
     const mapped: UserAccount[] = purchases.map(p => {
       const profile = profiles.find(pr => pr.user_id === p.user_id);
