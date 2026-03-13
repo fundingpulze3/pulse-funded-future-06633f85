@@ -10,6 +10,8 @@ import { Phase1PassedEmail } from '../_shared/email-templates/phase1-passed.tsx'
 import { Phase2PassedEmail } from '../_shared/email-templates/phase2-passed.tsx'
 import { PayoutReceivedEmail } from '../_shared/email-templates/payout-received.tsx'
 import { WelcomeEmail } from '../_shared/email-templates/welcome.tsx'
+import { KYCApprovedEmail } from '../_shared/email-templates/kyc-approved.tsx'
+import { KYCRejectedEmail } from '../_shared/email-templates/kyc-rejected.tsx'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
