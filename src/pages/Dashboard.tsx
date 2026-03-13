@@ -530,9 +530,19 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${sc.bg} ${sc.color}`}>
-                        {sc.label}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${sc.bg} ${sc.color}`}>
+                          {sc.label}
+                        </span>
+                        {(() => {
+                          const rank = getRank(p);
+                          return (
+                            <span className={`text-[10px] font-semibold ${rank.color}`}>
+                              {rank.emoji} {rank.label}
+                            </span>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-4 mt-1">
