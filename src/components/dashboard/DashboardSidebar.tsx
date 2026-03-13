@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X, Receipt } from "lucide-react";
+import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X, Receipt, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
