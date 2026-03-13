@@ -18,7 +18,7 @@ const PlatformPreview = () => {
   };
 
   return (
-    <section className="py-24 px-6">
+    <section className="py-16 sm:py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <p className="text-center text-xs uppercase tracking-[0.3em] text-muted-foreground/60 mb-3 font-medium">
           Your Trading Hub
