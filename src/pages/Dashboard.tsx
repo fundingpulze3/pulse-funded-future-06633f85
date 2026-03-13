@@ -694,8 +694,9 @@ const Dashboard = () => {
                         {(() => {
                           const rank = getRank(activeAccountStats.purchase);
                           return (
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-md bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] ${rank.color}`}>
-                              {rank.emoji} {rank.label}
+                            <span className={`flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-md bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] ${rank.color}`}>
+                              <img src={rank.img} alt={rank.label} className="w-5 h-5 rounded-full object-cover" />
+                              {rank.label}
                             </span>
                           );
                         })()}
