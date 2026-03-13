@@ -26,6 +26,7 @@ import DashboardPayouts from "./pages/DashboardPayouts";
 import DashboardSettings from "./pages/DashboardSettings";
 import DashboardBilling from "./pages/DashboardBilling";
 import DashboardAI from "./pages/DashboardAI";
+import DashboardKYC from "./pages/DashboardKYC";
 
 const queryClient = new QueryClient();
 
