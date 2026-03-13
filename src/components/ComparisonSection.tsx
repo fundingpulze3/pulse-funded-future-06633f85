@@ -25,7 +25,7 @@ const ComparisonSection = () => {
   }, []);
 
   return (
-    <section ref={ref} className="py-24 px-6">
+    <section ref={ref} className="py-16 sm:py-24 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
         <p className="text-center text-xs uppercase tracking-[0.3em] text-muted-foreground/60 mb-3 font-medium">
           Why Switch?
