@@ -212,12 +212,23 @@ const Checkout = () => {
   }, [user, sizeNum, stepType, firstName, lastName, country, billingAddress, city, zipCode]);
 
   useEffect(() => {
-    if (!paypalReady || !paypalRef.current || !user) return;
+    if (!paypalReady || !paypalRef.current || !user || !window.paypal?.Buttons) return;
     paypalRef.current.innerHTML = "";
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
-    window.paypal.Buttons({
+    const buttons = window.paypal.Buttons({
       style: { layout: "vertical", color: "black", shape: "rect", label: "pay", height: 45 },
+      onClick: (_data: any, actions: any) => {
+        if (!billingFilled) {
+          toast.error("Please fill billing details first.");
+          return actions.reject();
+        }
+        if (!agreedTerms) {
+          toast.error("Please agree to the terms.");
+          return actions.reject();
+        }
+        return actions.resolve();
+      },
       createOrder: async () => {
         const purchase = await createPurchaseRecord();
         purchaseIdRef.current = purchase.id;
@@ -258,10 +269,25 @@ const Checkout = () => {
         } catch (err) { toast.error("Payment failed: " + String(err)); }
         setProcessing(false);
       },
-      onError: (err: any) => { console.error("PayPal error:", err); toast.error("PayPal payment failed."); },
+      onError: (err: any) => {
+        console.error("PayPal error:", err);
+        setPaypalLoadError("PayPal button is unavailable right now.");
+        toast.error("PayPal payment failed.");
+      },
       onCancel: () => toast.info("Payment cancelled."),
-    }).render(paypalRef.current);
-  }, [paypalReady, user, createPurchaseRecord, stepType, selectedSize]);
+    });
+
+    buttons.render(paypalRef.current).catch((err: unknown) => {
+      console.error("PayPal render failed:", err);
+      setPaypalLoadError("PayPal button is unavailable right now.");
+    });
+
+    return () => {
+      try { buttons.close?.(); } catch {
+        // ignore cleanup errors
+      }
+    };
+  }, [paypalReady, user, createPurchaseRecord, stepType, selectedSize, billingFilled, agreedTerms]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
