@@ -378,7 +378,7 @@ const DashboardAI = () => {
                 <div className="p-3 border-t border-[hsl(220,15%,12%)]">
                   <div className="flex items-center gap-2 px-2">
                     <Sparkles size={14} className="text-[hsl(207,90%,77%)]" />
-                    <span className="text-[10px] font-bold text-[hsl(220,15%,40%)] uppercase tracking-wider">FP AI</span>
+                    <span className="text-[10px] font-bold text-[hsl(220,15%,40%)] uppercase tracking-wider">PulzeX</span>
                   </div>
                 </div>
               </motion.aside>
