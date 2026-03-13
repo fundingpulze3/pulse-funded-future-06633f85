@@ -386,7 +386,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
       <DashboardSidebar profile={profile} />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         {/* Left Panel - Account List */}
         {/* Spacer for desktop sidebar */}
         <div className="hidden lg:block w-16 shrink-0" />
