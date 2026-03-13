@@ -428,7 +428,7 @@ export default function Dashboard({
   return (
     <div className="space-y-6">
       {/* Date Range Picker */}
-      <div className="flex items-center gap-1 bg-[hsl(0,0%,100%)] rounded-lg border border-[hsl(0,0%,90%)] p-1 w-fit">
+      <div className="flex items-center gap-1 bg-[hsl(0,0%,100%)] rounded-lg border border-[hsl(0,0%,90%)] p-1 w-fit overflow-x-auto max-w-full">
         {ranges.map(r => (
           <button
             key={r.key}
@@ -445,14 +445,14 @@ export default function Dashboard({
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
         {statCards.map(card => (
-          <div key={card.label} className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-4 hover:shadow-md transition-shadow">
+          <div key={card.label} className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-3 md:p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-medium text-[hsl(0,0%,45%)] uppercase tracking-wider">{card.label}</span>
               <span className="text-[hsl(0,0%,60%)]">{card.icon}</span>
             </div>
-            <p className="text-xl font-display font-bold text-[hsl(0,0%,5%)]">{card.value}</p>
+            <p className="text-lg md:text-xl font-display font-bold text-[hsl(0,0%,5%)]">{card.value}</p>
             {card.change !== 0 && (
               <div className={`flex items-center gap-1 mt-1 text-[11px] font-medium ${card.change > 0 ? "text-[hsl(142,60%,40%)]" : "text-[hsl(0,70%,50%)]"}`}>
                 {card.change > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}

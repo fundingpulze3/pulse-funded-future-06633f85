@@ -14,7 +14,8 @@ import {
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
-  Image as ImageIcon, ShieldCheck,
+  Image as ImageIcon, ShieldCheck, Menu, X as XIcon,
+
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
@@ -73,6 +74,7 @@ const Admin = () => {
   const [pageVisits, setPageVisits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
@@ -358,8 +360,64 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(0,0%,100%)] text-[hsl(0,0%,10%)] flex light" data-theme="light" style={{"--background":"0 0% 98%","--foreground":"0 0% 5%","--card":"0 0% 100%","--card-foreground":"0 0% 5%","--popover":"0 0% 100%","--popover-foreground":"0 0% 5%","--primary":"0 0% 5%","--primary-foreground":"0 0% 100%","--secondary":"0 0% 94%","--secondary-foreground":"0 0% 10%","--muted":"0 0% 94%","--muted-foreground":"0 0% 40%","--accent":"0 0% 90%","--accent-foreground":"0 0% 5%","--destructive":"0 84% 60%","--destructive-foreground":"0 0% 100%","--border":"0 0% 88%","--input":"0 0% 88%","--ring":"0 0% 20%"} as React.CSSProperties}>
-      {/* ===== Left Sidebar ===== */}
-      <div className={`${sidebarCollapsed ? "w-16" : "w-56"} bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] flex flex-col shrink-0 transition-all duration-200`}>
+
+      {/* ===== Mobile Sidebar Overlay ===== */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSidebarOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-64 bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] flex flex-col animate-in slide-in-from-left duration-200">
+            {/* Brand */}
+            <div className="h-14 flex items-center justify-between px-4 border-b border-[hsl(0,0%,90%)]">
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg shrink-0" />
+                <div>
+                  <p className="font-display text-xs font-bold text-[hsl(0,0%,5%)] leading-tight">Funding Pulze</p>
+                  <p className="text-[9px] text-[hsl(0,0%,50%)]">Admin Panel</p>
+                </div>
+              </div>
+              <button onClick={() => setMobileSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-[hsl(0,0%,93%)]">
+                <XIcon size={18} className="text-[hsl(0,0%,45%)]" />
+              </button>
+            </div>
+            {/* Nav */}
+            <nav className="flex-1 py-3 px-2 space-y-4 overflow-auto">
+              {sidebarGroups.map(group => (
+                <div key={group.label}>
+                  <p className="text-[9px] font-semibold text-[hsl(0,0%,50%)] uppercase tracking-widest px-2 mb-1.5">{group.label}</p>
+                  <div className="space-y-0.5">
+                    {group.items.map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => { setTab(item.id); setMobileSidebarOpen(false); }}
+                        className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium transition-all ${
+                          tab === item.id
+                            ? "bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] shadow-sm"
+                            : "text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)]"
+                        }`}
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </nav>
+            {/* Bottom */}
+            <div className="border-t border-[hsl(0,0%,90%)] p-2 space-y-0.5">
+              <button onClick={() => { navigate("/"); setMobileSidebarOpen(false); }} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors">
+                <Home size={18} /><span>Back to Site</span>
+              </button>
+              <button onClick={() => { signOut(); navigate("/"); }} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors">
+                <LogOut size={18} /><span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Desktop Sidebar ===== */}
+      <div className={`${sidebarCollapsed ? "w-16" : "w-56"} bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] hidden md:flex flex-col shrink-0 transition-all duration-200`}>
         {/* Brand */}
         <div className="h-14 flex items-center gap-2 px-4 border-b border-[hsl(0,0%,90%)] cursor-pointer" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
           <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg shrink-0" />
@@ -413,12 +471,15 @@ const Admin = () => {
       {/* ===== Main Content ===== */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <div className="h-14 border-b border-[hsl(0,0%,90%)] flex items-center justify-between px-6 shrink-0 bg-[hsl(0,0%,100%)]">
-          <div>
-            <h1 className="font-display text-lg font-bold text-[hsl(0,0%,5%)]">{tabLabels[tab]}</h1>
+        <div className="h-14 border-b border-[hsl(0,0%,90%)] flex items-center justify-between px-3 md:px-6 shrink-0 bg-[hsl(0,0%,100%)]">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMobileSidebarOpen(true)} className="md:hidden p-1.5 rounded-lg hover:bg-[hsl(0,0%,93%)]">
+              <Menu size={20} className="text-[hsl(0,0%,30%)]" />
+            </button>
+            <h1 className="font-display text-base md:text-lg font-bold text-[hsl(0,0%,5%)]">{tabLabels[tab]}</h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <SearchIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[hsl(0,0%,55%)]" />
               <input
                 value={searchQuery}
@@ -436,7 +497,7 @@ const Admin = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6 bg-[hsl(0,0%,96%)]">
+        <div className="flex-1 overflow-auto p-3 md:p-6 bg-[hsl(0,0%,96%)]">
 
           {/* ===== Dashboard Tab ===== */}
           {tab === "dashboard" && (
@@ -483,8 +544,8 @@ const Admin = () => {
                 </div>
                 <Button size="sm" variant="outline" onClick={() => exportCSV(visibleProfiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
               </div>
-              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
-                <table className="w-full">
+              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden overflow-x-auto">
+                <table className="w-full min-w-[600px]">
                   <thead>
                     <tr className="text-left text-[11px] uppercase tracking-wider text-[hsl(0,0%,45%)] border-b border-[hsl(0,0%,92%)]">
                       <th className="px-5 py-3 font-medium">Name</th>
@@ -574,8 +635,8 @@ const Admin = () => {
                   </Button>
                 </div>
               </div>
-              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
-                <table className="w-full">
+              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden overflow-x-auto">
+                <table className="w-full min-w-[700px]">
                   <thead>
                     <tr className="text-left text-[11px] uppercase tracking-wider text-[hsl(0,0%,45%)] border-b border-[hsl(0,0%,92%)]">
                       <th className="px-5 py-3 font-medium">Name</th>
@@ -625,8 +686,8 @@ const Admin = () => {
                 </div>
                 <Button size="sm" variant="outline" onClick={() => exportCSV(referrals, "referrals")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
               </div>
-              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
-                <table className="w-full">
+              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden overflow-x-auto">
+                <table className="w-full min-w-[700px]">
                   <thead>
                     <tr className="text-left text-[11px] uppercase tracking-wider text-[hsl(0,0%,45%)] border-b border-[hsl(0,0%,92%)]">
                       <th className="px-5 py-3 font-medium">Referrer</th>
@@ -689,8 +750,8 @@ const Admin = () => {
                   </Button>
                 </div>
               </div>
-              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
-                <table className="w-full">
+              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden overflow-x-auto">
+                <table className="w-full min-w-[600px]">
                   <thead>
                     <tr className="text-left text-[11px] uppercase tracking-wider text-[hsl(0,0%,45%)] border-b border-[hsl(0,0%,92%)]">
                       <th className="px-5 py-3 font-medium">Code</th>
@@ -755,7 +816,7 @@ const Admin = () => {
                   </div>
                   <Button size="sm" variant="outline" onClick={() => exportCSV(utmSourceStats, "utm-sources")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
                 </div>
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]">
                   <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
                     <th className="text-left px-5 py-3 font-medium">Source</th>
                     <th className="text-left px-5 py-3 font-medium">Visits</th>
@@ -773,7 +834,7 @@ const Admin = () => {
                     ))}
                     {utmSourceStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No visit data yet.</td></tr>}
                   </tbody>
-                </table>
+                </table></div>
               </div>
 
               {/* By Campaign */}
@@ -782,7 +843,7 @@ const Admin = () => {
                   <TrendingUp size={18} className="text-[hsl(0,0%,40%)]" />
                   <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Campaign</h3>
                 </div>
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]">
                   <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
                     <th className="text-left px-5 py-3 font-medium">Campaign</th>
                     <th className="text-left px-5 py-3 font-medium">Visits</th>
@@ -800,7 +861,7 @@ const Admin = () => {
                     ))}
                     {utmCampaignStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No campaign data yet.</td></tr>}
                   </tbody>
-                </table>
+                </table></div>
               </div>
 
               {/* By Medium */}
@@ -809,7 +870,7 @@ const Admin = () => {
                   <BarChart3 size={18} className="text-[hsl(0,0%,40%)]" />
                   <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Medium</h3>
                 </div>
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]">
                   <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
                     <th className="text-left px-5 py-3 font-medium">Medium</th>
                     <th className="text-left px-5 py-3 font-medium">Visits</th>
@@ -827,7 +888,7 @@ const Admin = () => {
                     ))}
                     {utmMediumStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No medium data yet.</td></tr>}
                   </tbody>
-                </table>
+                </table></div>
               </div>
 
               <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
