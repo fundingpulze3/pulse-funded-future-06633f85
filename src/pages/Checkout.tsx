@@ -138,11 +138,54 @@ const Checkout = () => {
 
   // PayPal SDK init
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (window.paypal) { setPaypalReady(true); clearInterval(interval); }
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
+    if (window.paypal?.Buttons) {
+      setPaypalReady(true);
+      setPaypalLoadError(null);
+      return;
+    }
+
+    const existingScript = document.querySelector('script[src*="paypal.com/sdk/js"]') as HTMLScriptElement | null;
+
+    const handleLoad = () => {
+      if (window.paypal?.Buttons) {
+        setPaypalReady(true);
+        setPaypalLoadError(null);
+      }
+    };
+
+    const handleError = () => {
+      setPaypalReady(false);
+      setPaypalLoadError("PayPal failed to load. Please refresh and try again.");
+    };
+
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`;
+      script.async = true;
+      script.onload = handleLoad;
+      script.onerror = handleError;
+      document.body.appendChild(script);
+    }
+
+    const timeout = window.setTimeout(() => {
+      if (!window.paypal?.Buttons) {
+        setPaypalLoadError("PayPal button is unavailable right now.");
+      }
+    }, 10000);
+
+    if (existingScript) {
+      existingScript.addEventListener("load", handleLoad);
+      existingScript.addEventListener("error", handleError);
+    }
+
+    return () => {
+      window.clearTimeout(timeout);
+      if (existingScript) {
+        existingScript.removeEventListener("load", handleLoad);
+        existingScript.removeEventListener("error", handleError);
+      }
+    };
+  }, [PAYPAL_CLIENT_ID]);
 
   const createPurchaseRecord = useCallback(async () => {
     if (!user) throw new Error("Not signed in");
