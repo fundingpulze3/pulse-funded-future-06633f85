@@ -31,7 +31,6 @@ const DashboardKYC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ display_name: string | null } | null>(null);
-  const [hasPurchase, setHasPurchase] = useState(false);
   const [checking, setChecking] = useState(true);
   const [kycStatus, setKycStatus] = useState<KYCStatus>("not_started");
   const [kycData, setKycData] = useState<any>(null);
