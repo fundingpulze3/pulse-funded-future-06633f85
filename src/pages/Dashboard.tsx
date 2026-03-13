@@ -1041,26 +1041,40 @@ const Dashboard = () => {
                           funded: "border-[hsl(142,60%,50%)]/30",
                           payout: "border-purple-500/30",
                         };
+                        const bgImage = certTemplates[cert.certificate_type];
                         return (
-                          <div key={cert.id} className={`rounded-xl bg-[hsl(220,20%,7%)] border ${typeColors[cert.certificate_type] || "border-[hsl(220,15%,12%)]"} p-5 hover:shadow-lg transition-shadow`}>
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="w-10 h-10 rounded-lg bg-[hsl(210,80%,55%)]/10 flex items-center justify-center">
-                                <Award size={18} className="text-[hsl(210,80%,55%)]" />
+                          <div key={cert.id} className={`rounded-xl overflow-hidden bg-[hsl(220,20%,7%)] border ${typeColors[cert.certificate_type] || "border-[hsl(220,15%,12%)]"} hover:shadow-lg transition-shadow`}>
+                            {/* Certificate visual with name overlay */}
+                            {bgImage ? (
+                              <div className="relative h-48">
+                                <img src={bgImage} alt={cert.title} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] bg-black/20 px-5 py-2 rounded-lg backdrop-blur-sm">
+                                    {profile?.display_name || "Trader"}
+                                  </span>
+                                </div>
                               </div>
-                              <div>
-                                <h3 className="font-display font-bold text-sm">{cert.title}</h3>
-                                <span className="text-xs text-[hsl(220,15%,45%)]">{cert.certificate_type}</span>
-                              </div>
-                            </div>
-                            {cert.stats && Object.keys(cert.stats).length > 0 && (
-                              <div className="grid grid-cols-2 gap-2">
-                                {cert.stats.balance != null && <MiniStat label="Balance" value={`$${Number(cert.stats.balance).toLocaleString()}`} />}
-                                {cert.stats.profit != null && <MiniStat label="Profit" value={`$${Number(cert.stats.profit).toFixed(2)}`} positive={Number(cert.stats.profit) >= 0} />}
-                                {cert.stats.totalTrades != null && <MiniStat label="Trades" value={cert.stats.totalTrades} />}
-                                {cert.stats.profitFactor != null && <MiniStat label="PF" value={Number(cert.stats.profitFactor) === -1 ? "∞" : cert.stats.profitFactor} />}
+                            ) : (
+                              <div className="h-32 bg-gradient-to-br from-[hsl(210,80%,55%)]/20 to-[hsl(210,80%,35%)]/10 flex items-center justify-center">
+                                <div className="text-center">
+                                  <Award size={28} className="mx-auto mb-1 text-[hsl(210,80%,55%)]" />
+                                  <p className="text-lg font-bold text-white">{profile?.display_name || "Trader"}</p>
+                                </div>
                               </div>
                             )}
-                            <p className="text-[10px] text-[hsl(220,15%,35%)] mt-3">{new Date(cert.created_at).toLocaleDateString()}</p>
+                            <div className="p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-display font-bold text-sm">{cert.title}</h3>
+                              </div>
+                              <span className="text-xs text-[hsl(220,15%,45%)]">{cert.certificate_type.replace(/_/g, " ")}</span>
+                              {cert.stats && Object.keys(cert.stats).length > 0 && (
+                                <div className="grid grid-cols-2 gap-2 mt-3">
+                                  {cert.stats.balance != null && <MiniStat label="Balance" value={`$${Number(cert.stats.balance).toLocaleString()}`} />}
+                                  {cert.stats.profit != null && <MiniStat label="Profit" value={`$${Number(cert.stats.profit).toFixed(2)}`} positive={Number(cert.stats.profit) >= 0} />}
+                                </div>
+                              )}
+                              <p className="text-[10px] text-[hsl(220,15%,35%)] mt-3">{new Date(cert.created_at).toLocaleDateString()}</p>
+                            </div>
                           </div>
                         );
                       })}
