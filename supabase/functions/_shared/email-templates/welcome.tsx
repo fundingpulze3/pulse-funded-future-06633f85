@@ -1,6 +1,7 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
 import { Body, Container, Head, Heading, Html, Img, Preview, Section, Text, Button } from 'npm:@react-email/components@0.0.22'
+import { SocialFooter } from './social-footer.tsx'
 
 interface Props { siteName: string; siteUrl: string; recipient: string; displayName: string }
 
@@ -25,6 +26,7 @@ export const WelcomeEmail = ({ siteName = 'Funding Pulze', siteUrl = 'https://fu
         <Text style={text}>Ready to start? Pick your challenge and begin trading today.</Text>
         <Button style={button} href={siteUrl}>Get Your Challenge</Button>
         <Text style={footer}>Need help? Our support team is available 24/7. Just reply to this email.</Text>
+        <SocialFooter />
       </Container>
     </Body>
   </Html>

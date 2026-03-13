@@ -1,6 +1,7 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
 import { Body, Container, Head, Heading, Html, Img, Preview, Section, Text, Button } from 'npm:@react-email/components@0.0.22'
+import { SocialFooter } from './social-footer.tsx'
 
 interface Props { siteName: string; siteUrl: string; recipient: string; accountNumber: string; payoutAmount: string; payoutNumber: string }
 
@@ -24,6 +25,7 @@ export const PayoutReceivedEmail = ({ siteName = 'Funding Pulze', siteUrl = 'htt
         <Text style={text}>Keep up the amazing work. Consistent profitable trading unlocks scaling up to $1,000,000!</Text>
         <Button style={button} href={`${siteUrl}/dashboard`}>View Your Dashboard</Button>
         <Text style={footer}>Thank you for trading with Funding Pulze. More payouts await! 🚀</Text>
+        <SocialFooter />
       </Container>
     </Body>
   </Html>

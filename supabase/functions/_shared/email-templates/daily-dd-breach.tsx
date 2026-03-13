@@ -1,6 +1,7 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
 import { Body, Container, Head, Heading, Html, Img, Preview, Section, Text, Button } from 'npm:@react-email/components@0.0.22'
+import { SocialFooter } from './social-footer.tsx'
 
 interface Props { siteName: string; siteUrl: string; recipient: string; accountNumber: string; breachType: string; breachValue: string; limit: string }
 
@@ -24,6 +25,7 @@ export const DailyDDBreachEmail = ({ siteName = 'Funding Pulze', siteUrl = 'http
         <Text style={text}>This means the account has failed the challenge. You can purchase a new challenge at a discounted rate to try again.</Text>
         <Button style={button} href={siteUrl}>Get a New Challenge</Button>
         <Text style={footer}>If you believe this is an error, please contact support immediately.</Text>
+        <SocialFooter />
       </Container>
     </Body>
   </Html>

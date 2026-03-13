@@ -244,7 +244,7 @@ const Community = () => {
                   asChild
                 >
                   <a
-                    href="https://discord.gg/lovable-dev"
+                    href="https://discord.gg/YgWhnxNewG"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

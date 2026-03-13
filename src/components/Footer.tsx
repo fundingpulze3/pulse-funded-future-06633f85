@@ -18,6 +18,12 @@ const footerLinks = {
   ],
 };
 
+const socialLinks = [
+  { label: "Twitter", href: "https://x.com/fundingpulze?s=21&t=HnmtAeK4eOjcPiFqGHz5lw" },
+  { label: "Discord", href: "https://discord.gg/YgWhnxNewG" },
+  { label: "Instagram", href: "https://www.instagram.com/funding_pulze?igsh=MXZnd2J3dGp6ZGxkbw==" },
+];
+
 const Footer = () => {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-40px" });
@@ -98,13 +104,15 @@ const Footer = () => {
             © {new Date().getFullYear()} Funding Pulze. All rights reserved.
           </p>
           <div className="flex items-center gap-5">
-            {["Twitter", "Discord", "Instagram"].map((social) => (
+            {socialLinks.map((social) => (
               <a
-                key={social}
-                href="#"
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-300"
               >
-                {social}
+                {social.label}
               </a>
             ))}
           </div>
