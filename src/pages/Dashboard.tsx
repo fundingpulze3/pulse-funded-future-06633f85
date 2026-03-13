@@ -536,10 +536,10 @@ const Dashboard = () => {
                     <div className="px-3.5 py-3">
                       {/* Header row */}
                       <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors overflow-hidden ${
                           isActive ? `bg-[hsl(${accent})]/12` : "bg-[hsl(220,15%,11%)] group-hover:bg-[hsl(220,15%,13%)]"
                         }`}>
-                          <img src={fpLogoIcon} alt="FP" className={`w-5 h-5 object-contain transition-opacity ${isActive ? "opacity-100" : "opacity-50 group-hover:opacity-70"}`} />
+                          <img src={rank.img} alt={rank.label} className={`w-8 h-8 object-cover transition-opacity ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-90"}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
