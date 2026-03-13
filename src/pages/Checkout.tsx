@@ -126,6 +126,7 @@ const Checkout = () => {
   totalRef.current = total;
 
   const stepLabel = stepType === "1-step" ? "1 Step" : "2 Step";
+  const billingFilled = firstName.trim() && lastName.trim() && country.trim();
 
   // Save billing details
   const saveBillingDetails = async () => {
