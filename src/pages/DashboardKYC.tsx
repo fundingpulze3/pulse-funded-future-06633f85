@@ -68,13 +68,11 @@ const DashboardKYC = () => {
   const checkAccess = async () => {
     if (!user) return;
     setChecking(true);
-    const [profileRes, purchasesRes, kycRes] = await Promise.all([
+    const [profileRes, kycRes] = await Promise.all([
       supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle(),
-      supabase.from("challenge_purchases").select("id").eq("user_id", user.id).in("payment_status", ["paid", "confirmed", "completed"]).limit(1),
       supabase.from("kyc_submissions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
     ]);
     setProfile(profileRes.data);
-    setHasPurchase((purchasesRes.data?.length || 0) > 0);
     if (kycRes.data && kycRes.data.length > 0) {
       const kyc = kycRes.data[0] as any;
       setKycData(kyc);
