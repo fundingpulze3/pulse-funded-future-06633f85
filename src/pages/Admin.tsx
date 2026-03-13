@@ -14,6 +14,7 @@ import {
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
+  Image as ImageIcon,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
@@ -25,13 +26,15 @@ import Dashboard from "@/components/admin/Dashboard";
 import CredentialsManager from "@/components/admin/CredentialsManager";
 import OrdersCMS from "@/components/admin/OrdersCMS";
 import UserCertificatesCMS from "@/components/admin/UserCertificatesCMS";
+import CertificateTemplateManager from "@/components/admin/CertificateTemplateManager";
+import UserPhaseManager from "@/components/admin/UserPhaseManager";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import SEOManager from "@/components/admin/SEOManager";
 import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
@@ -256,6 +259,8 @@ const Admin = () => {
       label: "Administrator",
       items: [
         { id: "user_certificates" as Tab, label: "PDF / Certs", icon: <FileText size={18} /> },
+        { id: "cert_templates" as Tab, label: "Cert Templates", icon: <ImageIcon size={18} /> },
+        { id: "user_phases" as Tab, label: "User Phases", icon: <Shield size={18} /> },
       ],
       roles: ["administrator"],
     },
@@ -311,6 +316,7 @@ const Admin = () => {
     utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
     credentials: "Credentials", user_certificates: "User Certificates",
+    cert_templates: "Certificate Templates", user_phases: "User Phases",
   };
 
   // Helper to assign/change a user's role
@@ -850,6 +856,8 @@ const Admin = () => {
           {tab === "knowledgebase" && <KnowledgeBaseCMS />}
           {tab === "credentials" && <CredentialsManager />}
           {tab === "user_certificates" && <UserCertificatesCMS />}
+          {tab === "cert_templates" && <CertificateTemplateManager />}
+          {tab === "user_phases" && <UserPhaseManager />}
         </div>
       </div>
 

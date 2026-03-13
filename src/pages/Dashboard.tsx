@@ -93,6 +93,7 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState<SidebarTab>("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [certTemplates, setCertTemplates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -129,13 +130,14 @@ const Dashboard = () => {
       setLoading(true);
       setLoadError(null);
 
-      const [profileRes, referralsRes, purchasesRes, certsRes, credsRes] = await withTimeout(
+      const [profileRes, referralsRes, purchasesRes, certsRes, credsRes, templatesRes] = await withTimeout(
         Promise.all([
           supabase.from("profiles").select("referral_code, display_name, email, avatar_url, created_at").eq("user_id", user.id).maybeSingle(),
           supabase.from("affiliate_referrals").select("*").eq("referrer_id", user.id),
           supabase.from("challenge_purchases").select("*, challenges(name, account_size, profit_target, daily_drawdown, max_drawdown, step_type)").eq("user_id", user.id).order("created_at", { ascending: false }),
           supabase.from("user_certificates").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
           supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id").eq("assigned_to", user.id),
+          supabase.from("certificate_templates").select("certificate_type, background_image_url"),
         ])
       );
 
@@ -155,6 +157,9 @@ const Dashboard = () => {
       setPurchases((purchasesRes.data as unknown as Purchase[]) ?? []);
       setUserCertificates((certsRes.data as any) ?? []);
       setCredentials((credsRes.data as any) ?? []);
+      const tMap: Record<string, string> = {};
+      (templatesRes.data || []).forEach((t: any) => { tMap[t.certificate_type] = t.background_image_url; });
+      setCertTemplates(tMap);
     } catch (error) {
       console.error("Dashboard load failed:", error);
       setLoadError("Could not load dashboard data. Please retry.");
@@ -373,16 +378,16 @@ const Dashboard = () => {
   ];
 
   const navItems: { key: SidebarTab; label: string; icon: any }[] = [
-    { key: "overview", label: "Dashboard", icon: Home },
-    { key: "credentials", label: "Credentials", icon: Key },
-    { key: "affiliate", label: "Affiliate", icon: Users },
+    { key: "overview", label: "Overview", icon: Home },
+    { key: "credentials", label: "Accounts", icon: Key },
     { key: "certificates", label: "Certificates", icon: Award },
-    { key: "payout", label: "Payout", icon: Wallet },
+    { key: "payout", label: "Payouts", icon: Wallet },
+    { key: "affiliate", label: "Affiliate", icon: Users },
   ];
 
   return (
     <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
-      {/* Top Bar */}
+      {/* Top Bar - simplified without nav */}
       <header className="h-14 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,20%,6%)] flex items-center px-4 lg:px-6 z-50 sticky top-0">
         <button
           onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
@@ -399,24 +404,6 @@ const Dashboard = () => {
         </div>
 
         <div className="flex-1" />
-
-        {/* Nav items - desktop */}
-        <nav className="hidden lg:flex items-center gap-1 mr-4">
-          {navItems.map(item => (
-            <button
-              key={item.key}
-              onClick={() => setActiveView(item.key)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeView === item.key
-                  ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
-                  : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
-              }`}
-            >
-              <item.icon size={14} />
-              {item.label}
-            </button>
-          ))}
-        </nav>
 
         <div className="flex items-center gap-2">
           <button onClick={() => navigate("/help")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
@@ -445,15 +432,15 @@ const Dashboard = () => {
           )}
         </AnimatePresence>
 
-        {/* Left Panel - Account List */}
+        {/* Left Panel - Navigation + Account List */}
         <aside className={`
           fixed lg:static z-50 lg:z-auto top-14 bottom-0 left-0
           w-[340px] lg:w-[360px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
           flex flex-col overflow-hidden transition-transform duration-300
           ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}>
-          {/* Mobile nav */}
-          <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)]">
+          {/* Navigation tabs - in sidebar */}
+          <div className="p-3 border-b border-[hsl(220,15%,12%)]">
             <div className="flex flex-wrap gap-1">
               {navItems.map(item => (
                 <button
@@ -462,7 +449,7 @@ const Dashboard = () => {
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                     activeView === item.key
                       ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
-                      : "text-[hsl(220,15%,50%)] hover:bg-[hsl(220,15%,10%)]"
+                      : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
                   }`}
                 >
                   <item.icon size={12} />
@@ -1054,26 +1041,40 @@ const Dashboard = () => {
                           funded: "border-[hsl(142,60%,50%)]/30",
                           payout: "border-purple-500/30",
                         };
+                        const bgImage = certTemplates[cert.certificate_type];
                         return (
-                          <div key={cert.id} className={`rounded-xl bg-[hsl(220,20%,7%)] border ${typeColors[cert.certificate_type] || "border-[hsl(220,15%,12%)]"} p-5 hover:shadow-lg transition-shadow`}>
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="w-10 h-10 rounded-lg bg-[hsl(210,80%,55%)]/10 flex items-center justify-center">
-                                <Award size={18} className="text-[hsl(210,80%,55%)]" />
+                          <div key={cert.id} className={`rounded-xl overflow-hidden bg-[hsl(220,20%,7%)] border ${typeColors[cert.certificate_type] || "border-[hsl(220,15%,12%)]"} hover:shadow-lg transition-shadow`}>
+                            {/* Certificate visual with name overlay */}
+                            {bgImage ? (
+                              <div className="relative h-48">
+                                <img src={bgImage} alt={cert.title} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] bg-black/20 px-5 py-2 rounded-lg backdrop-blur-sm">
+                                    {profile?.display_name || "Trader"}
+                                  </span>
+                                </div>
                               </div>
-                              <div>
-                                <h3 className="font-display font-bold text-sm">{cert.title}</h3>
-                                <span className="text-xs text-[hsl(220,15%,45%)]">{cert.certificate_type}</span>
-                              </div>
-                            </div>
-                            {cert.stats && Object.keys(cert.stats).length > 0 && (
-                              <div className="grid grid-cols-2 gap-2">
-                                {cert.stats.balance != null && <MiniStat label="Balance" value={`$${Number(cert.stats.balance).toLocaleString()}`} />}
-                                {cert.stats.profit != null && <MiniStat label="Profit" value={`$${Number(cert.stats.profit).toFixed(2)}`} positive={Number(cert.stats.profit) >= 0} />}
-                                {cert.stats.totalTrades != null && <MiniStat label="Trades" value={cert.stats.totalTrades} />}
-                                {cert.stats.profitFactor != null && <MiniStat label="PF" value={Number(cert.stats.profitFactor) === -1 ? "∞" : cert.stats.profitFactor} />}
+                            ) : (
+                              <div className="h-32 bg-gradient-to-br from-[hsl(210,80%,55%)]/20 to-[hsl(210,80%,35%)]/10 flex items-center justify-center">
+                                <div className="text-center">
+                                  <Award size={28} className="mx-auto mb-1 text-[hsl(210,80%,55%)]" />
+                                  <p className="text-lg font-bold text-white">{profile?.display_name || "Trader"}</p>
+                                </div>
                               </div>
                             )}
-                            <p className="text-[10px] text-[hsl(220,15%,35%)] mt-3">{new Date(cert.created_at).toLocaleDateString()}</p>
+                            <div className="p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-display font-bold text-sm">{cert.title}</h3>
+                              </div>
+                              <span className="text-xs text-[hsl(220,15%,45%)]">{cert.certificate_type.replace(/_/g, " ")}</span>
+                              {cert.stats && Object.keys(cert.stats).length > 0 && (
+                                <div className="grid grid-cols-2 gap-2 mt-3">
+                                  {cert.stats.balance != null && <MiniStat label="Balance" value={`$${Number(cert.stats.balance).toLocaleString()}`} />}
+                                  {cert.stats.profit != null && <MiniStat label="Profit" value={`$${Number(cert.stats.profit).toFixed(2)}`} positive={Number(cert.stats.profit) >= 0} />}
+                                </div>
+                              )}
+                              <p className="text-[10px] text-[hsl(220,15%,35%)] mt-3">{new Date(cert.created_at).toLocaleDateString()}</p>
+                            </div>
                           </div>
                         );
                       })}
