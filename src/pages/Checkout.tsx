@@ -604,16 +604,6 @@ const Checkout = () => {
                 </div>
               )}
 
-              {payMethod === "manual" && (
-                <div className="space-y-2">
-                  <p className="text-xs text-[hsl(220,15%,45%)]">Pay via crypto or bank transfer, then click below. We'll verify within 24h.</p>
-                  <Button onClick={handleManual} disabled={processing || !agreedTerms || !billingFilled}
-                    className="w-full rounded-xl h-12 text-sm bg-[hsl(230,20%,15%)] hover:bg-[hsl(230,20%,20%)] text-white border border-[hsl(220,15%,20%)] font-semibold">
-                    {processing ? <><Loader2 size={14} className="animate-spin" /> Processing...</>
-                      : <><Check size={14} /> I Have Paid — ${total.toFixed(2)}</>}
-                  </Button>
-                </div>
-              )}
 
               {processing && (
                 <div className="flex items-center justify-center gap-2 text-xs text-[hsl(220,15%,45%)]">
