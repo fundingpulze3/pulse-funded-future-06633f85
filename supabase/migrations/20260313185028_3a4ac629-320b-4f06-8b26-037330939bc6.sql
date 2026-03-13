@@ -1,0 +1,2 @@
+ALTER TABLE public.challenge_purchases DROP CONSTRAINT challenge_purchases_status_check;
+ALTER TABLE public.challenge_purchases ADD CONSTRAINT challenge_purchases_status_check CHECK (status = ANY (ARRAY['pending'::text, 'active'::text, 'phase2'::text, 'funded'::text, 'breached'::text, 'completed'::text, 'passed'::text, 'failed'::text, 'expired'::text]));
