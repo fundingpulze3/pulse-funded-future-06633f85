@@ -1,5 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import fpLogoIcon from "@/assets/fp-logo-icon.png";
+import rankStudentImg from "@/assets/rank-student.png";
+import rankPractitionerImg from "@/assets/rank-practitioner.png";
+import rankMasterImg from "@/assets/rank-master.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
