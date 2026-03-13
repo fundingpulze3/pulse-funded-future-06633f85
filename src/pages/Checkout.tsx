@@ -113,7 +113,7 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState<{ code: string; type: string; value: number } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [payMethod, setPayMethod] = useState<"paypal" | "crypto" | "manual">("paypal");
+  const [payMethod, setPayMethod] = useState<"paypal" | "crypto">("paypal");
 
   let discount = 0;
   if (couponApplied) {
