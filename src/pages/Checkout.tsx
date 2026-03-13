@@ -342,7 +342,7 @@ const Checkout = () => {
           <ArrowLeft size={14} /> Back
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* LEFT — Configuration */}
           <div className="space-y-6">
             {/* Step Type Selector */}

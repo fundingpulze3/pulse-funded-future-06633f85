@@ -37,9 +37,9 @@ const ComparisonSection = () => {
         <div className="space-y-8">
           {METRICS.map((m, i) => (
             <div key={m.label} className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-sm">
                 <span className="text-muted-foreground">{m.label}</span>
-                <div className="flex gap-6 text-xs">
+                <div className="flex gap-4 sm:gap-6 text-xs">
                   <span className="text-muted-foreground/50">Others: {m.theirsLabel || `${m.theirs}%`}</span>
                   <span className="font-semibold text-foreground">Us: {m.oursLabel || `${m.ours}%`}</span>
                 </div>
