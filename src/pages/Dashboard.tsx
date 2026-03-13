@@ -197,11 +197,17 @@ const Dashboard = () => {
   const activeAccountStats = useMemo(() => {
     const activePurchase = selectedAccount ? purchases.find(p => p.id === selectedAccount) : purchases[0];
     if (!activePurchase) return null;
-    const latestStats = userCertificates.find(c => c.certificate_type === "latest_stats" && c.stats && Object.keys(c.stats).length > 0);
-    const anyCert = userCertificates.find(c => c.stats && Object.keys(c.stats).length > 0 && c.certificate_type !== "latest_stats");
-    const cert = latestStats || anyCert;
+    // Find the credential linked to this specific purchase
+    const purchaseCred = credentials.find(c => c.purchase_id === activePurchase.id);
+    const accountLogin = purchaseCred?.mt5_login || null;
+    // Find stats certificate matching this purchase (by purchase_id or account_number)
+    const matchedCert = userCertificates.find(c =>
+      c.purchase_id === activePurchase.id && c.stats && Object.keys(c.stats).length > 0
+    ) || (accountLogin ? userCertificates.find(c =>
+      c.account_number === accountLogin && c.stats && Object.keys(c.stats).length > 0
+    ) : null);
     const accountSize = activePurchase.challenges?.account_size || 0;
-    const stats = cert?.stats || {};
+    const stats = matchedCert?.stats || {};
     return {
       purchase: activePurchase,
       stats, balance: stats.balance ?? accountSize, equity: stats.equity ?? stats.balance ?? accountSize,
@@ -218,7 +224,7 @@ const Dashboard = () => {
       balanceChart: stats.balanceChart, growthChart: stats.growthChart, drawdownChart: stats.drawdownChart,
       profitByDay: stats.profitByDay, symbols: stats.symbols, monthlyPL: stats.monthlyPL, accountSize,
       broker: stats.broker ?? "", currency: stats.currency ?? "USD", accountType: stats.accountType ?? "",
-      accountNumber: stats.accountNumber ?? "", name: stats.name ?? "", withdrawal: stats.withdrawal ?? 0,
+      accountNumber: accountLogin || stats.accountNumber || "", name: stats.name ?? "", withdrawal: stats.withdrawal ?? 0,
       withdrawalCount: stats.withdrawalCount ?? 0, depositCount: stats.depositCount ?? 0,
       growthPercent: stats.growthPercent ?? 0, longNetPL: stats.longNetPL ?? 0, shortNetPL: stats.shortNetPL ?? 0,
       avgPLLong: stats.avgPLLong ?? 0, avgPLShort: stats.avgPLShort ?? 0,
@@ -227,7 +233,7 @@ const Dashboard = () => {
       signalTrades: stats.signalTrades ?? 0, maxConsecutiveProfit: stats.maxConsecutiveProfit ?? 0,
       maxConsecutiveLoss: stats.maxConsecutiveLoss ?? 0, drawdownDetailChart: stats.drawdownDetailChart,
     };
-  }, [purchases, userCertificates, selectedAccount]);
+  }, [purchases, userCertificates, selectedAccount, credentials]);
 
   const chartData = useMemo(() => {
     if (!activeAccountStats?.balanceChart || !Array.isArray(activeAccountStats.balanceChart)) {
