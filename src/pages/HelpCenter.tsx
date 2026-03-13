@@ -576,8 +576,8 @@ const HelpCenter = () => {
       </header>
 
       <section className="bg-primary pb-16 pt-10">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h1 className="font-display text-3xl lg:text-4xl font-bold text-primary-foreground mb-8">Funding Pulze Help Centre</h1>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-primary-foreground mb-6 sm:mb-8">Funding Pulze Help Centre</h1>
           <div className="relative max-w-2xl mx-auto" ref={searchRef}>
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={search}
