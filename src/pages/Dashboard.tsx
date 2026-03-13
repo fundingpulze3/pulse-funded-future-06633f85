@@ -157,6 +157,9 @@ const Dashboard = () => {
       setPurchases((purchasesRes.data as unknown as Purchase[]) ?? []);
       setUserCertificates((certsRes.data as any) ?? []);
       setCredentials((credsRes.data as any) ?? []);
+      const tMap: Record<string, string> = {};
+      (templatesRes.data || []).forEach((t: any) => { tMap[t.certificate_type] = t.background_image_url; });
+      setCertTemplates(tMap);
     } catch (error) {
       console.error("Dashboard load failed:", error);
       setLoadError("Could not load dashboard data. Please retry.");
