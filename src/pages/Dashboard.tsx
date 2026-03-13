@@ -648,6 +648,7 @@ const Dashboard = () => {
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className={`text-[9px] font-bold ${sc.color}`}>{sc.label}</span>
                             <span className="text-[9px] text-[hsl(220,15%,40%)]">${(p.challenges?.account_size || 0).toLocaleString()}</span>
+                            {(() => { const r = getRank(p); return <span className={`text-[9px] font-semibold ${r.color}`}>{r.emoji}</span>; })()}
                           </div>
                         </div>
                       </button>
