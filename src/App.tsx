@@ -23,6 +23,8 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import DashboardCertificates from "./pages/DashboardCertificates";
 import DashboardPayouts from "./pages/DashboardPayouts";
+import DashboardSettings from "./pages/DashboardSettings";
+import DashboardBilling from "./pages/DashboardBilling";
 
 const queryClient = new QueryClient();
 
