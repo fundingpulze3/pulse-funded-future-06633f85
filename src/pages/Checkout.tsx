@@ -340,7 +340,6 @@ const Checkout = () => {
     setProcessing(false);
   };
 
-  const billingFilled = firstName.trim() && lastName.trim() && country.trim();
 
   return (
     <div className="min-h-screen bg-[hsl(230,25%,7%)] text-white">
