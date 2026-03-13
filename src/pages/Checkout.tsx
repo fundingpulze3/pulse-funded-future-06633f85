@@ -332,10 +332,6 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(230,25%,7%)] text-white">
-      {/* Promo banner */}
-      <div className="bg-gradient-to-r from-[hsl(260,80%,55%)] to-[hsl(280,80%,50%)] py-2.5 text-center text-xs font-medium tracking-wide">
-        Haven't purchased yet? Use code <span className="font-bold">HELLO</span> & Get 20% OFF now on your first purchase!
-      </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8 lg:py-12">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-[hsl(220,15%,55%)] hover:text-white mb-6 transition-colors">
