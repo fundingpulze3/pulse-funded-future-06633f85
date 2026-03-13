@@ -406,6 +406,9 @@ export default function Dashboard({
         </div>
       </div>
 
+      {/* Sales Calendar & Custom Date Range */}
+      <SalesCalendarSection purchases={purchases.filter(isCountablePurchase)} getProfileName={getProfileName} getChallengeNameById={getChallengeNameById} />
+
       {/* Recent Sales */}
       <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
         <div className="flex items-center gap-2 mb-4">
