@@ -489,7 +489,7 @@ const Dashboard = () => {
           </div>
 
           {/* Account Cards */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-[hsl(220,15%,15%)] scrollbar-track-transparent">
+          <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin scrollbar-thumb-[hsl(220,15%,15%)] scrollbar-track-transparent">
             <AnimatePresence>
               {filteredPurchases.slice(0, 10).map((p, i) => {
                 const isActive = selectedAccount === p.id;
@@ -499,93 +499,100 @@ const Dashboard = () => {
                 const challengeName = p.challenges?.name || "Account";
                 const stepType = p.challenges?.step_type || "—";
                 const accountNumber = cred?.mt5_login || p.id.slice(0, 8);
+                const rank = getRank(p);
+                const purchaseCert = userCertificates.find(c => c.purchase_id === p.id && c.stats && Object.keys(c.stats).length > 0)
+                  || (cred ? userCertificates.find(c => c.account_number === cred.mt5_login && c.stats && Object.keys(c.stats).length > 0) : null);
+                const trades = purchaseCert?.stats?.totalTrades ?? 0;
+
+                // Subtle accent hue per card based on status
+                const accentMap: Record<string, string> = {
+                  ongoing: "207,90%,77%",
+                  funded: "142,60%,50%",
+                  breached: "0,70%,55%",
+                  completed: "160,55%,50%",
+                };
+                const accent = accentMap[status] || accentMap.ongoing;
 
                 return (
                   <motion.div
                     key={p.id}
                     layout
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
                     transition={{ duration: 0.2, delay: i * 0.02 }}
                     onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); }}
-                    className={`group cursor-pointer rounded-xl p-3.5 transition-all duration-200 border ${
+                    className={`group cursor-pointer rounded-xl transition-all duration-200 overflow-hidden ${
                       isActive
-                        ? "bg-[hsl(220,20%,9%)] border-[hsl(207,90%,77%)]/30 shadow-[0_0_20px_-5px_hsl(210,80%,55%,0.2)]"
-                        : "bg-[hsl(220,20%,7%)] border-[hsl(220,15%,12%)] hover:bg-[hsl(220,20%,8%)] hover:border-[hsl(220,15%,18%)]"
+                        ? `bg-[hsl(220,20%,8%)] ring-1 ring-[hsl(${accent})]/25 shadow-[0_0_24px_-6px_hsl(${accent},0.15)]`
+                        : "bg-[hsl(220,20%,7%)] hover:bg-[hsl(220,20%,8%)] ring-1 ring-[hsl(220,15%,12%)] hover:ring-[hsl(220,15%,18%)]"
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                          isActive ? "bg-[hsl(207,90%,77%)]/15" : "bg-[hsl(220,15%,12%)]"
+                    {/* Accent top line */}
+                    <div className={`h-[2px] w-full transition-opacity ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`} style={{ background: `linear-gradient(90deg, hsl(${accent}), hsl(${accent}, 0.3))` }} />
+
+                    <div className="px-3.5 py-3">
+                      {/* Header row */}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                          isActive ? `bg-[hsl(${accent})]/12` : "bg-[hsl(220,15%,11%)] group-hover:bg-[hsl(220,15%,13%)]"
                         }`}>
-                          <User size={16} className={isActive ? "text-[hsl(207,90%,77%)]" : "text-[hsl(220,15%,40%)]"} />
+                          <img src={fpLogoIcon} alt="FP" className={`w-5 h-5 object-contain transition-opacity ${isActive ? "opacity-100" : "opacity-50 group-hover:opacity-70"}`} />
                         </div>
-                        <div>
-                          <p className="text-sm font-bold leading-tight">FP {accountNumber}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[13px] font-bold leading-tight truncate">FP {accountNumber}</p>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ${sc.bg} ${sc.color}`}>
+                              {sc.label}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[11px] text-[hsl(220,15%,50%)]">{challengeName}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(207,90%,77%)]/10 text-[hsl(207,90%,77%)] font-medium">{stepType}</span>
+                            <span className="text-[10px] text-[hsl(220,15%,45%)] truncate">{challengeName}</span>
+                            <span className="text-[9px] px-1 py-px rounded bg-[hsl(220,15%,12%)] text-[hsl(220,15%,55%)] font-medium">{stepType}</span>
+                            <span className={`text-[9px] font-semibold ${rank.color} ml-auto shrink-0`}>
+                              {rank.emoji} {rank.label}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${sc.bg} ${sc.color}`}>
-                          {sc.label}
-                        </span>
-                        {(() => {
-                          const rank = getRank(p);
-                          return (
-                            <span className={`text-[10px] font-semibold ${rank.color}`}>
-                              {rank.emoji} {rank.label}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-4 mt-1">
-                      <div className="flex items-center gap-1.5">
-                        <Activity size={12} className="text-[hsl(220,15%,35%)]" />
-                        <div>
-                          <p className="text-[10px] text-[hsl(220,15%,40%)]">No. of trades</p>
-                          <p className="text-sm font-bold">{(() => {
-                            const purchaseCert = userCertificates.find(c => c.purchase_id === p.id && c.stats && Object.keys(c.stats).length > 0)
-                              || (cred ? userCertificates.find(c => c.account_number === cred.mt5_login && c.stats && Object.keys(c.stats).length > 0) : null);
-                            return purchaseCert?.stats?.totalTrades ?? 0;
-                          })()}</p>
+                      {/* Stats row */}
+                      <div className="flex items-center gap-3 mt-2.5 pl-12">
+                        <div className="flex items-center gap-1">
+                          <Activity size={10} className="text-[hsl(220,15%,30%)]" />
+                          <span className="text-[10px] text-[hsl(220,15%,40%)]">Trades</span>
+                          <span className="text-[11px] font-bold ml-0.5">{trades}</span>
+                        </div>
+                        <div className="w-px h-3 bg-[hsl(220,15%,15%)]" />
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-[hsl(220,15%,40%)]">#</span>
+                          <span className="text-[11px] font-bold font-mono">{accountNumber}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <CreditCard size={12} className="text-[hsl(220,15%,35%)]" />
-                        <div>
-                          <p className="text-[10px] text-[hsl(220,15%,40%)]">Account #</p>
-                          <p className="text-sm font-bold font-mono">{accountNumber}</p>
-                        </div>
-                      </div>
-                    </div>
 
-                    {isActive && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="flex gap-2 mt-3 pt-3 border-t border-[hsl(220,15%,12%)]"
-                      >
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openCredentialsPopup(p.id); }}
-                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[hsl(220,15%,12%)] hover:bg-[hsl(220,15%,15%)] text-xs font-medium text-[hsl(220,15%,60%)] hover:text-white transition-colors"
+                      {/* Action buttons (active only) */}
+                      {isActive && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          className="flex gap-2 mt-3 pt-2.5 border-t border-[hsl(220,15%,11%)]"
                         >
-                          <Key size={12} /> Credentials
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setActiveView("overview"); }}
-                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] text-xs font-bold text-white transition-colors"
-                        >
-                          <LayoutDashboard size={12} /> Dashboard
-                        </button>
-                      </motion.div>
-                    )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openCredentialsPopup(p.id); }}
+                            className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-[7px] rounded-lg bg-[hsl(220,15%,11%)] hover:bg-[hsl(220,15%,14%)] text-[11px] font-medium text-[hsl(220,15%,55%)] hover:text-white transition-colors"
+                          >
+                            <Key size={11} /> Credentials
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setActiveView("overview"); }}
+                            className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-[7px] rounded-lg text-[11px] font-bold text-white transition-colors`}
+                            style={{ background: `hsl(${accent})` }}
+                          >
+                            <LayoutDashboard size={11} /> Dashboard
+                          </button>
+                        </motion.div>
+                      )}
+                    </div>
                   </motion.div>
                 );
               })}
