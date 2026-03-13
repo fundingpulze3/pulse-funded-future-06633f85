@@ -126,7 +126,7 @@ const GlobeCTA = () => {
   return (
     <section ref={sectionRef} className="relative overflow-hidden">
       {/* Content area */}
-      <div className="relative z-10 text-center pt-24 sm:pt-32 pb-0">
+      <div className="relative z-10 text-center pt-16 sm:pt-32 pb-0">
         {/* Floating logo */}
         <motion.div
           className="mx-auto mb-8"

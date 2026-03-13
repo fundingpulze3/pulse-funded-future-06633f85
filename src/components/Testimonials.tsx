@@ -207,7 +207,7 @@ const Testimonials = () => {
   };
 
   return (
-    <section className="py-28 px-6 relative overflow-hidden">
+    <section className="py-16 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
       {/* Ambient glow */}
       <div className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full bg-foreground/[0.015] blur-[140px] pointer-events-none" />
 

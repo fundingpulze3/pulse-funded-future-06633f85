@@ -56,7 +56,7 @@ const StatsBar = () => {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section className="relative py-16 px-6">
+    <section className="relative py-12 sm:py-16 px-4 sm:px-6">
       <div
         ref={ref}
         className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4"
