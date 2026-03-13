@@ -471,7 +471,7 @@ const MissionCard = ({ icon, label, title, content, direction }: {
   return (
     <motion.div
       ref={ref}
-      className={`relative rounded-[2rem] border border-border/40 p-10 sm:p-14 overflow-hidden bg-card/30 backdrop-blur-sm ${
+      className={`relative rounded-2xl sm:rounded-[2rem] border border-border/40 p-6 sm:p-10 md:p-14 overflow-hidden bg-card/30 backdrop-blur-sm ${
         direction === "right" ? "lg:ml-auto lg:max-w-2xl" : "lg:mr-auto lg:max-w-2xl"
       }`}
       initial={{ opacity: 0, x: direction === "left" ? -60 : 60 }}
