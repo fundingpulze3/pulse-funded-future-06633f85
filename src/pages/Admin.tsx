@@ -888,7 +888,7 @@ const Admin = () => {
                     ))}
                     {utmMediumStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No medium data yet.</td></tr>}
                   </tbody>
-                </table>
+                </table></div>
               </div>
 
               <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] overflow-hidden">
