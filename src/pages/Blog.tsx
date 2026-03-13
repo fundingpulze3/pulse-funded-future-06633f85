@@ -147,7 +147,7 @@ const Blog = () => {
       ) : (
         <>
           {/* Featured + Latest Layout */}
-          <section className="px-6 pb-16">
+          <section className="px-4 sm:px-6 pb-16">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Featured / Latest Post — Large Card */}
               {featuredPost && (
