@@ -293,7 +293,7 @@ const DashboardAI = () => {
             <h1 className="font-display text-2xl font-bold mb-3">Premium AI Assistant</h1>
             <p className="text-[hsl(220,15%,50%)] text-sm mb-6 leading-relaxed">
               Get a personalized AI trading assistant that knows your accounts, stats, and trading history.
-              Purchase a challenge to unlock FP AI.
+              Purchase a challenge to unlock PulzeX AI.
             </p>
             <button
               onClick={() => navigate("/#rules")}
@@ -378,7 +378,7 @@ const DashboardAI = () => {
                 <div className="p-3 border-t border-[hsl(220,15%,12%)]">
                   <div className="flex items-center gap-2 px-2">
                     <Sparkles size={14} className="text-[hsl(207,90%,77%)]" />
-                    <span className="text-[10px] font-bold text-[hsl(220,15%,40%)] uppercase tracking-wider">FP AI</span>
+                    <span className="text-[10px] font-bold text-[hsl(220,15%,40%)] uppercase tracking-wider">PulzeX</span>
                   </div>
                 </div>
               </motion.aside>
@@ -398,7 +398,7 @@ const DashboardAI = () => {
             </button>
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="text-[hsl(207,90%,77%)]" />
-              <span className="text-sm font-bold">FP AI</span>
+              <span className="text-sm font-bold">PulzeX</span>
             </div>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-[hsl(207,90%,77%)]/10 text-[hsl(207,90%,77%)] font-medium">Premium</span>
           </div>
@@ -452,7 +452,7 @@ const DashboardAI = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-bold text-[hsl(220,15%,40%)] mb-1 uppercase tracking-wider">
-                        {msg.role === "assistant" ? "FP AI" : profile?.display_name || "You"}
+                        {msg.role === "assistant" ? "PulzeX" : profile?.display_name || "You"}
                       </p>
                       <div className="prose prose-sm prose-invert max-w-none text-[hsl(0,0%,85%)] text-sm leading-relaxed [&_p]:mb-2 [&_ul]:mb-2 [&_ol]:mb-2 [&_li]:mb-0.5 [&_strong]:text-white [&_code]:bg-[hsl(220,15%,12%)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[hsl(207,90%,77%)] [&_pre]:bg-[hsl(220,15%,8%)] [&_pre]:rounded-xl [&_pre]:p-4">
                         <ReactMarkdown>{msg.content || "..."}</ReactMarkdown>
@@ -486,7 +486,7 @@ const DashboardAI = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask FP AI anything about your account..."
+                  placeholder="Ask PulzeX anything about your account..."
                   rows={1}
                   className="flex-1 bg-transparent text-sm resize-none border-0 outline-none placeholder:text-[hsl(220,15%,30%)] px-2 py-2 max-h-32 min-h-[36px]"
                   style={{ height: "36px" }}
@@ -509,7 +509,7 @@ const DashboardAI = () => {
                 </button>
               </div>
               <p className="text-[10px] text-[hsl(220,15%,25%)] text-center mt-2">
-                FP AI has access to your account data. Responses are AI-generated and may not always be accurate.
+                PulzeX has access to your account data. Responses are AI-generated and may not always be accurate.
               </p>
             </div>
           </div>

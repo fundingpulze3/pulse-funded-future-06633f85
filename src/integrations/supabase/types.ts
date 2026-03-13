@@ -655,6 +655,63 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_submissions: {
+        Row: {
+          created_at: string
+          document_back_url: string | null
+          document_front_url: string | null
+          document_type: string | null
+          face_video_url: string | null
+          id: string
+          occupation: string | null
+          preferred_trading_strategy: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_of_funds: string | null
+          status: string
+          trading_experience: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_back_url?: string | null
+          document_front_url?: string | null
+          document_type?: string | null
+          face_video_url?: string | null
+          id?: string
+          occupation?: string | null
+          preferred_trading_strategy?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_of_funds?: string | null
+          status?: string
+          trading_experience?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_back_url?: string | null
+          document_front_url?: string | null
+          document_type?: string | null
+          face_video_url?: string | null
+          id?: string
+          occupation?: string | null
+          preferred_trading_strategy?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_of_funds?: string | null
+          status?: string
+          trading_experience?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       page_content: {
         Row: {
           content: string

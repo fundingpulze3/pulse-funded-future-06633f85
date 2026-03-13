@@ -1,12 +1,14 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X, Receipt, Sparkles } from "lucide-react";
+import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X, Receipt, Sparkles, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import fpLogoIcon from "@/assets/fp-logo-icon.png";
 
 const navItems = [
   { key: "overview", label: "Overview", route: "/dashboard", icon: Home },
-  { key: "ai", label: "FP AI", route: "/dashboard/ai", icon: Sparkles },
+  { key: "ai", label: "PulzeX", route: "/dashboard/ai", icon: Sparkles },
+  { key: "kyc", label: "KYC", route: "/dashboard/kyc", icon: ShieldCheck },
   { key: "affiliate", label: "Affiliate", route: "/dashboard?view=affiliate", icon: Users },
   { key: "certificates", label: "Certificates", route: "/dashboard/certificates", icon: Award },
   { key: "payouts", label: "Payouts", route: "/dashboard/payouts", icon: Wallet },
@@ -42,9 +44,7 @@ const DashboardSidebar = ({ profile }: Props) => {
         </button>
 
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/dashboard")}>
-          <div className="w-8 h-8 rounded-lg bg-[hsl(207,90%,77%)] flex items-center justify-center">
-            <Zap size={16} className="text-white" />
-          </div>
+          <img src={fpLogoIcon} alt="Funding Pulze" className="w-8 h-8 rounded-lg object-cover" />
           <span className="font-display font-bold text-sm tracking-wide hidden sm:inline">FUNDING PULZE</span>
         </div>
 
