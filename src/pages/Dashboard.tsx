@@ -315,9 +315,7 @@ const Dashboard = () => {
 
   // Get credential for a purchase
   const getCredentialForPurchase = (purchaseId: string) => {
-    const purchase = purchases.find(p => p.id === purchaseId);
-    if (!purchase) return null;
-    return credentials.find(c => c.challenge_id === purchase.challenge_id) || credentials[0] || null;
+    return credentials.find(c => c.purchase_id === purchaseId) || null;
   };
 
   const openCredentialsPopup = (purchaseId: string) => {
