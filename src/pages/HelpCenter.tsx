@@ -567,7 +567,7 @@ const HelpCenter = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-primary text-primary-foreground">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <button onClick={goHome} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg" />
             <span className="font-display font-bold text-sm">Funding Pulze Help Center</span>
