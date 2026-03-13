@@ -9,6 +9,7 @@ interface OrdersCMSProps {
   profiles: any[];
   challenges: any[];
   getProfileName: (userId: string) => string;
+  getProfileByUserId: (userId: string) => any;
   getChallengeNameById: (id: string) => string;
   onRefresh: () => void;
 }
@@ -16,7 +17,7 @@ interface OrdersCMSProps {
 type StatusFilter = "all" | "pending" | "completed" | "cancelled";
 
 export default function OrdersCMS({
-  purchases, profiles, challenges, getProfileName, getChallengeNameById, onRefresh,
+  purchases, profiles, challenges, getProfileName, getProfileByUserId, getChallengeNameById, onRefresh,
 }: OrdersCMSProps) {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
@@ -182,7 +183,7 @@ export default function OrdersCMS({
               <th className="px-5 py-3 font-medium">User</th>
               <th className="px-5 py-3 font-medium">Challenge</th>
               <th className="px-5 py-3 font-medium">Amount</th>
-              <th className="px-5 py-3 font-medium">Swap Free</th>
+              <th className="px-5 py-3 font-medium">Billing</th>
               <th className="px-5 py-3 font-medium">Status</th>
               <th className="px-5 py-3 font-medium">Date</th>
               <th className="px-5 py-3 font-medium">Actions</th>
@@ -192,7 +193,9 @@ export default function OrdersCMS({
             {filtered.length === 0 && (
               <tr><td colSpan={7} className="px-5 py-12 text-center text-xs text-[hsl(0,0%,55%)]">No orders found</td></tr>
             )}
-            {filtered.map(order => (
+            {filtered.map(order => {
+              const profile = getProfileByUserId(order.user_id);
+              return (
               <tr key={order.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)] transition-colors">
                 <td className="px-5 py-3">
                   <p className="text-sm font-medium text-[hsl(0,0%,10%)]">{getProfileName(order.user_id)}</p>
@@ -200,7 +203,17 @@ export default function OrdersCMS({
                 </td>
                 <td className="px-5 py-3 text-sm text-[hsl(0,0%,30%)]">{getChallengeNameById(order.challenge_id)}</td>
                 <td className="px-5 py-3 text-sm font-semibold text-[hsl(0,0%,10%)]">${order.amount_paid}</td>
-                <td className="px-5 py-3 text-xs text-[hsl(0,0%,45%)]">{order.swap_free ? "Yes" : "No"}</td>
+                <td className="px-5 py-3">
+                  {profile?.first_name ? (
+                    <div className="text-[11px] text-[hsl(0,0%,30%)] space-y-0.5">
+                      <p className="font-medium">{profile.first_name} {profile.last_name}</p>
+                      {profile.country && <p>{profile.city ? `${profile.city}, ` : ""}{profile.country}</p>}
+                      {profile.billing_address && <p className="text-[hsl(0,0%,55%)] truncate max-w-[140px]">{profile.billing_address}</p>}
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-[hsl(0,0%,55%)]">—</span>
+                  )}
+                </td>
                 <td className="px-5 py-3">{statusBadge(order.payment_status)}</td>
                 <td className="px-5 py-3 text-xs text-[hsl(0,0%,50%)]">{new Date(order.created_at).toLocaleString()}</td>
                 <td className="px-5 py-3">
@@ -240,7 +253,8 @@ export default function OrdersCMS({
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

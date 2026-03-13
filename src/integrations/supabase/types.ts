@@ -751,10 +751,15 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          billing_address: string | null
+          city: string | null
+          country: string | null
           created_at: string
           display_name: string | null
           email: string | null
+          first_name: string | null
           id: string
+          last_name: string | null
           referral_code: string | null
           referred_by: string | null
           updated_at: string
@@ -764,13 +769,19 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           utm_term: string | null
+          zip_code: string | null
         }
         Insert: {
           avatar_url?: string | null
+          billing_address?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           referral_code?: string | null
           referred_by?: string | null
           updated_at?: string
@@ -780,13 +791,19 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          zip_code?: string | null
         }
         Update: {
           avatar_url?: string | null
+          billing_address?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           referral_code?: string | null
           referred_by?: string | null
           updated_at?: string
@@ -796,6 +813,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }

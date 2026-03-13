@@ -51,7 +51,7 @@ const DashboardBilling = () => {
       ]);
       setProfile(p);
       setOrders(
-        (o || []).map((r: any) => ({
+        (o || []).filter((r: any) => r.status !== "pending").map((r: any) => ({
           ...r,
           challenge: r.challenges || null,
         }))

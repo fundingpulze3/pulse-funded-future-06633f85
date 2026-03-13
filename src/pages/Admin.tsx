@@ -551,6 +551,7 @@ const Admin = () => {
               profiles={profiles}
               challenges={challenges}
               getProfileName={getProfileName}
+              getProfileByUserId={(userId: string) => profiles.find((p: any) => p.user_id === userId)}
               getChallengeNameById={getChallengeNameById}
               onRefresh={fetchAll}
             />
