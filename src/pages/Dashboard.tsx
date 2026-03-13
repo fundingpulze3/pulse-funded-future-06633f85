@@ -579,7 +579,11 @@ const Dashboard = () => {
                         <Activity size={12} className="text-[hsl(220,15%,35%)]" />
                         <div>
                           <p className="text-[10px] text-[hsl(220,15%,40%)]">No. of trades</p>
-                          <p className="text-sm font-bold">{activeAccountStats?.totalTrades || 0}</p>
+                          <p className="text-sm font-bold">{(() => {
+                            const purchaseCert = userCertificates.find(c => c.purchase_id === p.id && c.stats && Object.keys(c.stats).length > 0)
+                              || (cred ? userCertificates.find(c => c.account_number === cred.mt5_login && c.stats && Object.keys(c.stats).length > 0) : null);
+                            return purchaseCert?.stats?.totalTrades ?? 0;
+                          })()}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
