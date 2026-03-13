@@ -428,7 +428,7 @@ export default function Dashboard({
   return (
     <div className="space-y-6">
       {/* Date Range Picker */}
-      <div className="flex items-center gap-1 bg-[hsl(0,0%,100%)] rounded-lg border border-[hsl(0,0%,90%)] p-1 w-fit">
+      <div className="flex items-center gap-1 bg-[hsl(0,0%,100%)] rounded-lg border border-[hsl(0,0%,90%)] p-1 w-fit overflow-x-auto max-w-full">
         {ranges.map(r => (
           <button
             key={r.key}
