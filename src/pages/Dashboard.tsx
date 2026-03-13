@@ -93,6 +93,7 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState<SidebarTab>("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [certTemplates, setCertTemplates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
