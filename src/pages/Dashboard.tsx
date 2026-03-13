@@ -130,13 +130,14 @@ const Dashboard = () => {
       setLoading(true);
       setLoadError(null);
 
-      const [profileRes, referralsRes, purchasesRes, certsRes, credsRes] = await withTimeout(
+      const [profileRes, referralsRes, purchasesRes, certsRes, credsRes, templatesRes] = await withTimeout(
         Promise.all([
           supabase.from("profiles").select("referral_code, display_name, email, avatar_url, created_at").eq("user_id", user.id).maybeSingle(),
           supabase.from("affiliate_referrals").select("*").eq("referrer_id", user.id),
           supabase.from("challenge_purchases").select("*, challenges(name, account_size, profit_target, daily_drawdown, max_drawdown, step_type)").eq("user_id", user.id).order("created_at", { ascending: false }),
           supabase.from("user_certificates").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
           supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id").eq("assigned_to", user.id),
+          supabase.from("certificate_templates").select("certificate_type, background_image_url"),
         ])
       );
 
