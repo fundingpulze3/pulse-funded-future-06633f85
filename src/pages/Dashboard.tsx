@@ -373,12 +373,8 @@ const Dashboard = () => {
 
   // Get all credentials for the popup
   const popupCredentials = credDialogPurchaseId
-    ? (() => {
-        const purchase = purchases.find(p => p.id === credDialogPurchaseId);
-        if (!purchase) return [];
-        return credentials.filter(c => c.challenge_id === purchase.challenge_id);
-      })()
-    : credentials;
+    ? credentials.filter(c => c.purchase_id === credDialogPurchaseId)
+    : [];
 
   return (
     <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
