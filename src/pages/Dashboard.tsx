@@ -373,11 +373,11 @@ const Dashboard = () => {
   ];
 
   const navItems: { key: SidebarTab; label: string; icon: any }[] = [
-    { key: "overview", label: "Dashboard", icon: Home },
-    { key: "credentials", label: "Credentials", icon: Key },
-    { key: "affiliate", label: "Affiliate", icon: Users },
+    { key: "overview", label: "Overview", icon: Home },
+    { key: "credentials", label: "Accounts", icon: Key },
     { key: "certificates", label: "Certificates", icon: Award },
-    { key: "payout", label: "Payout", icon: Wallet },
+    { key: "payout", label: "Payouts", icon: Wallet },
+    { key: "affiliate", label: "Affiliate", icon: Users },
   ];
 
   return (
