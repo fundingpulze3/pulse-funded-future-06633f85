@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign, Users, ShoppingCart, TrendingUp, BarChart3, Percent,
   Trophy, Clock, MessageSquare, ArrowUpRight, ArrowDownRight, Activity,
-  Eye, ExternalLink,
+  Eye, ExternalLink, CalendarDays, Filter,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -25,6 +25,233 @@ type DateRange = "today" | "7d" | "30d" | "90d" | "all";
 const PIE_COLORS = [
   "hsl(0,0%,15%)", "hsl(0,0%,35%)", "hsl(0,0%,55%)", "hsl(0,0%,70%)", "hsl(0,0%,85%)",
 ];
+
+/* ─── Sales Calendar Component ─── */
+const SalesCalendarSection = ({ purchases, getProfileName, getChallengeNameById }: {
+  purchases: any[];
+  getProfileName: (id: string) => string;
+  getChallengeNameById: (id: string) => string;
+}) => {
+  const today = new Date();
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const dailySales = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    purchases.forEach(p => {
+      const d = p.created_at?.slice(0, 10);
+      if (!d) return;
+      if (!map[d]) map[d] = { total: 0, count: 0 };
+      map[d].total += p.amount_paid || 0;
+      map[d].count++;
+    });
+    return map;
+  }, [purchases]);
+
+  // Calendar grid
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const cells: (number | null)[] = [];
+    for (let i = 0; i < firstDay; i++) cells.push(null);
+    for (let i = 1; i <= daysInMonth; i++) cells.push(i);
+    return cells;
+  }, [viewMonth, viewYear]);
+
+  const maxDailySale = useMemo(() => {
+    return Math.max(1, ...Object.values(dailySales).map(d => d.total));
+  }, [dailySales]);
+
+  const getIntensity = (amount: number) => {
+    if (amount === 0) return "bg-[hsl(0,0%,96%)]";
+    const ratio = amount / maxDailySale;
+    if (ratio > 0.75) return "bg-[hsl(0,0%,10%)] text-white";
+    if (ratio > 0.5) return "bg-[hsl(0,0%,25%)] text-white";
+    if (ratio > 0.25) return "bg-[hsl(0,0%,45%)] text-white";
+    return "bg-[hsl(0,0%,75%)] text-white";
+  };
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  // Custom range stats
+  const rangeStats = useMemo(() => {
+    if (!fromDate || !toDate) return null;
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+    to.setHours(23, 59, 59, 999);
+    const filtered = purchases.filter(p => {
+      const d = new Date(p.created_at);
+      return d >= from && d <= to;
+    });
+    const totalRevenue = filtered.reduce((s, p) => s + (p.amount_paid || 0), 0);
+    const totalOrders = filtered.length;
+    const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    return { totalRevenue, totalOrders, avgOrder, sales: filtered };
+  }, [fromDate, toDate, purchases]);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Sales Calendar */}
+      <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <CalendarDays size={16} className="text-[hsl(0,0%,40%)]" />
+            <h3 className="text-sm font-display font-semibold text-[hsl(0,0%,10%)]">Sales Calendar</h3>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
+                else setViewMonth(viewMonth - 1);
+              }}
+              className="px-2 py-1 text-xs text-[hsl(0,0%,40%)] hover:bg-[hsl(0,0%,94%)] rounded transition-colors"
+            >←</button>
+            <span className="text-xs font-semibold text-[hsl(0,0%,20%)] min-w-[120px] text-center">
+              {monthNames[viewMonth]} {viewYear}
+            </span>
+            <button
+              onClick={() => {
+                if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
+                else setViewMonth(viewMonth + 1);
+              }}
+              className="px-2 py-1 text-xs text-[hsl(0,0%,40%)] hover:bg-[hsl(0,0%,94%)] rounded transition-colors"
+            >→</button>
+          </div>
+        </div>
+
+        {/* Weekday headers */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+            <div key={d} className="text-[9px] font-semibold text-[hsl(0,0%,50%)] text-center py-1">{d}</div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {calendarDays.map((day, i) => {
+            if (day === null) return <div key={`empty-${i}`} className="aspect-square" />;
+            const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const sale = dailySales[dateStr];
+            const amount = sale?.total || 0;
+            const count = sale?.count || 0;
+            const isToday = dateStr === today.toISOString().slice(0, 10);
+            return (
+              <div
+                key={dateStr}
+                className={`aspect-square rounded-lg flex flex-col items-center justify-center relative group cursor-default transition-all ${
+                  amount > 0 ? getIntensity(amount) : "bg-[hsl(0,0%,96%)]"
+                } ${isToday ? "ring-2 ring-[hsl(0,0%,0%)] ring-offset-1" : ""}`}
+                title={`${dateStr}: $${amount.toFixed(2)} (${count} orders)`}
+              >
+                <span className={`text-[10px] font-medium ${amount > 0 ? "" : "text-[hsl(0,0%,55%)]"}`}>{day}</span>
+                {amount > 0 && (
+                  <span className="text-[8px] font-bold opacity-80">${amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toFixed(0)}</span>
+                )}
+                {/* Tooltip on hover */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10">
+                  <div className="bg-[hsl(0,0%,5%)] text-white text-[10px] rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                    <p className="font-semibold">${amount.toFixed(2)}</p>
+                    <p className="text-[hsl(0,0%,60%)]">{count} order{count !== 1 ? "s" : ""}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Month total */}
+        {(() => {
+          const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
+          const monthTotal = Object.entries(dailySales)
+            .filter(([d]) => d.startsWith(monthPrefix))
+            .reduce((s, [, v]) => s + v.total, 0);
+          const monthOrders = Object.entries(dailySales)
+            .filter(([d]) => d.startsWith(monthPrefix))
+            .reduce((s, [, v]) => s + v.count, 0);
+          return (
+            <div className="mt-3 pt-3 border-t border-[hsl(0,0%,92%)] flex items-center justify-between">
+              <span className="text-[11px] text-[hsl(0,0%,50%)]">{monthNames[viewMonth]} Total</span>
+              <div className="text-right">
+                <span className="text-sm font-bold text-[hsl(0,0%,5%)]">${monthTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-[10px] text-[hsl(0,0%,50%)] ml-2">({monthOrders} orders)</span>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Custom Date Range */}
+      <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter size={16} className="text-[hsl(0,0%,40%)]" />
+          <h3 className="text-sm font-display font-semibold text-[hsl(0,0%,10%)]">Custom Date Range</h3>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label className="text-[10px] font-semibold text-[hsl(0,0%,45%)] uppercase tracking-wider mb-1 block">From</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={e => setFromDate(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-[hsl(0,0%,88%)] text-xs text-[hsl(0,0%,15%)] bg-white focus:outline-none focus:ring-2 focus:ring-[hsl(0,0%,0%)]"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-semibold text-[hsl(0,0%,45%)] uppercase tracking-wider mb-1 block">To</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={e => setToDate(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-[hsl(0,0%,88%)] text-xs text-[hsl(0,0%,15%)] bg-white focus:outline-none focus:ring-2 focus:ring-[hsl(0,0%,0%)]"
+            />
+          </div>
+        </div>
+
+        {rangeStats ? (
+          <div className="space-y-4">
+            {/* Summary cards */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-[hsl(0,0%,96%)] rounded-lg p-3 text-center">
+                <p className="text-[10px] text-[hsl(0,0%,50%)] font-medium">Revenue</p>
+                <p className="text-lg font-bold text-[hsl(0,0%,5%)]">${rangeStats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+              </div>
+              <div className="bg-[hsl(0,0%,96%)] rounded-lg p-3 text-center">
+                <p className="text-[10px] text-[hsl(0,0%,50%)] font-medium">Orders</p>
+                <p className="text-lg font-bold text-[hsl(0,0%,5%)]">{rangeStats.totalOrders}</p>
+              </div>
+              <div className="bg-[hsl(0,0%,96%)] rounded-lg p-3 text-center">
+                <p className="text-[10px] text-[hsl(0,0%,50%)] font-medium">Avg Order</p>
+                <p className="text-lg font-bold text-[hsl(0,0%,5%)]">${rangeStats.avgOrder.toFixed(0)}</p>
+              </div>
+            </div>
+
+            {/* Sales list */}
+            <div className="max-h-[200px] overflow-auto space-y-0">
+              {rangeStats.sales.length === 0 && <p className="text-xs text-[hsl(0,0%,55%)] text-center py-4">No sales in this range</p>}
+              {rangeStats.sales.slice(0, 20).map((sale: any) => (
+                <div key={sale.id} className="flex items-center justify-between py-2 border-b border-[hsl(0,0%,95%)] last:border-0">
+                  <div>
+                    <p className="text-xs font-medium text-[hsl(0,0%,15%)]">{getProfileName(sale.user_id)}</p>
+                    <p className="text-[10px] text-[hsl(0,0%,50%)]">{new Date(sale.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <span className="text-xs font-bold text-[hsl(0,0%,5%)]">${sale.amount_paid}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-10">
+            <CalendarDays size={28} className="mx-auto text-[hsl(0,0%,80%)] mb-2" />
+            <p className="text-xs text-[hsl(0,0%,55%)]">Select a date range to view sales</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function Dashboard({
   profiles, purchases, referrals, challenges, pageVisits,
@@ -405,6 +632,9 @@ export default function Dashboard({
           </div>
         </div>
       </div>
+
+      {/* Sales Calendar & Custom Date Range */}
+      <SalesCalendarSection purchases={purchases.filter(isCountablePurchase)} getProfileName={getProfileName} getChallengeNameById={getChallengeNameById} />
 
       {/* Recent Sales */}
       <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
