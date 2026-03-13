@@ -395,11 +395,11 @@ const About = () => {
       </section>
 
       {/* ═══ FOUNDER ═══ */}
-      <section className="py-32 px-6 relative">
+      <section className="py-20 sm:py-32 px-4 sm:px-6 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-foreground/[0.015] to-transparent" />
         <div className="max-w-3xl mx-auto relative z-10">
           <motion.div
-            className="relative rounded-[2rem] border border-border/50 p-12 sm:p-16 text-center overflow-hidden"
+            className="relative rounded-2xl sm:rounded-[2rem] border border-border/50 p-8 sm:p-12 md:p-16 text-center overflow-hidden"
             initial={{ opacity: 0, y: 40, scale: 0.97 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true }}
