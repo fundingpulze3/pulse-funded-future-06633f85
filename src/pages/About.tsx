@@ -309,7 +309,7 @@ const About = () => {
       </section>
 
       {/* ═══ VALUES ═══ */}
-      <section className="py-32 px-6 relative">
+      <section className="py-20 sm:py-32 px-4 sm:px-6 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-foreground/[0.01] to-transparent" />
         <div className="max-w-6xl mx-auto relative z-10">
           <motion.div
