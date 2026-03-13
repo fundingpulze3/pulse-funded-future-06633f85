@@ -57,7 +57,7 @@ const faqData = [
 ];
 
 const FAQ = () => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const [openIndex, setOpenIndex] = useState<string | null>(null);
   const navigate = useNavigate();
 
