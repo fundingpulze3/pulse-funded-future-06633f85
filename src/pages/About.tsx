@@ -284,7 +284,7 @@ const About = () => {
       </section>
 
       {/* ═══ MISSION & VISION ═══ */}
-      <section id="mission" className="py-32 px-6">
+      <section id="mission" className="py-20 sm:py-32 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           {/* Mission — Full width cinematic */}
           <MissionCard
