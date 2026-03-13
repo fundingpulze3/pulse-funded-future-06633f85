@@ -377,7 +377,7 @@ const Checkout = () => {
             </div>
 
             {/* Account Size */}
-            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-6">
+            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-4 sm:p-6">
               <h2 className="text-lg font-bold mb-1">Account Size</h2>
               <p className="text-sm text-[hsl(220,15%,50%)] mb-4">Select your preferred account size</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
