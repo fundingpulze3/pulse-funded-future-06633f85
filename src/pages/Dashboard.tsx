@@ -495,7 +495,7 @@ const Dashboard = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2, delay: i * 0.02 }}
-                    onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); setMobileSidebarOpen(false); }}
+                    onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); }}
                     className={`group cursor-pointer rounded-xl p-3.5 transition-all duration-200 border ${
                       isActive
                         ? "bg-[hsl(220,20%,9%)] border-[hsl(207,90%,77%)]/30 shadow-[0_0_20px_-5px_hsl(210,80%,55%,0.2)]"
