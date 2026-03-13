@@ -209,12 +209,12 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
                 <div className="border-t border-border pt-4 space-y-3">
                   {user ? (
                     <>
-                      <div className="flex items-center gap-3 px-4 py-2">
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                          <User size={16} className="text-primary-foreground" />
-                        </div>
-                        <span className="text-sm text-muted-foreground truncate">Logged in</span>
-                      </div>
+                      <button
+                        onClick={() => { navigate("/dashboard"); setMobileOpen(false); }}
+                        className="flex items-center gap-2 w-full py-3 px-4 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+                      >
+                        <LayoutDashboard size={16} /> Dashboard
+                      </button>
                       <button
                         onClick={handleSignOut}
                         className="flex items-center gap-2 w-full py-3 px-4 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
