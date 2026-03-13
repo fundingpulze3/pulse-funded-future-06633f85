@@ -91,6 +91,7 @@ const UserPhaseManager = () => {
 
   const changePhase = async (account: UserAccount, newStatus: string) => {
     setUpdating(account.purchaseId);
+    const oldStatus = account.status;
 
     // Update purchase status
     const { error } = await supabase
@@ -103,6 +104,16 @@ const UserPhaseManager = () => {
       setUpdating(null);
       return;
     }
+
+    // Log status change to history
+    const { data: { session } } = await supabase.auth.getSession();
+    await supabase.from("account_status_history").insert({
+      purchase_id: account.purchaseId,
+      user_id: account.userId,
+      old_status: oldStatus,
+      new_status: newStatus,
+      changed_by: session?.user?.id || null,
+    } as any);
 
     // Auto-assign credentials if moving to active phase and no creds assigned
     if ((newStatus === "active" || newStatus === "phase2" || newStatus === "funded") && !account.mt5Login) {
