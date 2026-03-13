@@ -12,13 +12,13 @@ const PAYOUTS = [
 ];
 
 const PayoutRow = ({ name, amount, country, time }: typeof PAYOUTS[0]) => (
-  <div className="flex items-center justify-between px-6 py-4 border-b border-border/20 last:border-0">
-    <div className="flex items-center gap-3">
-      <span className="text-xl">{country}</span>
-      <span className="text-sm text-foreground font-medium">{name}</span>
+  <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border/20 last:border-0 gap-2">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <span className="text-lg sm:text-xl">{country}</span>
+      <span className="text-xs sm:text-sm text-foreground font-medium truncate">{name}</span>
     </div>
-    <span className="text-sm font-bold text-foreground">{amount}</span>
-    <span className="text-xs text-muted-foreground">{time}</span>
+    <span className="text-xs sm:text-sm font-bold text-foreground shrink-0">{amount}</span>
+    <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">{time}</span>
   </div>
 );
 
