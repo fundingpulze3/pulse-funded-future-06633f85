@@ -442,9 +442,9 @@ const Dashboard = () => {
           {navItems.map(item => (
             <button
               key={item.key}
-              onClick={() => setActiveView(item.key)}
+              onClick={() => item.route ? navigate(item.route) : setActiveView(item.key as SidebarTab)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                activeView === item.key
+                !item.route && activeView === item.key
                   ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
                   : "text-[hsl(220,15%,40%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
               }`}
