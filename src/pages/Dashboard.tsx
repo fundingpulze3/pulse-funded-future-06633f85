@@ -3,23 +3,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import {
   User, Copy, Users, DollarSign, Clock, Award, Wallet,
-  BarChart3, Mail, Calendar, ChevronRight, TrendingUp, TrendingDown,
-  Target, Activity, Shield, Upload, ArrowUpRight, ArrowDownRight,
-  Eye, EyeOff, Percent, Crosshair, Zap, LineChart, Filter,
-  CheckCircle2, XCircle, AlertCircle, PlayCircle, CreditCard,
-  Key, LayoutDashboard, ChevronDown, Settings, LogOut, HelpCircle,
-  Home, PieChart, Menu, X
+  BarChart3, Calendar, TrendingUp, TrendingDown,
+  Target, Activity, Shield, ArrowUpRight, ArrowDownRight,
+  Eye, EyeOff, Percent, Zap, Key, LayoutDashboard, ChevronDown,
+  LogOut, HelpCircle, Home, PieChart, Menu, X, Plus,
+  Settings, CreditCard
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend, BarChart, Bar, Cell
+  ResponsiveContainer, BarChart, Bar, Cell
 } from "recharts";
 
 interface Profile {
@@ -70,7 +69,7 @@ interface TradingCredential {
 const REFERRAL_DOMAIN = "https://fundingpulze.com";
 
 type AccountFilter = "all" | "1-step" | "2-step" | "ongoing" | "breached" | "funded" | "completed";
-type SidebarTab = "overview" | "credentials" | "affiliate" | "certificates" | "payout";
+type SidebarTab = "overview" | "affiliate" | "certificates" | "payout";
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -91,9 +90,10 @@ const Dashboard = () => {
   const [accountFilter, setAccountFilter] = useState<AccountFilter>("all");
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [activeView, setActiveView] = useState<SidebarTab>("overview");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [certTemplates, setCertTemplates] = useState<Record<string, string>>({});
+  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
+  const [credDialogPurchaseId, setCredDialogPurchaseId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -108,11 +108,8 @@ const Dashboard = () => {
       setSelectedAccount(null);
       return;
     }
-
     setSelectedAccount((prev) => {
-      if (prev && purchases.some((purchase) => purchase.id === prev)) {
-        return prev;
-      }
+      if (prev && purchases.some((purchase) => purchase.id === prev)) return prev;
       return purchases[0].id;
     });
   }, [purchases]);
@@ -125,11 +122,9 @@ const Dashboard = () => {
 
   const fetchAllData = async () => {
     if (!user) return;
-
     try {
       setLoading(true);
       setLoadError(null);
-
       const [profileRes, referralsRes, purchasesRes, certsRes, credsRes, templatesRes] = await withTimeout(
         Promise.all([
           supabase.from("profiles").select("referral_code, display_name, email, avatar_url, created_at").eq("user_id", user.id).maybeSingle(),
@@ -140,18 +135,8 @@ const Dashboard = () => {
           supabase.from("certificate_templates").select("certificate_type, background_image_url"),
         ])
       );
-
       const fatalError = purchasesRes.error;
-      const nonFatalErrors = [profileRes.error, referralsRes.error, certsRes.error, credsRes.error].filter(Boolean);
-
-      if (fatalError) {
-        throw fatalError;
-      }
-
-      if (nonFatalErrors.length > 0) {
-        console.error("Dashboard partial query failures:", nonFatalErrors);
-      }
-
+      if (fatalError) throw fatalError;
       setProfile(profileRes.data ?? null);
       setReferrals(referralsRes.data ?? []);
       setPurchases((purchasesRes.data as unknown as Purchase[]) ?? []);
@@ -286,40 +271,32 @@ const Dashboard = () => {
   const monthlyPLRows = useMemo(() => {
     const monthlyPL = activeAccountStats?.monthlyPL;
     if (!monthlyPL || typeof monthlyPL !== "object") return [] as Array<{ year: string; months: number[]; total: number }>;
-
     const normalizeMonths = (value: unknown): number[] => {
-      if (Array.isArray(value)) {
-        return Array.from({ length: 12 }, (_, i) => Number(value[i] ?? 0) || 0);
-      }
-
+      if (Array.isArray(value)) return Array.from({ length: 12 }, (_, i) => Number(value[i] ?? 0) || 0);
       if (value && typeof value === "object") {
         const monthsObj = value as Record<string, unknown>;
         return Array.from({ length: 12 }, (_, i) => Number(monthsObj[String(i + 1)] ?? monthsObj[String(i)] ?? 0) || 0);
       }
-
       return Array(12).fill(0);
     };
-
     const rows: Array<{ year: string; months: number[]; total: number }> = [];
     const typedMonthly = monthlyPL as Record<string, any>;
-
     if (Array.isArray(typedMonthly.years)) {
       typedMonthly.years.forEach((entry: any) => {
         if (!entry || typeof entry !== "object") return;
         const year = entry.year != null ? String(entry.year) : "Unknown";
         const months = normalizeMonths(entry.months);
-        const total = Number(entry.yearly ?? months.reduce((sum, m) => sum + m, 0)) || 0;
+        const total = Number(entry.yearly ?? months.reduce((sum: number, m: number) => sum + m, 0)) || 0;
         rows.push({ year, months, total });
       });
     } else {
       Object.entries(typedMonthly).forEach(([year, value]) => {
         if (!/^\d{4}$/.test(year)) return;
-        const months = normalizeMonths(value?.months ?? value);
-        const total = Number(value?.total ?? value?.yearly ?? months.reduce((sum, m) => sum + m, 0)) || 0;
+        const months = normalizeMonths((value as any)?.months ?? value);
+        const total = Number((value as any)?.total ?? (value as any)?.yearly ?? months.reduce((sum: number, m: number) => sum + m, 0)) || 0;
         rows.push({ year, months, total });
       });
     }
-
     return rows.sort((a, b) => Number(a.year) - Number(b.year));
   }, [activeAccountStats]);
 
@@ -327,6 +304,18 @@ const Dashboard = () => {
     ? Number(activeAccountStats.gainPercent || ((Number(activeAccountStats.profit) / activeAccountStats.accountSize) * 100))
     : 0;
   const ddUsed = Number(activeAccountStats?.maxDrawdownPercent || 0);
+
+  // Get credential for a purchase
+  const getCredentialForPurchase = (purchaseId: string) => {
+    const purchase = purchases.find(p => p.id === purchaseId);
+    if (!purchase) return null;
+    return credentials.find(c => c.challenge_id === purchase.challenge_id) || credentials[0] || null;
+  };
+
+  const openCredentialsPopup = (purchaseId: string) => {
+    setCredDialogPurchaseId(purchaseId);
+    setCredentialsDialogOpen(true);
+  };
 
   // Loading
   if (authLoading || loading) {
@@ -340,7 +329,6 @@ const Dashboard = () => {
     );
   }
 
-  // Error
   if (loadError) {
     return (
       <div className="min-h-screen bg-[hsl(220,20%,4%)] text-white flex items-center justify-center">
@@ -352,13 +340,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  // Get credential for a purchase
-  const getCredentialForPurchase = (purchaseId: string) => {
-    const purchase = purchases.find(p => p.id === purchaseId);
-    if (!purchase) return null;
-    return credentials.find(c => c.challenge_id === purchase.challenge_id) || credentials[0] || null;
-  };
 
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
     ongoing: { label: "Active", color: "text-[hsl(210,80%,55%)]", bg: "bg-[hsl(210,80%,55%)]/15" },
@@ -379,15 +360,23 @@ const Dashboard = () => {
 
   const navItems: { key: SidebarTab; label: string; icon: any }[] = [
     { key: "overview", label: "Overview", icon: Home },
-    { key: "credentials", label: "Accounts", icon: Key },
     { key: "certificates", label: "Certificates", icon: Award },
     { key: "payout", label: "Payouts", icon: Wallet },
     { key: "affiliate", label: "Affiliate", icon: Users },
   ];
 
+  // Get all credentials for the popup
+  const popupCredentials = credDialogPurchaseId
+    ? (() => {
+        const purchase = purchases.find(p => p.id === credDialogPurchaseId);
+        if (!purchase) return [];
+        return credentials.filter(c => c.challenge_id === purchase.challenge_id);
+      })()
+    : credentials;
+
   return (
     <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
-      {/* Top Bar - simplified without nav */}
+      {/* Top Bar */}
       <header className="h-14 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,20%,6%)] flex items-center px-4 lg:px-6 z-50 sticky top-0">
         <button
           onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
@@ -432,16 +421,56 @@ const Dashboard = () => {
           )}
         </AnimatePresence>
 
-        {/* Left Panel - Navigation + Account List */}
+        {/* Icon-only nav strip */}
+        <nav className="hidden lg:flex flex-col items-center w-16 bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)] py-4 gap-1 shrink-0">
+          {/* New Challenge + button */}
+          <button
+            onClick={() => navigate("/#rules")}
+            className="w-10 h-10 rounded-xl bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] flex items-center justify-center text-white mb-4 transition-colors shadow-[0_0_16px_hsl(210,80%,55%,0.3)]"
+            title="New Challenge"
+          >
+            <Plus size={20} />
+          </button>
+
+          {navItems.map(item => (
+            <button
+              key={item.key}
+              onClick={() => setActiveView(item.key)}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                activeView === item.key
+                  ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
+                  : "text-[hsl(220,15%,40%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
+              }`}
+              title={item.label}
+            >
+              <item.icon size={20} />
+            </button>
+          ))}
+
+          <div className="flex-1" />
+
+          {/* User avatar at bottom */}
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(210,80%,55%)] to-[hsl(210,80%,40%)] flex items-center justify-center text-white font-bold text-xs cursor-pointer" title={profile?.display_name || "Profile"}>
+            {(profile?.display_name || "T")[0].toUpperCase()}
+          </div>
+        </nav>
+
+        {/* Left Panel - Account List */}
         <aside className={`
           fixed lg:static z-50 lg:z-auto top-14 bottom-0 left-0
-          w-[340px] lg:w-[360px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
+          w-[320px] lg:w-[320px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
           flex flex-col overflow-hidden transition-transform duration-300
           ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}>
-          {/* Navigation tabs - in sidebar */}
-          <div className="p-3 border-b border-[hsl(220,15%,12%)]">
+          {/* Mobile-only nav */}
+          <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)]">
             <div className="flex flex-wrap gap-1">
+              <button
+                onClick={() => { navigate("/#rules"); setMobileSidebarOpen(false); }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
+              >
+                <Plus size={12} /> New Challenge
+              </button>
               {navItems.map(item => (
                 <button
                   key={item.key}
@@ -497,13 +526,14 @@ const Dashboard = () => {
           {/* Account Cards */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-[hsl(220,15%,15%)] scrollbar-track-transparent">
             <AnimatePresence>
-              {filteredPurchases.map((p, i) => {
+              {filteredPurchases.slice(0, 10).map((p, i) => {
                 const isActive = selectedAccount === p.id;
                 const status = getAccountStatus(p);
                 const sc = statusConfig[status] || statusConfig.ongoing;
                 const cred = credentials.find(c => c.challenge_id === p.challenge_id);
                 const challengeName = p.challenges?.name || "Account";
                 const stepType = p.challenges?.step_type || "—";
+                const accountNumber = cred?.mt5_login || p.id.slice(0, 8);
 
                 return (
                   <motion.div
@@ -529,7 +559,7 @@ const Dashboard = () => {
                           <User size={16} className={isActive ? "text-[hsl(210,80%,55%)]" : "text-[hsl(220,15%,40%)]"} />
                         </div>
                         <div>
-                          <p className="text-sm font-bold leading-tight">Mt5 {cred?.mt5_login || "—"}</p>
+                          <p className="text-sm font-bold leading-tight">FP {accountNumber}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[11px] text-[hsl(220,15%,50%)]">{challengeName}</span>
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(210,80%,55%)]/10 text-[hsl(210,80%,55%)] font-medium">{stepType}</span>
@@ -551,10 +581,10 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Calendar size={12} className="text-[hsl(220,15%,35%)]" />
+                        <CreditCard size={12} className="text-[hsl(220,15%,35%)]" />
                         <div>
-                          <p className="text-[10px] text-[hsl(220,15%,40%)]">Days traded</p>
-                          <p className="text-sm font-bold">{activeAccountStats?.profitByDay ? activeAccountStats.profitByDay.filter((d: any) => (typeof d === "number" ? d : d?.y?.[0]) !== 0).length : 0}</p>
+                          <p className="text-[10px] text-[hsl(220,15%,40%)]">Account #</p>
+                          <p className="text-sm font-bold font-mono">{accountNumber}</p>
                         </div>
                       </div>
                     </div>
@@ -567,7 +597,7 @@ const Dashboard = () => {
                         className="flex gap-2 mt-3 pt-3 border-t border-[hsl(220,15%,12%)]"
                       >
                         <button
-                          onClick={(e) => { e.stopPropagation(); setActiveView("credentials"); }}
+                          onClick={(e) => { e.stopPropagation(); openCredentialsPopup(p.id); }}
                           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[hsl(220,15%,12%)] hover:bg-[hsl(220,15%,15%)] text-xs font-medium text-[hsl(220,15%,60%)] hover:text-white transition-colors"
                         >
                           <Key size={12} /> Credentials
@@ -590,6 +620,12 @@ const Dashboard = () => {
                 <BarChart3 size={28} className="mx-auto mb-3 opacity-40" />
                 <p className="text-sm">No accounts match this filter.</p>
               </div>
+            )}
+
+            {filteredPurchases.length > 10 && (
+              <p className="text-center text-[10px] text-[hsl(220,15%,35%)] pt-2">
+                Showing 10 of {filteredPurchases.length} accounts
+              </p>
             )}
           </div>
 
@@ -931,71 +967,38 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* ═══ CREDENTIALS ═══ */}
-              {activeView === "credentials" && (
-                <div className="space-y-5">
-                  <h1 className="font-display text-xl font-bold">MT5 Credentials</h1>
-                  {credentials.length === 0 ? (
-                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-10 text-center">
-                      <Key size={32} className="mx-auto mb-3 text-[hsl(220,15%,25%)]" />
-                      <p className="text-sm text-[hsl(220,15%,45%)]">No credentials assigned yet.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {credentials.map((c) => (
-                        <div key={c.id} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5 hover:border-[hsl(220,15%,18%)] transition-colors">
-                          <div className="flex flex-wrap items-center gap-6">
-                            <div className="min-w-[120px]">
-                              <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">Login</p>
-                              <p className="font-mono text-sm font-bold">{c.mt5_login}</p>
-                            </div>
-                            <div className="min-w-[120px]">
-                              <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">Password</p>
-                              <div className="flex items-center gap-2">
-                                <p className="font-mono text-sm">{showPasswords[c.id] ? c.mt5_password : "••••••••"}</p>
-                                <button onClick={() => setShowPasswords(prev => ({ ...prev, [c.id]: !prev[c.id] }))} className="hover:opacity-70 transition-opacity">
-                                  {showPasswords[c.id] ? <EyeOff size={14} className="text-[hsl(220,15%,40%)]" /> : <Eye size={14} className="text-[hsl(220,15%,40%)]" />}
-                                </button>
-                              </div>
-                            </div>
-                            <div className="min-w-[120px]">
-                              <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">Server</p>
-                              <p className="text-sm">{c.mt5_server}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* ═══ AFFILIATE ═══ */}
               {activeView === "affiliate" && (
                 <div className="space-y-5">
                   <h1 className="font-display text-xl font-bold">Affiliate Program</h1>
-                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                    <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-2 font-semibold">Your Referral Link</p>
-                    <div className="flex items-center gap-3">
-                      <code className="flex-1 bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] rounded-lg px-4 py-3 text-sm truncate font-mono text-[hsl(210,80%,55%)]">
-                        {REFERRAL_DOMAIN}?ref={profile?.referral_code}
-                      </code>
-                      <Button onClick={copyReferralLink} size="sm" className="rounded-lg bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] text-white shrink-0">
-                        <Copy size={14} className="mr-1.5" /> Copy
-                      </Button>
-                    </div>
-                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <DashStatCard icon={Users} value={referrals.length.toString()} label="Total Referrals" />
-                    <DashStatCard icon={DollarSign} value={`$${totalEarnings.toFixed(2)}`} label="Total Earnings" highlight />
+                    <DashStatCard icon={Users} value={String(referrals.length)} label="Total Referrals" />
+                    <DashStatCard icon={DollarSign} value={`$${totalEarnings.toFixed(2)}`} label="Total Earned" highlight />
                     <DashStatCard icon={Clock} value={`$${pendingEarnings.toFixed(2)}`} label="Pending" />
                   </div>
-                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] overflow-hidden">
-                    <div className="p-4 border-b border-[hsl(220,15%,12%)]">
-                      <h2 className="font-display font-bold text-sm">Referral History</h2>
-                    </div>
+
+                  {/* Referral Link */}
+                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                    <h2 className="font-display font-bold text-sm mb-4">Your Referral Link</h2>
+                    {profile?.referral_code ? (
+                      <div className="flex items-center gap-3">
+                        <code className="flex-1 bg-[hsl(220,15%,10%)] px-4 py-2.5 rounded-lg text-xs text-[hsl(210,80%,55%)] font-mono truncate">
+                          {REFERRAL_DOMAIN}?ref={profile.referral_code}
+                        </code>
+                        <Button size="sm" onClick={copyReferralLink} className="rounded-lg bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] text-white shrink-0">
+                          <Copy size={14} className="mr-1" /> Copy
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-[hsl(220,15%,45%)]">No referral code assigned yet.</p>
+                    )}
+                  </div>
+
+                  {/* Referral History */}
+                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
+                    <h2 className="font-display font-bold text-sm mb-4">Commission History</h2>
                     {referrals.length === 0 ? (
-                      <div className="p-10 text-center text-[hsl(220,15%,40%)] text-sm">No referrals yet. Share your link to start earning!</div>
+                      <p className="text-sm text-[hsl(220,15%,45%)]">No referrals yet. Share your link to start earning!</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full">
@@ -1044,7 +1047,6 @@ const Dashboard = () => {
                         const bgImage = certTemplates[cert.certificate_type];
                         return (
                           <div key={cert.id} className={`rounded-xl overflow-hidden bg-[hsl(220,20%,7%)] border ${typeColors[cert.certificate_type] || "border-[hsl(220,15%,12%)]"} hover:shadow-lg transition-shadow`}>
-                            {/* Certificate visual with name overlay */}
                             {bgImage ? (
                               <div className="relative h-48">
                                 <img src={bgImage} alt={cert.title} className="w-full h-full object-cover" />
@@ -1117,6 +1119,50 @@ const Dashboard = () => {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* ═══ CREDENTIALS POPUP ═══ */}
+      <Dialog open={credentialsDialogOpen} onOpenChange={setCredentialsDialogOpen}>
+        <DialogContent className="bg-[hsl(220,20%,7%)] border-[hsl(220,15%,15%)] text-[hsl(0,0%,92%)] rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">FP Credentials</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {popupCredentials.length === 0 ? (
+              <div className="text-center py-6">
+                <Key size={28} className="mx-auto mb-2 text-[hsl(220,15%,30%)]" />
+                <p className="text-sm text-[hsl(220,15%,45%)]">No credentials assigned yet.</p>
+              </div>
+            ) : (
+              popupCredentials.map(c => (
+                <div key={c.id} className="rounded-xl bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">Login</p>
+                      <p className="font-mono text-sm font-bold">{c.mt5_login}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">Server</p>
+                      <p className="text-sm text-[hsl(220,15%,60%)]">{c.mt5_server}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">Password</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono text-sm flex-1">{showPasswords[c.id] ? c.mt5_password : "••••••••"}</p>
+                      <button onClick={() => setShowPasswords(prev => ({ ...prev, [c.id]: !prev[c.id] }))} className="p-1.5 rounded-lg hover:bg-[hsl(220,15%,15%)] transition-colors">
+                        {showPasswords[c.id] ? <EyeOff size={14} className="text-[hsl(220,15%,45%)]" /> : <Eye size={14} className="text-[hsl(220,15%,45%)]" />}
+                      </button>
+                      <button onClick={() => { navigator.clipboard.writeText(c.mt5_password); toast.success("Password copied"); }} className="p-1.5 rounded-lg hover:bg-[hsl(220,15%,15%)] transition-colors">
+                        <Copy size={14} className="text-[hsl(220,15%,45%)]" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
