@@ -447,7 +447,7 @@ export default function Dashboard({
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
         {statCards.map(card => (
-          <div key={card.label} className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-4 hover:shadow-md transition-shadow">
+          <div key={card.label} className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-3 md:p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-medium text-[hsl(0,0%,45%)] uppercase tracking-wider">{card.label}</span>
               <span className="text-[hsl(0,0%,60%)]">{card.icon}</span>
