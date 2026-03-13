@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import dashboardPreview from "@/assets/dashboard-preview.png";
 
 const PlatformPreview = () => {
   const frameRef = useRef<HTMLDivElement>(null);
@@ -52,64 +53,13 @@ const PlatformPreview = () => {
               </div>
             </div>
 
-            {/* Dashboard mockup */}
-            <div className="p-6 sm:p-8 grid grid-cols-3 gap-4 min-h-[300px] sm:min-h-[400px]">
-              {/* Stat cards */}
-              <div className="rounded-xl bg-muted/30 p-4 flex flex-col justify-between border border-border/20">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Account Balance</span>
-                <span className="text-xl sm:text-2xl font-display font-bold">$52,340</span>
-                <span className="text-xs text-green-500">+4.68%</span>
-              </div>
-              <div className="rounded-xl bg-muted/30 p-4 flex flex-col justify-between border border-border/20">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Profit Target</span>
-                <div className="flex items-end gap-1">
-                  <span className="text-xl sm:text-2xl font-display font-bold">78%</span>
-                  <span className="text-xs text-muted-foreground mb-1">/ 100%</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
-                  <div className="h-full w-[78%] rounded-full bg-foreground" />
-                </div>
-              </div>
-              <div className="rounded-xl bg-muted/30 p-4 flex flex-col justify-between border border-border/20">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Total Payouts</span>
-                <span className="text-xl sm:text-2xl font-display font-bold">$18,200</span>
-                <span className="text-xs text-muted-foreground">3 payouts</span>
-              </div>
-
-              {/* Chart placeholder */}
-              <div className="col-span-2 rounded-xl bg-muted/20 p-4 border border-border/20 flex flex-col">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-4">Equity Curve</span>
-                <div className="flex-1 flex items-end gap-1">
-                  {[35, 42, 38, 55, 48, 62, 58, 70, 65, 78, 72, 85, 80, 88, 92, 86, 95].map((h, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 rounded-t bg-foreground/20 hover:bg-foreground/40 transition-colors"
-                      style={{ height: `${h}%` }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent trades */}
-              <div className="rounded-xl bg-muted/20 p-4 border border-border/20">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Recent Trades</span>
-                <div className="mt-3 space-y-2">
-                  {[
-                    { pair: "EUR/USD", pnl: "+$240" },
-                    { pair: "GBP/JPY", pnl: "+$180" },
-                    { pair: "XAU/USD", pnl: "-$65" },
-                    { pair: "US30", pnl: "+$520" },
-                  ].map((t) => (
-                    <div key={t.pair} className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">{t.pair}</span>
-                      <span className={t.pnl.startsWith("+") ? "text-green-500" : "text-destructive"}>
-                        {t.pnl}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            {/* Real dashboard screenshot */}
+            <img
+              src={dashboardPreview}
+              alt="Funding Pulze Trading Dashboard — Account Overview with equity curve, balance, and drawdown metrics"
+              className="w-full h-auto block"
+              loading="lazy"
+            />
           </div>
         </div>
       </div>

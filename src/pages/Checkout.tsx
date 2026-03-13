@@ -47,6 +47,10 @@ const countries = [
   "Venezuela","Vietnam","Yemen","Zambia","Zimbabwe",
 ];
 
+// Brand blue matching homepage: HSL 207 90% 77%
+const BLUE = "207,90%,77%";
+const BLUE_DARK = "207,80%,60%";
+
 const Checkout = () => {
   useUtmTracking();
   const navigate = useNavigate();
@@ -89,7 +93,6 @@ const Checkout = () => {
           if (data.billing_address) setBillingAddress(data.billing_address);
           if (data.city) setCity(data.city);
           if (data.zip_code) setZipCode(data.zip_code);
-          // If billing already filled, collapse
           if (data.first_name && data.last_name && data.country) {
             setBillingOpen(false);
           }
@@ -128,7 +131,6 @@ const Checkout = () => {
   const stepLabel = stepType === "1-step" ? "1 Step" : "2 Step";
   const billingFilled = firstName.trim() && lastName.trim() && country.trim();
 
-  // Save billing details
   const saveBillingDetails = async () => {
     if (!user) return;
     await supabase.from("profiles").update({
@@ -191,7 +193,6 @@ const Checkout = () => {
   const createPurchaseRecord = useCallback(async () => {
     if (!user) throw new Error("Not signed in");
     if (!firstName || !lastName || !country) throw new Error("Please fill in billing details");
-    // Save billing on purchase
     await saveBillingDetails();
     const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
     const { data: challenge } = await supabase
@@ -328,13 +329,10 @@ const Checkout = () => {
     setProcessing(false);
   };
 
-
-
   return (
-    <div className="min-h-screen bg-[hsl(230,25%,7%)] text-white">
-
+    <div className="min-h-screen bg-background text-foreground dark">
       <div className="max-w-6xl mx-auto px-4 py-8 lg:py-12">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-[hsl(220,15%,55%)] hover:text-white mb-6 transition-colors">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
           <ArrowLeft size={14} /> Back
         </button>
 
@@ -342,9 +340,9 @@ const Checkout = () => {
           {/* LEFT — Configuration */}
           <div className="space-y-6">
             {/* Step Type Selector */}
-            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-4 sm:p-6">
+            <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
               <h2 className="text-lg font-bold mb-1">Challenge Type</h2>
-              <p className="text-sm text-[hsl(220,15%,50%)] mb-4">Choose your evaluation path</p>
+              <p className="text-sm text-muted-foreground mb-4">Choose your evaluation path</p>
               <div className="grid grid-cols-2 gap-3">
                 {(["1-step", "2-step"] as const).map((s) => (
                   <button
@@ -352,18 +350,18 @@ const Checkout = () => {
                     onClick={() => setStepType(s)}
                     className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${
                       stepType === s
-                        ? "border-[hsl(230,60%,55%)] bg-[hsl(230,40%,15%)]"
-                        : "border-[hsl(220,15%,15%)] bg-[hsl(230,20%,8%)] hover:border-[hsl(220,15%,25%)]"
+                        ? `border-[hsl(${BLUE})] bg-[hsl(${BLUE})/0.08]`
+                        : "border-border bg-background hover:border-muted-foreground/30"
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      stepType === s ? "border-[hsl(230,60%,55%)]" : "border-[hsl(220,15%,30%)]"
+                      stepType === s ? `border-[hsl(${BLUE})]` : "border-muted-foreground/30"
                     }`}>
-                      {stepType === s && <div className="w-2 h-2 rounded-full bg-[hsl(230,60%,55%)]" />}
+                      {stepType === s && <div className={`w-2 h-2 rounded-full bg-[hsl(${BLUE})]`} />}
                     </div>
                     <div className="text-left">
                       <span className="text-sm font-semibold">{s === "1-step" ? "1 Step" : "2 Step"}</span>
-                      <span className="ml-2 text-xs text-[hsl(220,15%,45%)]">
+                      <span className="ml-2 text-xs text-muted-foreground">
                         {s === "1-step" ? "Single phase" : "Two phases"}
                       </span>
                     </div>
@@ -373,9 +371,9 @@ const Checkout = () => {
             </div>
 
             {/* Account Size */}
-            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-4 sm:p-6">
+            <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
               <h2 className="text-lg font-bold mb-1">Account Size</h2>
-              <p className="text-sm text-[hsl(220,15%,50%)] mb-4">Select your preferred account size</p>
+              <p className="text-sm text-muted-foreground mb-4">Select your preferred account size</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {accountSizes.map(size => {
                   const sNum = parseInt(size.replace(/[$,K]/gi, "")) * 1000;
@@ -387,17 +385,17 @@ const Checkout = () => {
                       onClick={() => setSelectedSize(size)}
                       className={`p-4 rounded-xl border text-left transition-all ${
                         selectedSize === size
-                          ? "border-[hsl(230,60%,55%)] bg-[hsl(230,40%,15%)]"
-                          : "border-[hsl(220,15%,15%)] bg-[hsl(230,20%,8%)] hover:border-[hsl(220,15%,25%)]"
+                          ? `border-[hsl(${BLUE})] bg-[hsl(${BLUE})/0.08]`
+                          : "border-border bg-background hover:border-muted-foreground/30"
                       }`}
                     >
                       <div className={`w-4 h-4 rounded-full border-2 mb-3 flex items-center justify-center ${
-                        selectedSize === size ? "border-[hsl(230,60%,55%)]" : "border-[hsl(220,15%,30%)]"
+                        selectedSize === size ? `border-[hsl(${BLUE})]` : "border-muted-foreground/30"
                       }`}>
-                        {selectedSize === size && <div className="w-2 h-2 rounded-full bg-[hsl(230,60%,55%)]" />}
+                        {selectedSize === size && <div className={`w-2 h-2 rounded-full bg-[hsl(${BLUE})]`} />}
                       </div>
                       <p className="text-base font-bold">${sNum.toLocaleString()}</p>
-                      {price != null && <p className="text-xs text-[hsl(220,15%,45%)] mt-0.5">${price}</p>}
+                      {price != null && <p className="text-xs text-muted-foreground mt-0.5">${price}</p>}
                     </button>
                   );
                 })}
@@ -405,54 +403,54 @@ const Checkout = () => {
             </div>
 
             {/* Billing Details */}
-            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)]">
+            <div className="rounded-2xl border border-border bg-card">
               <button
                 onClick={() => setBillingOpen(!billingOpen)}
                 className="w-full flex items-center justify-between p-6"
               >
                 <div className="text-left">
                   <h2 className="text-lg font-bold">Billing Details</h2>
-                  <p className="text-sm text-[hsl(220,15%,50%)]">Enter your billing information for the challenge purchase</p>
+                  <p className="text-sm text-muted-foreground">Enter your billing information for the challenge purchase</p>
                 </div>
-                {billingOpen ? <ChevronUp size={18} className="text-[hsl(220,15%,45%)]" /> : <ChevronDown size={18} className="text-[hsl(220,15%,45%)]" />}
+                {billingOpen ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
               </button>
               {billingOpen && (
-                <div className="px-6 pb-6 space-y-4 border-t border-[hsl(220,15%,12%)] pt-4">
+                <div className="px-6 pb-6 space-y-4 border-t border-border pt-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-[hsl(220,15%,70%)] mb-1.5 block">First Name</label>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">First Name</label>
                       <Input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First Name"
-                        className="h-11 rounded-xl bg-[hsl(230,20%,8%)] border-[hsl(220,15%,15%)] text-white placeholder:text-[hsl(220,15%,30%)]" />
+                        className="h-11 rounded-xl bg-background border-border text-foreground placeholder:text-muted-foreground/40" />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-[hsl(220,15%,70%)] mb-1.5 block">Last Name</label>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Last Name</label>
                       <Input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last Name"
-                        className="h-11 rounded-xl bg-[hsl(230,20%,8%)] border-[hsl(220,15%,15%)] text-white placeholder:text-[hsl(220,15%,30%)]" />
+                        className="h-11 rounded-xl bg-background border-border text-foreground placeholder:text-muted-foreground/40" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-[hsl(220,15%,70%)] mb-1.5 block">Country</label>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Country</label>
                     <select value={country} onChange={e => setCountry(e.target.value)}
-                      className="w-full h-11 rounded-xl bg-[hsl(230,20%,8%)] border border-[hsl(220,15%,15%)] text-white px-3 text-sm appearance-none">
+                      className="w-full h-11 rounded-xl bg-background border border-border text-foreground px-3 text-sm appearance-none">
                       <option value="">Select country</option>
                       {countries.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-[hsl(220,15%,70%)] mb-1.5 block">Billing Address</label>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Billing Address</label>
                     <Input value={billingAddress} onChange={e => setBillingAddress(e.target.value)} placeholder="Street address"
-                      className="h-11 rounded-xl bg-[hsl(230,20%,8%)] border-[hsl(220,15%,15%)] text-white placeholder:text-[hsl(220,15%,30%)]" />
+                      className="h-11 rounded-xl bg-background border-border text-foreground placeholder:text-muted-foreground/40" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-[hsl(220,15%,70%)] mb-1.5 block">City</label>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">City</label>
                       <Input value={city} onChange={e => setCity(e.target.value)} placeholder="City"
-                        className="h-11 rounded-xl bg-[hsl(230,20%,8%)] border-[hsl(220,15%,15%)] text-white placeholder:text-[hsl(220,15%,30%)]" />
+                        className="h-11 rounded-xl bg-background border-border text-foreground placeholder:text-muted-foreground/40" />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-[hsl(220,15%,70%)] mb-1.5 block">ZIP / Postal Code</label>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">ZIP / Postal Code</label>
                       <Input value={zipCode} onChange={e => setZipCode(e.target.value)} placeholder="ZIP Code"
-                        className="h-11 rounded-xl bg-[hsl(230,20%,8%)] border-[hsl(220,15%,15%)] text-white placeholder:text-[hsl(220,15%,30%)]" />
+                        className="h-11 rounded-xl bg-background border-border text-foreground placeholder:text-muted-foreground/40" />
                     </div>
                   </div>
                 </div>
@@ -463,19 +461,19 @@ const Checkout = () => {
           {/* RIGHT — Order Summary */}
           <div className="space-y-4 lg:sticky lg:top-8 self-start">
             {/* Coupon */}
-            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-5">
+            <div className="rounded-2xl border border-border bg-card p-5">
               <h3 className="text-sm font-bold mb-1">Coupon Code</h3>
-              <p className="text-xs text-[hsl(220,15%,45%)] mb-3">Enter a coupon code to get a discount on your challenge</p>
+              <p className="text-xs text-muted-foreground mb-3">Enter a coupon code to get a discount on your challenge</p>
               {couponApplied ? (
                 <div className="flex items-center justify-between bg-[hsl(142,60%,50%)]/10 border border-[hsl(142,60%,50%)]/20 rounded-xl px-3 py-2.5">
                   <div className="flex items-center gap-2">
                     <Check size={14} className="text-[hsl(142,60%,50%)]" />
                     <span className="text-xs font-mono font-bold">{couponApplied.code}</span>
-                    <span className="text-xs text-[hsl(220,15%,45%)]">
+                    <span className="text-xs text-muted-foreground">
                       ({couponApplied.type === "percentage" ? `${couponApplied.value}%` : `$${couponApplied.value}`} off)
                     </span>
                   </div>
-                  <button onClick={() => { setCouponApplied(null); setCouponCode(""); }} className="text-[hsl(220,15%,45%)] hover:text-[hsl(0,70%,55%)]"><X size={14} /></button>
+                  <button onClick={() => { setCouponApplied(null); setCouponCode(""); }} className="text-muted-foreground hover:text-destructive"><X size={14} /></button>
                 </div>
               ) : (
                 <div className="flex gap-2">
@@ -483,13 +481,13 @@ const Checkout = () => {
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
                     placeholder="Enter coupon code"
-                    className="h-10 text-sm rounded-xl bg-[hsl(230,20%,8%)] border-[hsl(220,15%,15%)] text-white font-mono uppercase placeholder:text-[hsl(220,15%,30%)] placeholder:normal-case"
+                    className="h-10 text-sm rounded-xl bg-background border-border text-foreground font-mono uppercase placeholder:text-muted-foreground/40 placeholder:normal-case"
                     onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
                   />
                   <Button
                     onClick={applyCoupon}
                     variant="outline"
-                    className="h-10 rounded-xl px-5 text-sm border-[hsl(220,15%,20%)] text-white hover:bg-[hsl(220,15%,15%)]"
+                    className="h-10 rounded-xl px-5 text-sm border-border text-foreground hover:bg-muted"
                     disabled={couponLoading || !couponCode.trim()}
                   >
                     {couponLoading ? <Loader2 size={14} className="animate-spin" /> : "Apply"}
@@ -499,16 +497,16 @@ const Checkout = () => {
             </div>
 
             {/* Order Summary Card */}
-            <div className="rounded-2xl border border-[hsl(230,60%,55%)]/30 bg-[hsl(230,20%,10%)] p-5 shadow-[0_0_30px_-10px_hsl(230,60%,55%,0.2)]">
+            <div className={`rounded-2xl border border-[hsl(${BLUE})]/30 bg-card p-5 shadow-[0_0_30px_-10px_hsl(${BLUE},0.2)]`}>
               <h3 className="text-lg font-bold mb-4">Order Summary</h3>
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[hsl(220,15%,60%)]">
+                  <span className="text-sm text-muted-foreground">
                     ${sizeNum.toLocaleString()} — {stepLabel} Funding Pulze
                   </span>
                   <span className="text-sm font-semibold">${basePrice.toFixed(2)}</span>
                 </div>
-                <p className="text-xs text-[hsl(220,15%,40%)]">Platform: MetaTrader 5</p>
+                <p className="text-xs text-muted-foreground/60">Platform: MetaTrader 5</p>
                 {discount > 0 && (
                   <div className="flex items-center justify-between text-sm text-[hsl(142,60%,50%)]">
                     <span>Discount ({couponApplied?.code})</span>
@@ -516,27 +514,27 @@ const Checkout = () => {
                   </div>
                 )}
               </div>
-              <div className="border-t border-[hsl(220,15%,15%)] pt-3 flex items-center justify-between">
+              <div className="border-t border-border pt-3 flex items-center justify-between">
                 <span className="text-base font-bold">Total</span>
                 <span className="text-2xl font-bold text-[hsl(142,60%,50%)]">${total.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Terms */}
-            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-5">
+            <div className="rounded-2xl border border-border bg-card p-5">
               <div className="flex items-start gap-3">
                 <Checkbox
                   id="terms"
                   checked={agreedTerms}
                   onCheckedChange={(v) => setAgreedTerms(!!v)}
-                  className="mt-0.5 border-[hsl(220,15%,25%)] data-[state=checked]:bg-[hsl(230,60%,55%)] data-[state=checked]:border-[hsl(230,60%,55%)]"
+                  className={`mt-0.5 border-muted-foreground/30 data-[state=checked]:bg-[hsl(${BLUE})] data-[state=checked]:border-[hsl(${BLUE})]`}
                 />
-                <label htmlFor="terms" className="text-xs text-[hsl(220,15%,55%)] leading-relaxed cursor-pointer">
-                  <span className="font-semibold text-white block mb-1.5">I agree with all the following terms:</span>
+                <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                  <span className="font-semibold text-foreground block mb-1.5">I agree with all the following terms:</span>
                   <ul className="space-y-1 list-disc list-inside">
-                    <li>I have read and agreed to the <a href="/terms" className="text-[hsl(230,60%,65%)] hover:underline">Terms of Use</a>.</li>
+                    <li>I have read and agreed to the <a href="/terms" className={`text-[hsl(${BLUE})] hover:underline`}>Terms of Use</a>.</li>
                     <li>All information provided is correct and matches government-issued ID.</li>
-                    <li>I have read and agree with the <a href="/terms" className="text-[hsl(230,60%,65%)] hover:underline">Terms & Conditions</a>.</li>
+                    <li>I have read and agree with the <a href="/terms" className={`text-[hsl(${BLUE})] hover:underline`}>Terms & Conditions</a>.</li>
                     <li>I confirm that I am not a U.S. citizen or resident.</li>
                   </ul>
                 </label>
@@ -545,13 +543,13 @@ const Checkout = () => {
 
             {/* Payment */}
             <div className="space-y-3">
-              <div className="flex gap-1 p-1 rounded-xl bg-[hsl(230,20%,8%)] border border-[hsl(220,15%,15%)]">
+              <div className="flex gap-1 p-1 rounded-xl bg-background border border-border">
                 {([["paypal", "PayPal & Cards", CreditCard], ["crypto", "Crypto", Bitcoin]] as const).map(([key, label, Icon]) => (
                   <button key={key} onClick={() => setPayMethod(key as any)}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                       payMethod === key
-                        ? "bg-[hsl(230,20%,15%)] text-white shadow-sm"
-                        : "text-[hsl(220,15%,45%)] hover:text-white"
+                        ? "bg-muted text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}>
                     <Icon size={13} /> {label}
                   </button>
@@ -559,13 +557,13 @@ const Checkout = () => {
               </div>
 
               {!billingFilled && (
-                <p className="text-xs text-[hsl(0,70%,55%)] text-center">Please fill in billing details first</p>
+                <p className="text-xs text-destructive text-center">Please fill in billing details first</p>
               )}
 
               {payMethod === "paypal" && (
                 <div>
                   {!user ? (
-                    <Button onClick={() => navigate("/auth")} className="w-full rounded-xl h-12 text-sm bg-[hsl(230,60%,55%)] hover:bg-[hsl(230,60%,50%)] text-white font-semibold">
+                    <Button onClick={() => navigate("/auth")} className={`w-full rounded-xl h-12 text-sm bg-[hsl(${BLUE})] hover:bg-[hsl(${BLUE_DARK})] text-[hsl(0,0%,3%)] font-semibold`}>
                       Sign in to Continue
                     </Button>
                   ) : paypalLoadError ? (
@@ -573,14 +571,14 @@ const Checkout = () => {
                       {paypalLoadError}
                     </div>
                   ) : !paypalReady ? (
-                    <div className="flex items-center justify-center py-4 gap-2 text-[hsl(220,15%,45%)] text-sm">
+                    <div className="flex items-center justify-center py-4 gap-2 text-muted-foreground text-sm">
                       <Loader2 size={14} className="animate-spin" /> Loading PayPal...
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <div ref={paypalRef} className="min-h-[48px]" />
                       {(!agreedTerms || !billingFilled) && (
-                        <p className="text-[10px] text-[hsl(220,15%,45%)] text-center">
+                        <p className="text-[10px] text-muted-foreground text-center">
                           Complete billing details and accept terms before clicking PayPal.
                         </p>
                       )}
@@ -596,19 +594,18 @@ const Checkout = () => {
                     {processing ? <><Loader2 size={14} className="animate-spin" /> Creating invoice...</>
                       : <><Bitcoin size={14} /> Pay ${total.toFixed(2)} with Crypto <ExternalLink size={12} /></>}
                   </Button>
-                  <p className="text-[10px] text-[hsl(220,15%,40%)] text-center">BTC • ETH • USDT • SOL • 200+ coins</p>
+                  <p className="text-[10px] text-muted-foreground/60 text-center">BTC • ETH • USDT • SOL • 200+ coins</p>
                 </div>
               )}
 
-
               {processing && (
-                <div className="flex items-center justify-center gap-2 text-xs text-[hsl(220,15%,45%)]">
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Loader2 size={12} className="animate-spin" /> Verifying payment...
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-center gap-5 pt-1 text-[10px] text-[hsl(220,15%,40%)]">
+            <div className="flex items-center justify-center gap-5 pt-1 text-[10px] text-muted-foreground/60">
               <span className="flex items-center gap-1"><Shield size={10} /> SSL Encrypted</span>
               <span className="flex items-center gap-1"><Check size={10} /> Instant Access</span>
               <span className="flex items-center gap-1"><Check size={10} /> 24/7 Support</span>
