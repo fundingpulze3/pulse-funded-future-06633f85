@@ -434,6 +434,56 @@ const CredentialsManager = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Pending Credentials Dialog */}
+      <Dialog open={pendingDialogOpen} onOpenChange={setPendingDialogOpen}>
+        <DialogContent className="bg-white border-[hsl(0,0%,90%)] rounded-2xl max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-[hsl(0,0%,5%)]">
+              Pending Credential Assignments ({pendingPurchases.length})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[350px] overflow-y-auto">
+            {pendingPurchases.length === 0 ? (
+              <div className="text-center py-8 text-[hsl(0,0%,50%)] text-sm">
+                <CheckCircle2 size={28} className="mx-auto mb-2 text-green-500" />
+                All purchases have credentials assigned!
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {pendingPurchases.map(p => {
+                  const ch = p.challenges as any;
+                  const availForChallenge = credentials.filter(c => c.challenge_id === p.challenge_id && !c.is_assigned).length;
+                  return (
+                    <div key={p.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,92%)]">
+                      <div>
+                        <p className="text-sm font-medium text-[hsl(0,0%,10%)]">
+                          ${ch?.account_size?.toLocaleString()} - {ch?.step_type === "one_step" ? "1 Step" : "2 Step"}
+                        </p>
+                        <p className="text-[10px] text-[hsl(0,0%,50%)]">
+                          Purchase: {new Date(p.created_at).toLocaleDateString()} • User: {p.user_id.slice(0, 8)}...
+                        </p>
+                      </div>
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${availForChallenge > 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"}`}>
+                        {availForChallenge > 0 ? `${availForChallenge} free` : "No creds"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-lg border-[hsl(0,0%,88%)]" onClick={() => setPendingDialogOpen(false)}>Close</Button>
+            {pendingPurchases.length > 0 && (
+              <Button className="rounded-lg bg-[hsl(0,0%,0%)] text-white hover:bg-[hsl(0,0%,15%)]" onClick={assignAllPending} disabled={assigning}>
+                <RefreshCw size={14} className={`mr-1 ${assigning ? "animate-spin" : ""}`} />
+                {assigning ? "Assigning..." : `Assign All (${pendingPurchases.length})`}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
