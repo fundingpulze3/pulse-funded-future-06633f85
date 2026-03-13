@@ -452,7 +452,7 @@ export default function Dashboard({
               <span className="text-[10px] font-medium text-[hsl(0,0%,45%)] uppercase tracking-wider">{card.label}</span>
               <span className="text-[hsl(0,0%,60%)]">{card.icon}</span>
             </div>
-            <p className="text-xl font-display font-bold text-[hsl(0,0%,5%)]">{card.value}</p>
+            <p className="text-lg md:text-xl font-display font-bold text-[hsl(0,0%,5%)]">{card.value}</p>
             {card.change !== 0 && (
               <div className={`flex items-center gap-1 mt-1 text-[11px] font-medium ${card.change > 0 ? "text-[hsl(142,60%,40%)]" : "text-[hsl(0,70%,50%)]"}`}>
                 {card.change > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
