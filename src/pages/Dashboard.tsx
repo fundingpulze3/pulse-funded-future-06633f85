@@ -198,6 +198,19 @@ const Dashboard = () => {
 
   const getStepType = (purchase: Purchase): string => purchase.challenges?.step_type?.toLowerCase() || "";
 
+  const getRank = (purchase: Purchase): { label: string; emoji: string; color: string } => {
+    const status = purchase.status.toLowerCase();
+    const stepType = (purchase.challenges?.step_type || "").toLowerCase();
+    if (status === "funded") return { label: "Master", emoji: "👑", color: "text-[hsl(45,90%,55%)]" };
+    if (stepType.includes("one") || stepType.includes("1")) {
+      // 1-step: only one phase before funded → Practitioner
+      return { label: "Practitioner", emoji: "⚔️", color: "text-[hsl(270,70%,65%)]" };
+    }
+    // 2-step
+    if (status === "phase2") return { label: "Practitioner", emoji: "⚔️", color: "text-[hsl(270,70%,65%)]" };
+    return { label: "Student", emoji: "🎓", color: "text-[hsl(207,80%,65%)]" };
+  };
+
   const filteredPurchases = useMemo(() => {
     return purchases.filter(p => {
       // Step filter
