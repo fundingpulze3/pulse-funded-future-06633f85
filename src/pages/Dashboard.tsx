@@ -427,15 +427,15 @@ const Dashboard = () => {
           )}
         </AnimatePresence>
 
-        {/* Left Panel - Account List */}
+        {/* Left Panel - Navigation + Account List */}
         <aside className={`
           fixed lg:static z-50 lg:z-auto top-14 bottom-0 left-0
           w-[340px] lg:w-[360px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
           flex flex-col overflow-hidden transition-transform duration-300
           ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}>
-          {/* Mobile nav */}
-          <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)]">
+          {/* Navigation tabs - in sidebar */}
+          <div className="p-3 border-b border-[hsl(220,15%,12%)]">
             <div className="flex flex-wrap gap-1">
               {navItems.map(item => (
                 <button
@@ -444,7 +444,7 @@ const Dashboard = () => {
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                     activeView === item.key
                       ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
-                      : "text-[hsl(220,15%,50%)] hover:bg-[hsl(220,15%,10%)]"
+                      : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
                   }`}
                 >
                   <item.icon size={12} />
