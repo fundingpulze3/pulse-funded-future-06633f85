@@ -84,6 +84,18 @@ const Admin = () => {
   const [couponForm, setCouponForm] = useState<CouponForm>(emptyCouponForm);
   const [couponSaving, setCouponSaving] = useState(false);
 
+  // SEO: noindex for admin pages
+  useEffect(() => {
+    let meta = document.querySelector('meta[name="robots"]') as HTMLMetaElement;
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "robots";
+      document.head.appendChild(meta);
+    }
+    meta.content = "noindex, nofollow";
+    return () => { if (meta) meta.remove(); };
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     let gPressed = false;
