@@ -263,7 +263,7 @@ const About = () => {
       </section>
 
       {/* ═══ STATS BAR ═══ */}
-      <section className="py-20 px-6 border-y border-border/30">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 border-y border-border/30">
         <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x divide-border/30">
           {stats.map((stat, i) => (
             <motion.div
