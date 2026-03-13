@@ -71,7 +71,7 @@ const FAQ = () => {
     <div className="min-h-screen bg-background text-foreground">
       <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
 
-      <section className="pt-32 pb-24 px-6">
+      <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
             <h1 className="font-display text-4xl sm:text-5xl font-bold mb-4">
