@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign, Users, ShoppingCart, TrendingUp, BarChart3, Percent,
   Trophy, Clock, MessageSquare, ArrowUpRight, ArrowDownRight, Activity,
-  Eye, ExternalLink,
+  Eye, ExternalLink, CalendarDays, Filter,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
