@@ -395,31 +395,6 @@ const Dashboard = () => {
           hidden lg:flex w-[320px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
           flex-col overflow-hidden
         `}>
-          {/* Mobile-only nav */}
-          <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)]">
-            <div className="flex flex-wrap gap-1">
-              <button
-                onClick={() => { navigate("/#rules"); setMobileSidebarOpen(false); }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
-              >
-                <Plus size={12} /> New Challenge
-              </button>
-              {navItems.map(item => (
-                <button
-                  key={item.key}
-                  onClick={() => { if (item.route) { navigate(item.route); } else { setActiveView(item.key as SidebarTab); } setMobileSidebarOpen(false); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                    !item.route && activeView === item.key
-                      ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
-                      : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
-                  }`}
-                >
-                  <item.icon size={12} />
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* User info */}
           <div className="p-4 border-b border-[hsl(220,15%,12%)]">
