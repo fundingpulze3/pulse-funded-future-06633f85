@@ -930,7 +930,7 @@ const Dashboard = () => {
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,12%)" />
                             <XAxis dataKey="day" tick={{ fill: "hsl(220,15%,45%)", fontSize: 11 }} tickLine={false} />
                             <YAxis tick={{ fill: "hsl(220,15%,45%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
-                            <Tooltip contentStyle={{ background: "hsl(220,20%,8%)", border: "1px solid hsl(220,15%,15%)", borderRadius: "8px", color: "white", fontSize: "12px" }} />
+                            <Tooltip contentStyle={{ background: "hsl(220,20%,8%)", border: "1px solid hsl(220,15%,15%)", borderRadius: "8px", color: "white", fontSize: "12px" }} labelStyle={{ color: "hsl(220,15%,70%)" }} itemStyle={{ color: "white" }} />
                             <Bar dataKey="profit" radius={[4, 4, 0, 0]}>
                               {dailyProfitData.map((entry, index) => (
                                 <Cell key={index} fill={entry.profit >= 0 ? "hsl(142,60%,50%)" : "hsl(0,70%,55%)"} />
