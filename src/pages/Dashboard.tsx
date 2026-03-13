@@ -371,9 +371,11 @@ const Dashboard = () => {
     { key: "completed", label: "Passed" },
   ];
 
-  const navItems: { key: SidebarTab; label: string; icon: any }[] = [
+  const navItems: { key: SidebarTab | string; label: string; icon: any; route?: string }[] = [
     { key: "overview", label: "Overview", icon: Home },
     { key: "affiliate", label: "Affiliate", icon: Users },
+    { key: "certificates", label: "Certificates", icon: Award, route: "/dashboard/certificates" },
+    { key: "payouts", label: "Payouts", icon: Wallet, route: "/dashboard/payouts" },
   ];
 
   const popupCredentials = credDialogPurchaseId
