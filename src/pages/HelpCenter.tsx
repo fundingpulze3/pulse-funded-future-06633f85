@@ -271,6 +271,11 @@ const HelpCenter = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // Force dark mode
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+  }, []);
+
   // Determine base path (either /help or / for help subdomain)
   const isHelpDomain = window.location.hostname.startsWith("help.");
   const basePath = isHelpDomain ? "" : "/help";
