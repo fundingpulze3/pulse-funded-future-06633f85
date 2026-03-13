@@ -44,9 +44,7 @@ const DashboardSidebar = ({ profile }: Props) => {
         </button>
 
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/dashboard")}>
-          <div className="w-8 h-8 rounded-lg bg-[hsl(207,90%,77%)] flex items-center justify-center">
-            <Zap size={16} className="text-white" />
-          </div>
+          <img src={fpLogoIcon} alt="Funding Pulze" className="w-8 h-8 rounded-lg object-cover" />
           <span className="font-display font-bold text-sm tracking-wide hidden sm:inline">FUNDING PULZE</span>
         </div>
 
