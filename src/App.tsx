@@ -21,6 +21,8 @@ import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import DashboardCertificates from "./pages/DashboardCertificates";
+import DashboardPayouts from "./pages/DashboardPayouts";
 
 const queryClient = new QueryClient();
 
