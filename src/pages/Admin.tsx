@@ -274,6 +274,12 @@ const Admin = () => {
       label: "Administrator",
       items: [
         { id: "user_certificates" as Tab, label: "PDF / Certs", icon: <FileText size={18} /> },
+      ],
+      roles: ["administrator"],
+    },
+    {
+      label: "Certificates",
+      items: [
         { id: "cert_templates" as Tab, label: "Cert Templates", icon: <ImageIcon size={18} /> },
       ],
       roles: ["administrator", "admin"],
