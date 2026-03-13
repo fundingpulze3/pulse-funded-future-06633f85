@@ -322,7 +322,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-[hsl(220,20%,4%)] flex items-center justify-center">
         <motion.div className="flex flex-col items-center gap-4" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-          <div className="w-10 h-10 border-2 border-[hsl(210,80%,55%)] border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-2 border-[hsl(207,90%,77%)] border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-[hsl(210,20%,70%)] font-medium">Loading dashboard...</p>
         </motion.div>
       </div>
@@ -335,14 +335,14 @@ const Dashboard = () => {
         <div className="text-center p-8">
           <p className="text-lg font-bold mb-2">Dashboard unavailable</p>
           <p className="text-[hsl(210,20%,60%)] mb-5">{loadError}</p>
-          <Button className="rounded-xl bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)]" onClick={fetchAllData}>Retry</Button>
+          <Button className="rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)]" onClick={fetchAllData}>Retry</Button>
         </div>
       </div>
     );
   }
 
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-    ongoing: { label: "Active", color: "text-[hsl(210,80%,55%)]", bg: "bg-[hsl(210,80%,55%)]/15" },
+    ongoing: { label: "Active", color: "text-[hsl(207,90%,77%)]", bg: "bg-[hsl(207,90%,77%)]/15" },
     funded: { label: "Funded", color: "text-[hsl(142,60%,50%)]", bg: "bg-[hsl(142,60%,50%)]/15" },
     breached: { label: "Not Passed", color: "text-[hsl(0,70%,55%)]", bg: "bg-[hsl(0,70%,55%)]/15" },
     completed: { label: "Passed", color: "text-[hsl(142,60%,50%)]", bg: "bg-[hsl(142,60%,50%)]/15" },
@@ -386,7 +386,7 @@ const Dashboard = () => {
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[hsl(210,80%,55%)] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-[hsl(207,90%,77%)] flex items-center justify-center">
             <Zap size={16} className="text-white" />
           </div>
           <span className="font-display font-bold text-sm tracking-wide hidden sm:inline">FUNDING PULZE</span>
@@ -426,7 +426,7 @@ const Dashboard = () => {
           {/* New Challenge + button */}
           <button
             onClick={() => navigate("/#rules")}
-            className="w-10 h-10 rounded-xl bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] flex items-center justify-center text-white mb-4 transition-colors shadow-[0_0_16px_hsl(210,80%,55%,0.3)]"
+            className="w-10 h-10 rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] flex items-center justify-center text-white mb-4 transition-colors shadow-[0_0_16px_hsl(210,80%,55%,0.3)]"
             title="New Challenge"
           >
             <Plus size={20} />
@@ -438,7 +438,7 @@ const Dashboard = () => {
               onClick={() => setActiveView(item.key)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
                 activeView === item.key
-                  ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
+                  ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
                   : "text-[hsl(220,15%,40%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
               }`}
               title={item.label}
@@ -450,7 +450,7 @@ const Dashboard = () => {
           <div className="flex-1" />
 
           {/* User avatar at bottom */}
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(210,80%,55%)] to-[hsl(210,80%,40%)] flex items-center justify-center text-white font-bold text-xs cursor-pointer" title={profile?.display_name || "Profile"}>
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(207,90%,77%)] to-[hsl(207,85%,65%)] flex items-center justify-center text-white font-bold text-xs cursor-pointer" title={profile?.display_name || "Profile"}>
             {(profile?.display_name || "T")[0].toUpperCase()}
           </div>
         </nav>
@@ -467,7 +467,7 @@ const Dashboard = () => {
             <div className="flex flex-wrap gap-1">
               <button
                 onClick={() => { navigate("/#rules"); setMobileSidebarOpen(false); }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
               >
                 <Plus size={12} /> New Challenge
               </button>
@@ -477,7 +477,7 @@ const Dashboard = () => {
                   onClick={() => { setActiveView(item.key); setMobileSidebarOpen(false); }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                     activeView === item.key
-                      ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
+                      ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
                       : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
                   }`}
                 >
@@ -491,7 +491,7 @@ const Dashboard = () => {
           {/* User info */}
           <div className="p-4 border-b border-[hsl(220,15%,12%)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(210,80%,55%)] to-[hsl(210,80%,40%)] flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(207,90%,77%)] to-[hsl(207,85%,65%)] flex items-center justify-center text-white font-bold text-sm">
                 {(profile?.display_name || "T")[0].toUpperCase()}
               </div>
               <div className="min-w-0">
@@ -510,7 +510,7 @@ const Dashboard = () => {
                   onClick={() => setAccountFilter(f.key)}
                   className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
                     accountFilter === f.key
-                      ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)] shadow-[0_0_8px_hsl(210,80%,55%,0.15)]"
+                      ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)] shadow-[0_0_8px_hsl(210,80%,55%,0.15)]"
                       : "text-[hsl(220,15%,45%)] hover:text-[hsl(0,0%,80%)] hover:bg-[hsl(220,15%,10%)]"
                   }`}
                 >
@@ -546,7 +546,7 @@ const Dashboard = () => {
                     onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); setMobileSidebarOpen(false); }}
                     className={`group cursor-pointer rounded-xl p-3.5 transition-all duration-200 border ${
                       isActive
-                        ? "bg-[hsl(220,20%,9%)] border-[hsl(210,80%,55%)]/30 shadow-[0_0_20px_-5px_hsl(210,80%,55%,0.2)]"
+                        ? "bg-[hsl(220,20%,9%)] border-[hsl(207,90%,77%)]/30 shadow-[0_0_20px_-5px_hsl(210,80%,55%,0.2)]"
                         : "bg-[hsl(220,20%,7%)] border-[hsl(220,15%,12%)] hover:bg-[hsl(220,20%,8%)] hover:border-[hsl(220,15%,18%)]"
                     }`}
                   >
@@ -554,15 +554,15 @@ const Dashboard = () => {
                     <div className="flex items-center justify-between mb-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                          isActive ? "bg-[hsl(210,80%,55%)]/15" : "bg-[hsl(220,15%,12%)]"
+                          isActive ? "bg-[hsl(207,90%,77%)]/15" : "bg-[hsl(220,15%,12%)]"
                         }`}>
-                          <User size={16} className={isActive ? "text-[hsl(210,80%,55%)]" : "text-[hsl(220,15%,40%)]"} />
+                          <User size={16} className={isActive ? "text-[hsl(207,90%,77%)]" : "text-[hsl(220,15%,40%)]"} />
                         </div>
                         <div>
                           <p className="text-sm font-bold leading-tight">FP {accountNumber}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[11px] text-[hsl(220,15%,50%)]">{challengeName}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(210,80%,55%)]/10 text-[hsl(210,80%,55%)] font-medium">{stepType}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(207,90%,77%)]/10 text-[hsl(207,90%,77%)] font-medium">{stepType}</span>
                           </div>
                         </div>
                       </div>
@@ -604,7 +604,7 @@ const Dashboard = () => {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setActiveView("overview"); }}
-                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] text-xs font-bold text-white transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] text-xs font-bold text-white transition-colors"
                         >
                           <LayoutDashboard size={12} /> Dashboard
                         </button>
@@ -633,7 +633,7 @@ const Dashboard = () => {
           <div className="p-3 border-t border-[hsl(220,15%,12%)]">
             <button
               onClick={() => navigate("/#rules")}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[hsl(210,80%,55%)] to-[hsl(210,90%,45%)] text-white text-xs font-bold hover:opacity-90 transition-opacity"
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[hsl(207,90%,77%)] to-[hsl(207,90%,72%)] text-white text-xs font-bold hover:opacity-90 transition-opacity"
             >
               + New Challenge
             </button>
@@ -672,15 +672,15 @@ const Dashboard = () => {
                         <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                           <defs>
                             <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(210,80%,55%)" stopOpacity={0.25} />
-                              <stop offset="95%" stopColor="hsl(210,80%,55%)" stopOpacity={0} />
+                              <stop offset="5%" stopColor="hsl(207,90%,77%)" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="hsl(207,90%,77%)" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,12%)" />
                           <XAxis dataKey="date" tick={{ fill: "hsl(220,15%,40%)", fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                           <YAxis tick={{ fill: "hsl(220,15%,40%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toLocaleString()}`} domain={["dataMin - 20", "dataMax + 20"]} />
                           <Tooltip contentStyle={{ background: "hsl(220,20%,8%)", border: "1px solid hsl(220,15%,15%)", borderRadius: "8px", color: "white", fontSize: "12px" }} formatter={(value: number) => [`$${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, undefined]} />
-                          <Area type="monotone" dataKey="balance" stroke="hsl(210,80%,55%)" strokeWidth={2} fill="url(#balGrad)" dot={false} activeDot={{ r: 4, fill: "hsl(210,80%,55%)" }} />
+                          <Area type="monotone" dataKey="balance" stroke="hsl(207,90%,77%)" strokeWidth={2} fill="url(#balGrad)" dot={false} activeDot={{ r: 4, fill: "hsl(207,90%,77%)" }} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -770,7 +770,7 @@ const Dashboard = () => {
                   {/* Trading Metrics Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                     {[
-                      { label: "Win Rate", value: `${Number(activeAccountStats.winRate).toFixed(1)}%`, color: "text-[hsl(210,80%,55%)]" },
+                      { label: "Win Rate", value: `${Number(activeAccountStats.winRate).toFixed(1)}%`, color: "text-[hsl(207,90%,77%)]" },
                       { label: "Profit Factor", value: Number(activeAccountStats.profitFactor) === -1 ? "∞" : String(activeAccountStats.profitFactor ?? "—"), color: "" },
                       { label: "Sharpe Ratio", value: Number(activeAccountStats.sharpeRatio).toFixed(2), color: "" },
                       { label: "Best Trade", value: `$${Number(activeAccountStats.bestTrade).toFixed(2)}`, color: "text-[hsl(142,60%,50%)]" },
@@ -807,7 +807,7 @@ const Dashboard = () => {
 
                     <InfoCard title="Direction">
                       {[
-                        { label: "Long", count: activeAccountStats.longTrades, color: "bg-[hsl(210,80%,55%)]" },
+                        { label: "Long", count: activeAccountStats.longTrades, color: "bg-[hsl(207,90%,77%)]" },
                         { label: "Short", count: activeAccountStats.shortTrades, color: "bg-purple-500" },
                       ].map(d => (
                         <div key={d.label}>
@@ -960,7 +960,7 @@ const Dashboard = () => {
                     <BarChart3 size={40} className="mx-auto mb-4 text-[hsl(220,15%,25%)]" />
                     <p className="text-lg font-bold mb-2">No account selected</p>
                     <p className="text-sm text-[hsl(220,15%,40%)] mb-4">Select an account from the left panel or purchase a challenge.</p>
-                    <Button onClick={() => navigate("/#rules")} className="rounded-xl bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)]">
+                    <Button onClick={() => navigate("/#rules")} className="rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)]">
                       Browse Challenges
                     </Button>
                   </div>
@@ -982,10 +982,10 @@ const Dashboard = () => {
                     <h2 className="font-display font-bold text-sm mb-4">Your Referral Link</h2>
                     {profile?.referral_code ? (
                       <div className="flex items-center gap-3">
-                        <code className="flex-1 bg-[hsl(220,15%,10%)] px-4 py-2.5 rounded-lg text-xs text-[hsl(210,80%,55%)] font-mono truncate">
+                        <code className="flex-1 bg-[hsl(220,15%,10%)] px-4 py-2.5 rounded-lg text-xs text-[hsl(207,90%,77%)] font-mono truncate">
                           {REFERRAL_DOMAIN}?ref={profile.referral_code}
                         </code>
-                        <Button size="sm" onClick={copyReferralLink} className="rounded-lg bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] text-white shrink-0">
+                        <Button size="sm" onClick={copyReferralLink} className="rounded-lg bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] text-white shrink-0">
                           <Copy size={14} className="mr-1" /> Copy
                         </Button>
                       </div>
@@ -1039,7 +1039,7 @@ const Dashboard = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {userCertificates.filter(c => c.certificate_type !== "latest_stats").map((cert) => {
                         const typeColors: Record<string, string> = {
-                          phase1_passed: "border-[hsl(210,80%,55%)]/30",
+                          phase1_passed: "border-[hsl(207,90%,77%)]/30",
                           phase2_passed: "border-[hsl(180,60%,50%)]/30",
                           funded: "border-[hsl(142,60%,50%)]/30",
                           payout: "border-purple-500/30",
@@ -1057,9 +1057,9 @@ const Dashboard = () => {
                                 </div>
                               </div>
                             ) : (
-                              <div className="h-32 bg-gradient-to-br from-[hsl(210,80%,55%)]/20 to-[hsl(210,80%,35%)]/10 flex items-center justify-center">
+                              <div className="h-32 bg-gradient-to-br from-[hsl(207,90%,77%)]/20 to-[hsl(207,85%,60%)]/10 flex items-center justify-center">
                                 <div className="text-center">
-                                  <Award size={28} className="mx-auto mb-1 text-[hsl(210,80%,55%)]" />
+                                  <Award size={28} className="mx-auto mb-1 text-[hsl(207,90%,77%)]" />
                                   <p className="text-lg font-bold text-white">{profile?.display_name || "Trader"}</p>
                                 </div>
                               </div>
@@ -1103,12 +1103,12 @@ const Dashboard = () => {
                         { icon: Clock, label: "Processing Time", value: "24 – 48 hrs" },
                       ].map(item => (
                         <div key={item.label} className="flex items-center gap-3 p-4 rounded-xl bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,14%)]">
-                          <item.icon size={18} className="text-[hsl(210,80%,55%)] shrink-0" />
+                          <item.icon size={18} className="text-[hsl(207,90%,77%)] shrink-0" />
                           <div><p className="text-[11px] text-[hsl(220,15%,45%)]">{item.label}</p><p className="text-base font-bold">{item.value}</p></div>
                         </div>
                       ))}
                     </div>
-                    <Button className="mt-5 rounded-xl bg-[hsl(210,80%,55%)] hover:bg-[hsl(210,80%,50%)] text-white" onClick={() => navigate("/help")}>
+                    <Button className="mt-5 rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] text-white" onClick={() => navigate("/help")}>
                       Contact Support
                     </Button>
                   </div>
@@ -1173,11 +1173,11 @@ const DashStatCard = ({ icon: Icon, value, label, subValue, trend, highlight }: 
   icon: any; value: string; label: string; subValue?: string; trend?: "up" | "down"; highlight?: boolean;
 }) => (
   <div className={`rounded-xl bg-[hsl(220,20%,7%)] border p-4 transition-all ${
-    highlight ? "border-[hsl(210,80%,55%)]/20" : "border-[hsl(220,15%,12%)]"
+    highlight ? "border-[hsl(207,90%,77%)]/20" : "border-[hsl(220,15%,12%)]"
   }`}>
     <div className="flex items-center justify-between mb-2">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${highlight ? "bg-[hsl(210,80%,55%)]/10" : "bg-[hsl(220,15%,12%)]"}`}>
-        <Icon size={16} className={highlight ? "text-[hsl(210,80%,55%)]" : "text-[hsl(220,15%,40%)]"} />
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${highlight ? "bg-[hsl(207,90%,77%)]/10" : "bg-[hsl(220,15%,12%)]"}`}>
+        <Icon size={16} className={highlight ? "text-[hsl(207,90%,77%)]" : "text-[hsl(220,15%,40%)]"} />
       </div>
       {trend && (
         <div className={`flex items-center gap-0.5 text-xs font-medium ${trend === "up" ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`}>
@@ -1204,7 +1204,7 @@ const RuleCard = ({ label, value, current, status }: { label: string; value: str
   const statusColors: Record<string, string> = {
     passed: "text-[hsl(142,60%,50%)] bg-[hsl(142,60%,50%)]/10 border-[hsl(142,60%,50%)]/20",
     safe: "text-[hsl(142,60%,50%)] bg-[hsl(142,60%,50%)]/10 border-[hsl(142,60%,50%)]/20",
-    in_progress: "text-[hsl(210,80%,55%)] bg-[hsl(210,80%,55%)]/10 border-[hsl(210,80%,55%)]/20",
+    in_progress: "text-[hsl(207,90%,77%)] bg-[hsl(207,90%,77%)]/10 border-[hsl(207,90%,77%)]/20",
     breached: "text-[hsl(0,70%,55%)] bg-[hsl(0,70%,55%)]/10 border-[hsl(0,70%,55%)]/20",
   };
   const statusLabels: Record<string, string> = { passed: "Passed ✓", safe: "Safe ✓", in_progress: "In Progress", breached: "Breached ✕" };
@@ -1230,7 +1230,7 @@ const MiniStat = ({ label, value, positive }: { label: string; value: any; posit
 const StatusBadge = ({ status }: { status: string }) => {
   const colors: Record<string, string> = {
     paid: "bg-[hsl(142,60%,50%)]/15 text-[hsl(142,60%,50%)] border-[hsl(142,60%,50%)]/20",
-    approved: "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)] border-[hsl(210,80%,55%)]/20",
+    approved: "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)] border-[hsl(207,90%,77%)]/20",
     active: "bg-[hsl(142,60%,50%)]/15 text-[hsl(142,60%,50%)] border-[hsl(142,60%,50%)]/20",
     pending: "bg-[hsl(45,80%,55%)]/15 text-[hsl(45,80%,55%)] border-[hsl(45,80%,55%)]/20",
     completed: "bg-[hsl(142,60%,50%)]/15 text-[hsl(142,60%,50%)] border-[hsl(142,60%,50%)]/20",

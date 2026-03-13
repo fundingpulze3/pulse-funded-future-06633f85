@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { User, LogOut, Shield, Menu, X } from "lucide-react";
+import { User, LogOut, Shield, Menu, X, LayoutDashboard } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,12 +19,12 @@ const navLinks = [
   { label: "Help Center", href: "/help", route: "/help" },
   { label: "FAQ", href: "/faq", route: "/faq" },
   { label: "About", href: "/about", route: "/about" },
-  { label: "Dashboard", href: "/dashboard", route: "/dashboard" },
 ];
 
 const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdminCheck();
@@ -118,13 +118,32 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
           <div className="flex items-center gap-2 sm:gap-3">
 
             {user ? (
-              <div className="hidden sm:flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                  <User size={16} className="text-primary-foreground" />
-                </div>
-                <button onClick={handleSignOut} className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors" title="Sign out">
-                  <LogOut size={16} />
+              <div className="hidden sm:flex items-center relative">
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="w-9 h-9 rounded-full bg-foreground flex items-center justify-center hover:opacity-90 transition-opacity"
+                >
+                  <User size={16} className="text-background" />
                 </button>
+                {profileOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                    <div className="absolute right-0 top-12 z-50 w-44 rounded-xl border border-border bg-background shadow-xl py-1.5">
+                      <button
+                        onClick={() => { navigate("/dashboard"); setProfileOpen(false); }}
+                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <LayoutDashboard size={15} /> Dashboard
+                      </button>
+                      <button
+                        onClick={() => { handleSignOut(); setProfileOpen(false); }}
+                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <LogOut size={15} /> Sign Out
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <Button size="sm" className="hidden sm:inline-flex rounded-xl font-medium" onClick={() => navigate("/auth")}>
@@ -190,12 +209,12 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
                 <div className="border-t border-border pt-4 space-y-3">
                   {user ? (
                     <>
-                      <div className="flex items-center gap-3 px-4 py-2">
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                          <User size={16} className="text-primary-foreground" />
-                        </div>
-                        <span className="text-sm text-muted-foreground truncate">Logged in</span>
-                      </div>
+                      <button
+                        onClick={() => { navigate("/dashboard"); setMobileOpen(false); }}
+                        className="flex items-center gap-2 w-full py-3 px-4 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+                      >
+                        <LayoutDashboard size={16} /> Dashboard
+                      </button>
                       <button
                         onClick={handleSignOut}
                         className="flex items-center gap-2 w-full py-3 px-4 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
