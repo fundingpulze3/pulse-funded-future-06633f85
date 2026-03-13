@@ -590,7 +590,7 @@ const HelpCenter = () => {
         </div>
       </section>
 
-      <main className="max-w-5xl mx-auto px-6 -mt-2 pb-10">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 -mt-2 pb-10">
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
