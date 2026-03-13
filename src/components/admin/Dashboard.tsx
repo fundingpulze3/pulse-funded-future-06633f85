@@ -62,8 +62,14 @@ export default function Dashboard({
     [pageVisits]
   );
 
-  const rangedPurchases = useMemo(() => purchases.filter(p => inRange(p.created_at)), [purchases, dateRange]);
-  const prevPurchases = useMemo(() => purchases.filter(p => inPrevRange(p.created_at)), [purchases, dateRange]);
+  const isCountablePurchase = (purchase: any) => {
+    const paymentStatus = String(purchase?.payment_status || "").toLowerCase();
+    const orderStatus = String(purchase?.status || "").toLowerCase();
+    return ["paid", "confirmed", "completed"].includes(paymentStatus) && orderStatus !== "pending";
+  };
+
+  const rangedPurchases = useMemo(() => purchases.filter(p => inRange(p.created_at) && isCountablePurchase(p)), [purchases, dateRange]);
+  const prevPurchases = useMemo(() => purchases.filter(p => inPrevRange(p.created_at) && isCountablePurchase(p)), [purchases, dateRange]);
   const rangedProfiles = useMemo(() => profiles.filter(p => inRange(p.created_at)), [profiles, dateRange]);
   const prevProfiles = useMemo(() => profiles.filter(p => inPrevRange(p.created_at)), [profiles, dateRange]);
   const rangedVisits = useMemo(() => filteredVisits.filter(v => inRange(v.created_at)), [filteredVisits, dateRange]);

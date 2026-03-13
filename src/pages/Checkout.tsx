@@ -55,7 +55,9 @@ const Checkout = () => {
   const paypalRef = useRef<HTMLDivElement>(null);
   const purchaseIdRef = useRef<string | null>(null);
   const [paypalReady, setPaypalReady] = useState(false);
+  const [paypalLoadError, setPaypalLoadError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const PAYPAL_CLIENT_ID = "BAAwk3bjO1bqRcrVytA9YTQC4dW6smqK2ocXDSrlDZn3pWNo2pNumzgqwzr8SwlEk7mZ4z9dpmxMCRDz5Q";
 
   const initialStep = searchParams.get("step") || "2-step";
   const initialSize = searchParams.get("size") || "$50K";
@@ -124,6 +126,7 @@ const Checkout = () => {
   totalRef.current = total;
 
   const stepLabel = stepType === "1-step" ? "1 Step" : "2 Step";
+  const billingFilled = firstName.trim() && lastName.trim() && country.trim();
 
   // Save billing details
   const saveBillingDetails = async () => {
@@ -136,11 +139,54 @@ const Checkout = () => {
 
   // PayPal SDK init
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (window.paypal) { setPaypalReady(true); clearInterval(interval); }
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
+    if (window.paypal?.Buttons) {
+      setPaypalReady(true);
+      setPaypalLoadError(null);
+      return;
+    }
+
+    const existingScript = document.querySelector('script[src*="paypal.com/sdk/js"]') as HTMLScriptElement | null;
+
+    const handleLoad = () => {
+      if (window.paypal?.Buttons) {
+        setPaypalReady(true);
+        setPaypalLoadError(null);
+      }
+    };
+
+    const handleError = () => {
+      setPaypalReady(false);
+      setPaypalLoadError("PayPal failed to load. Please refresh and try again.");
+    };
+
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`;
+      script.async = true;
+      script.onload = handleLoad;
+      script.onerror = handleError;
+      document.body.appendChild(script);
+    }
+
+    const timeout = window.setTimeout(() => {
+      if (!window.paypal?.Buttons) {
+        setPaypalLoadError("PayPal button is unavailable right now.");
+      }
+    }, 10000);
+
+    if (existingScript) {
+      existingScript.addEventListener("load", handleLoad);
+      existingScript.addEventListener("error", handleError);
+    }
+
+    return () => {
+      window.clearTimeout(timeout);
+      if (existingScript) {
+        existingScript.removeEventListener("load", handleLoad);
+        existingScript.removeEventListener("error", handleError);
+      }
+    };
+  }, [PAYPAL_CLIENT_ID]);
 
   const createPurchaseRecord = useCallback(async () => {
     if (!user) throw new Error("Not signed in");
@@ -167,12 +213,23 @@ const Checkout = () => {
   }, [user, sizeNum, stepType, firstName, lastName, country, billingAddress, city, zipCode]);
 
   useEffect(() => {
-    if (!paypalReady || !paypalRef.current || !user) return;
+    if (!paypalReady || !paypalRef.current || !user || !window.paypal?.Buttons) return;
     paypalRef.current.innerHTML = "";
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
-    window.paypal.Buttons({
+    const buttons = window.paypal.Buttons({
       style: { layout: "vertical", color: "black", shape: "rect", label: "pay", height: 45 },
+      onClick: (_data: any, actions: any) => {
+        if (!billingFilled) {
+          toast.error("Please fill billing details first.");
+          return actions.reject();
+        }
+        if (!agreedTerms) {
+          toast.error("Please agree to the terms.");
+          return actions.reject();
+        }
+        return actions.resolve();
+      },
       createOrder: async () => {
         const purchase = await createPurchaseRecord();
         purchaseIdRef.current = purchase.id;
@@ -213,10 +270,25 @@ const Checkout = () => {
         } catch (err) { toast.error("Payment failed: " + String(err)); }
         setProcessing(false);
       },
-      onError: (err: any) => { console.error("PayPal error:", err); toast.error("PayPal payment failed."); },
+      onError: (err: any) => {
+        console.error("PayPal error:", err);
+        setPaypalLoadError("PayPal button is unavailable right now.");
+        toast.error("PayPal payment failed.");
+      },
       onCancel: () => toast.info("Payment cancelled."),
-    }).render(paypalRef.current);
-  }, [paypalReady, user, createPurchaseRecord, stepType, selectedSize]);
+    });
+
+    buttons.render(paypalRef.current).catch((err: unknown) => {
+      console.error("PayPal render failed:", err);
+      setPaypalLoadError("PayPal button is unavailable right now.");
+    });
+
+    return () => {
+      try { buttons.close?.(); } catch {
+        // ignore cleanup errors
+      }
+    };
+  }, [paypalReady, user, createPurchaseRecord, stepType, selectedSize, billingFilled, agreedTerms]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -268,7 +340,6 @@ const Checkout = () => {
     setProcessing(false);
   };
 
-  const billingFilled = firstName.trim() && lastName.trim() && country.trim();
 
   return (
     <div className="min-h-screen bg-[hsl(230,25%,7%)] text-white">
@@ -512,16 +583,23 @@ const Checkout = () => {
                     <Button onClick={() => navigate("/auth")} className="w-full rounded-xl h-12 text-sm bg-[hsl(230,60%,55%)] hover:bg-[hsl(230,60%,50%)] text-white font-semibold">
                       Sign in to Continue
                     </Button>
-                  ) : !agreedTerms || !billingFilled ? (
-                    <Button disabled className="w-full rounded-xl h-12 text-sm bg-[hsl(230,60%,55%)]/50 text-white/50 font-semibold cursor-not-allowed">
-                      {!billingFilled ? "Fill billing details" : "Accept terms to continue"}
-                    </Button>
+                  ) : paypalLoadError ? (
+                    <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                      {paypalLoadError}
+                    </div>
                   ) : !paypalReady ? (
                     <div className="flex items-center justify-center py-4 gap-2 text-[hsl(220,15%,45%)] text-sm">
                       <Loader2 size={14} className="animate-spin" /> Loading PayPal...
                     </div>
                   ) : (
-                    <div ref={paypalRef} className="min-h-[48px]" />
+                    <div className="space-y-2">
+                      <div ref={paypalRef} className="min-h-[48px]" />
+                      {(!agreedTerms || !billingFilled) && (
+                        <p className="text-[10px] text-[hsl(220,15%,45%)] text-center">
+                          Complete billing details and accept terms before clicking PayPal.
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
