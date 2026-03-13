@@ -7,7 +7,7 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { motion } from "framer-motion";
 import {
   ShieldCheck, Upload, Camera, FileText, CheckCircle2,
-  Clock, XCircle, Lock, ShoppingCart, Loader2, Video
+  Clock, XCircle, Loader2, Video
 } from "lucide-react";
 
 type KYCStatus = "pending" | "approved" | "rejected" | "not_started";
