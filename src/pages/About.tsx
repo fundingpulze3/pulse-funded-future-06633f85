@@ -350,7 +350,7 @@ const About = () => {
       </section>
 
       {/* ═══ TIMELINE ═══ */}
-      <section ref={timelineRef} className="py-32 px-6">
+      <section ref={timelineRef} className="py-20 sm:py-32 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
             className="text-center mb-20"
