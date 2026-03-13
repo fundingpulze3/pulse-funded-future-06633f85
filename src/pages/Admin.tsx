@@ -870,7 +870,7 @@ const Admin = () => {
                   <BarChart3 size={18} className="text-[hsl(0,0%,40%)]" />
                   <h3 className="font-display font-semibold text-[hsl(0,0%,10%)]">Performance by Medium</h3>
                 </div>
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]">
                   <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
                     <th className="text-left px-5 py-3 font-medium">Medium</th>
                     <th className="text-left px-5 py-3 font-medium">Visits</th>
