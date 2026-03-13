@@ -480,9 +480,9 @@ const Dashboard = () => {
               {navItems.map(item => (
                 <button
                   key={item.key}
-                  onClick={() => { setActiveView(item.key); setMobileSidebarOpen(false); }}
+                  onClick={() => { if (item.route) { navigate(item.route); } else { setActiveView(item.key as SidebarTab); } setMobileSidebarOpen(false); }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                    activeView === item.key
+                    !item.route && activeView === item.key
                       ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
                       : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
                   }`}
