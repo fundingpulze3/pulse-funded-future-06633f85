@@ -15,6 +15,7 @@ import {
   LogOut, HelpCircle, Home, PieChart, Menu, X, Plus,
   Settings, CreditCard, Filter
 } from "lucide-react";
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -106,8 +107,12 @@ const Dashboard = () => {
   const [stepFilter, setStepFilter] = useState<StepFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
-  const [activeView, setActiveView] = useState<SidebarTab>("overview");
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const searchParams = new URLSearchParams(window.location.search);
+  const activeView: SidebarTab = searchParams.get("view") === "affiliate" ? "affiliate" : "overview";
+  const setActiveView = (v: SidebarTab) => {
+    if (v === "affiliate") navigate("/dashboard?view=affiliate");
+    else navigate("/dashboard");
+  };
   const [certTemplates, setCertTemplates] = useState<Record<string, string>>({});
   const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
   const [credDialogPurchaseId, setCredDialogPurchaseId] = useState<string | null>(null);
@@ -371,12 +376,7 @@ const Dashboard = () => {
     { key: "completed", label: "Passed" },
   ];
 
-  const navItems: { key: SidebarTab | string; label: string; icon: any; route?: string }[] = [
-    { key: "overview", label: "Overview", icon: Home },
-    { key: "affiliate", label: "Affiliate", icon: Users },
-    { key: "certificates", label: "Certificates", icon: Award, route: "/dashboard/certificates" },
-    { key: "payouts", label: "Payouts", icon: Wallet, route: "/dashboard/payouts" },
-  ];
+  // navItems moved to DashboardSidebar
 
   const popupCredentials = credDialogPurchaseId
     ? credentials.filter(c => c.purchase_id === credDialogPurchaseId)
@@ -384,115 +384,17 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
-      {/* Top Bar */}
-      <header className="h-14 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,20%,6%)] flex items-center px-4 lg:px-6 z-50 sticky top-0">
-        <button
-          onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-          className="lg:hidden mr-3 p-1.5 rounded-lg hover:bg-[hsl(220,15%,12%)] transition-colors"
-        >
-          {mobileSidebarOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
-
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[hsl(207,90%,77%)] flex items-center justify-center">
-            <Zap size={16} className="text-white" />
-          </div>
-          <span className="font-display font-bold text-sm tracking-wide hidden sm:inline">FUNDING PULZE</span>
-        </div>
-
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/help")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
-            <HelpCircle size={16} />
-          </button>
-          <button onClick={() => navigate("/")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
-            <Settings size={16} />
-          </button>
-          <button onClick={async () => { await signOut(); navigate("/"); }} className="p-2 rounded-lg hover:bg-[hsl(0,70%,55%)]/10 text-[hsl(220,15%,50%)] hover:text-[hsl(0,70%,55%)] transition-colors">
-            <LogOut size={16} />
-          </button>
-        </div>
-      </header>
+      <DashboardSidebar profile={profile} />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Mobile sidebar overlay */}
-        <AnimatePresence>
-          {mobileSidebarOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-              onClick={() => setMobileSidebarOpen(false)}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Icon-only nav strip */}
-        <nav className="hidden lg:flex flex-col items-center w-16 bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)] py-4 gap-1 shrink-0">
-          <button
-            onClick={() => navigate("/#rules")}
-            className="w-10 h-10 rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] flex items-center justify-center text-white mb-4 transition-colors shadow-[0_0_16px_hsl(210,80%,55%,0.3)]"
-            title="New Challenge"
-          >
-            <Plus size={20} />
-          </button>
-
-          {navItems.map(item => (
-            <button
-              key={item.key}
-              onClick={() => item.route ? navigate(item.route) : setActiveView(item.key as SidebarTab)}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                !item.route && activeView === item.key
-                  ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
-                  : "text-[hsl(220,15%,40%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
-              }`}
-              title={item.label}
-            >
-              <item.icon size={20} />
-            </button>
-          ))}
-
-          <div className="flex-1" />
-
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(207,90%,77%)] to-[hsl(207,85%,65%)] flex items-center justify-center text-white font-bold text-xs cursor-pointer" title={profile?.display_name || "Profile"}>
-            {(profile?.display_name || "T")[0].toUpperCase()}
-          </div>
-        </nav>
-
         {/* Left Panel - Account List */}
+        {/* Spacer for desktop sidebar */}
+        <div className="hidden lg:block w-16 shrink-0" />
+
         <aside className={`
-          fixed lg:static z-50 lg:z-auto top-14 bottom-0 left-0
-          w-[320px] lg:w-[320px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
-          flex flex-col overflow-hidden transition-transform duration-300
-          ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+          hidden lg:flex w-[320px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
+          flex-col overflow-hidden
         `}>
-          {/* Mobile-only nav */}
-          <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)]">
-            <div className="flex flex-wrap gap-1">
-              <button
-                onClick={() => { navigate("/#rules"); setMobileSidebarOpen(false); }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
-              >
-                <Plus size={12} /> New Challenge
-              </button>
-              {navItems.map(item => (
-                <button
-                  key={item.key}
-                  onClick={() => { if (item.route) { navigate(item.route); } else { setActiveView(item.key as SidebarTab); } setMobileSidebarOpen(false); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                    !item.route && activeView === item.key
-                      ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
-                      : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
-                  }`}
-                >
-                  <item.icon size={12} />
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* User info */}
           <div className="p-4 border-b border-[hsl(220,15%,12%)]">
@@ -593,7 +495,7 @@ const Dashboard = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2, delay: i * 0.02 }}
-                    onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); setMobileSidebarOpen(false); }}
+                    onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); }}
                     className={`group cursor-pointer rounded-xl p-3.5 transition-all duration-200 border ${
                       isActive
                         ? "bg-[hsl(220,20%,9%)] border-[hsl(207,90%,77%)]/30 shadow-[0_0_20px_-5px_hsl(210,80%,55%,0.2)]"
