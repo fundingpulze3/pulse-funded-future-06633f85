@@ -360,8 +360,64 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(0,0%,100%)] text-[hsl(0,0%,10%)] flex light" data-theme="light" style={{"--background":"0 0% 98%","--foreground":"0 0% 5%","--card":"0 0% 100%","--card-foreground":"0 0% 5%","--popover":"0 0% 100%","--popover-foreground":"0 0% 5%","--primary":"0 0% 5%","--primary-foreground":"0 0% 100%","--secondary":"0 0% 94%","--secondary-foreground":"0 0% 10%","--muted":"0 0% 94%","--muted-foreground":"0 0% 40%","--accent":"0 0% 90%","--accent-foreground":"0 0% 5%","--destructive":"0 84% 60%","--destructive-foreground":"0 0% 100%","--border":"0 0% 88%","--input":"0 0% 88%","--ring":"0 0% 20%"} as React.CSSProperties}>
-      {/* ===== Left Sidebar ===== */}
-      <div className={`${sidebarCollapsed ? "w-16" : "w-56"} bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] flex flex-col shrink-0 transition-all duration-200`}>
+
+      {/* ===== Mobile Sidebar Overlay ===== */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSidebarOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-64 bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] flex flex-col animate-in slide-in-from-left duration-200">
+            {/* Brand */}
+            <div className="h-14 flex items-center justify-between px-4 border-b border-[hsl(0,0%,90%)]">
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg shrink-0" />
+                <div>
+                  <p className="font-display text-xs font-bold text-[hsl(0,0%,5%)] leading-tight">Funding Pulze</p>
+                  <p className="text-[9px] text-[hsl(0,0%,50%)]">Admin Panel</p>
+                </div>
+              </div>
+              <button onClick={() => setMobileSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-[hsl(0,0%,93%)]">
+                <XIcon size={18} className="text-[hsl(0,0%,45%)]" />
+              </button>
+            </div>
+            {/* Nav */}
+            <nav className="flex-1 py-3 px-2 space-y-4 overflow-auto">
+              {sidebarGroups.map(group => (
+                <div key={group.label}>
+                  <p className="text-[9px] font-semibold text-[hsl(0,0%,50%)] uppercase tracking-widest px-2 mb-1.5">{group.label}</p>
+                  <div className="space-y-0.5">
+                    {group.items.map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => { setTab(item.id); setMobileSidebarOpen(false); }}
+                        className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium transition-all ${
+                          tab === item.id
+                            ? "bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] shadow-sm"
+                            : "text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)]"
+                        }`}
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </nav>
+            {/* Bottom */}
+            <div className="border-t border-[hsl(0,0%,90%)] p-2 space-y-0.5">
+              <button onClick={() => { navigate("/"); setMobileSidebarOpen(false); }} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors">
+                <Home size={18} /><span>Back to Site</span>
+              </button>
+              <button onClick={() => { signOut(); navigate("/"); }} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors">
+                <LogOut size={18} /><span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Desktop Sidebar ===== */}
+      <div className={`${sidebarCollapsed ? "w-16" : "w-56"} bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] hidden md:flex flex-col shrink-0 transition-all duration-200`}>
         {/* Brand */}
         <div className="h-14 flex items-center gap-2 px-4 border-b border-[hsl(0,0%,90%)] cursor-pointer" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
           <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg shrink-0" />
