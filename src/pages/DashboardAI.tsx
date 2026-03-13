@@ -486,7 +486,7 @@ const DashboardAI = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask FP AI anything about your account..."
+                  placeholder="Ask PulzeX anything about your account..."
                   rows={1}
                   className="flex-1 bg-transparent text-sm resize-none border-0 outline-none placeholder:text-[hsl(220,15%,30%)] px-2 py-2 max-h-32 min-h-[36px]"
                   style={{ height: "36px" }}
