@@ -388,11 +388,12 @@ const Dashboard = () => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel - Account List */}
+        {/* Spacer for desktop sidebar */}
+        <div className="hidden lg:block w-16 shrink-0" />
+
         <aside className={`
-          fixed lg:static z-50 lg:z-auto top-14 bottom-0 left-0
-          w-[320px] lg:w-[320px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
-          flex flex-col overflow-hidden transition-transform duration-300
-          ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+          hidden lg:flex w-[320px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
+          flex-col overflow-hidden
         `}>
           {/* Mobile-only nav */}
           <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)]">
