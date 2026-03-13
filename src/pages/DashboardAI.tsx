@@ -452,7 +452,7 @@ const DashboardAI = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-bold text-[hsl(220,15%,40%)] mb-1 uppercase tracking-wider">
-                        {msg.role === "assistant" ? "FP AI" : profile?.display_name || "You"}
+                        {msg.role === "assistant" ? "PulzeX" : profile?.display_name || "You"}
                       </p>
                       <div className="prose prose-sm prose-invert max-w-none text-[hsl(0,0%,85%)] text-sm leading-relaxed [&_p]:mb-2 [&_ul]:mb-2 [&_ol]:mb-2 [&_li]:mb-0.5 [&_strong]:text-white [&_code]:bg-[hsl(220,15%,12%)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[hsl(207,90%,77%)] [&_pre]:bg-[hsl(220,15%,8%)] [&_pre]:rounded-xl [&_pre]:p-4">
                         <ReactMarkdown>{msg.content || "..."}</ReactMarkdown>
