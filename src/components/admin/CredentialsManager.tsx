@@ -130,7 +130,66 @@ const CredentialsManager = () => {
     fetchData();
   };
 
-  // Group credentials by challenge (deduplicate by label)
+  // Fetch purchases that are confirmed/completed but have no credentials assigned
+  const fetchPending = async () => {
+    // Get all confirmed/completed purchases
+    const { data: purchases } = await supabase
+      .from("challenge_purchases")
+      .select("id, challenge_id, user_id, payment_status, created_at, challenges(name, account_size, step_type)")
+      .in("payment_status", ["confirmed", "completed", "paid"])
+      .order("created_at", { ascending: false });
+    if (!purchases) return;
+    // Get all assigned credential purchase_ids
+    const { data: assignedCreds } = await supabase
+      .from("trading_credentials")
+      .select("purchase_id")
+      .not("purchase_id", "is", null);
+    const assignedPurchaseIds = new Set((assignedCreds || []).map(c => c.purchase_id));
+    const pending = purchases.filter(p => !assignedPurchaseIds.has(p.id));
+    setPendingPurchases(pending);
+  };
+
+  const openPendingDialog = async () => {
+    await fetchPending();
+    setPendingDialogOpen(true);
+  };
+
+  // Auto-assign credentials to all pending purchases
+  const assignAllPending = async () => {
+    setAssigning(true);
+    let assigned = 0;
+    let failed = 0;
+    for (const p of pendingPurchases) {
+      const { data: freeCred } = await supabase
+        .from("trading_credentials")
+        .select("id")
+        .eq("challenge_id", p.challenge_id)
+        .eq("is_assigned", false)
+        .limit(1)
+        .maybeSingle();
+      if (freeCred) {
+        const { error } = await supabase
+          .from("trading_credentials")
+          .update({
+            is_assigned: true,
+            assigned_to: p.user_id,
+            assigned_at: new Date().toISOString(),
+            purchase_id: p.id,
+          })
+          .eq("id", freeCred.id)
+          .eq("is_assigned", false);
+        if (!error) assigned++;
+        else failed++;
+      } else {
+        failed++;
+      }
+    }
+    toast.success(`${assigned} credentials assigned${failed > 0 ? `, ${failed} failed (no free creds)` : ""}`);
+    setAssigning(false);
+    fetchData();
+    await fetchPending();
+  };
+
   const grouped = (() => {
     const map = new Map<string, { challenge: Challenge; challengeIds: string[]; credentials: Credential[]; total: number; available: number; assigned: number }>();
     challenges.forEach(ch => {
