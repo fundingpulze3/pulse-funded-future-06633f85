@@ -25,6 +25,8 @@ import Dashboard from "@/components/admin/Dashboard";
 import CredentialsManager from "@/components/admin/CredentialsManager";
 import OrdersCMS from "@/components/admin/OrdersCMS";
 import UserCertificatesCMS from "@/components/admin/UserCertificatesCMS";
+import CertificateTemplateManager from "@/components/admin/CertificateTemplateManager";
+import UserPhaseManager from "@/components/admin/UserPhaseManager";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import SEOManager from "@/components/admin/SEOManager";
 import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
