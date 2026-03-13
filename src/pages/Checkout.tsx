@@ -113,7 +113,7 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState<{ code: string; type: string; value: number } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [payMethod, setPayMethod] = useState<"paypal" | "crypto" | "manual">("paypal");
+  const [payMethod, setPayMethod] = useState<"paypal" | "crypto">("paypal");
 
   let discount = 0;
   if (couponApplied) {
@@ -328,17 +328,6 @@ const Checkout = () => {
     setProcessing(false);
   };
 
-  const handleManual = async () => {
-    if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
-    if (!agreedTerms) { toast.error("Please agree to the terms."); return; }
-    setProcessing(true);
-    try {
-      await createPurchaseRecord();
-      toast.success("Order placed! Payment is being reviewed.");
-      navigate("/dashboard");
-    } catch (err) { toast.error("Something went wrong: " + String(err)); }
-    setProcessing(false);
-  };
 
 
   return (
@@ -561,7 +550,7 @@ const Checkout = () => {
             {/* Payment */}
             <div className="space-y-3">
               <div className="flex gap-1 p-1 rounded-xl bg-[hsl(230,20%,8%)] border border-[hsl(220,15%,15%)]">
-                {([["paypal", "PayPal", CreditCard], ["crypto", "Crypto", Bitcoin], ["manual", "Manual", Check]] as const).map(([key, label, Icon]) => (
+                {([["paypal", "PayPal & Cards", CreditCard], ["crypto", "Crypto", Bitcoin]] as const).map(([key, label, Icon]) => (
                   <button key={key} onClick={() => setPayMethod(key as any)}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                       payMethod === key
@@ -615,16 +604,6 @@ const Checkout = () => {
                 </div>
               )}
 
-              {payMethod === "manual" && (
-                <div className="space-y-2">
-                  <p className="text-xs text-[hsl(220,15%,45%)]">Pay via crypto or bank transfer, then click below. We'll verify within 24h.</p>
-                  <Button onClick={handleManual} disabled={processing || !agreedTerms || !billingFilled}
-                    className="w-full rounded-xl h-12 text-sm bg-[hsl(230,20%,15%)] hover:bg-[hsl(230,20%,20%)] text-white border border-[hsl(220,15%,20%)] font-semibold">
-                    {processing ? <><Loader2 size={14} className="animate-spin" /> Processing...</>
-                      : <><Check size={14} /> I Have Paid — ${total.toFixed(2)}</>}
-                  </Button>
-                </div>
-              )}
 
               {processing && (
                 <div className="flex items-center justify-center gap-2 text-xs text-[hsl(220,15%,45%)]">
