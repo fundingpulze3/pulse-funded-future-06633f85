@@ -156,6 +156,22 @@ Deno.serve(async (req) => {
         break
       }
 
+      case 'kyc_approved': {
+        const props = { ...baseProps, displayName: data.displayName || '' }
+        html = await renderAsync(React.createElement(KYCApprovedEmail, props))
+        text = await renderAsync(React.createElement(KYCApprovedEmail, props), { plainText: true })
+        subject = '✅ KYC Approved — You\'re Fully Verified!'
+        break
+      }
+
+      case 'kyc_rejected': {
+        const props = { ...baseProps, displayName: data.displayName || '', reviewNote: data.reviewNote || '' }
+        html = await renderAsync(React.createElement(KYCRejectedEmail, props))
+        text = await renderAsync(React.createElement(KYCRejectedEmail, props), { plainText: true })
+        subject = '⚠️ KYC Verification Update — Action Required'
+        break
+      }
+
       default:
         return new Response(JSON.stringify({ error: `Unknown email type: ${type}` }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
