@@ -107,8 +107,12 @@ const Dashboard = () => {
   const [stepFilter, setStepFilter] = useState<StepFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
-  const [activeView, setActiveView] = useState<SidebarTab>("overview");
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const searchParams = new URLSearchParams(window.location.search);
+  const activeView: SidebarTab = searchParams.get("view") === "affiliate" ? "affiliate" : "overview";
+  const setActiveView = (v: SidebarTab) => {
+    if (v === "affiliate") navigate("/dashboard?view=affiliate");
+    else navigate("/dashboard");
+  };
   const [certTemplates, setCertTemplates] = useState<Record<string, string>>({});
   const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
   const [credDialogPurchaseId, setCredDialogPurchaseId] = useState<string | null>(null);
