@@ -382,7 +382,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
-      {/* Top Bar */}
+      {/* Top Bar - simplified without nav */}
       <header className="h-14 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,20%,6%)] flex items-center px-4 lg:px-6 z-50 sticky top-0">
         <button
           onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
@@ -399,24 +399,6 @@ const Dashboard = () => {
         </div>
 
         <div className="flex-1" />
-
-        {/* Nav items - desktop */}
-        <nav className="hidden lg:flex items-center gap-1 mr-4">
-          {navItems.map(item => (
-            <button
-              key={item.key}
-              onClick={() => setActiveView(item.key)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeView === item.key
-                  ? "bg-[hsl(210,80%,55%)]/15 text-[hsl(210,80%,55%)]"
-                  : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
-              }`}
-            >
-              <item.icon size={14} />
-              {item.label}
-            </button>
-          ))}
-        </nav>
 
         <div className="flex items-center gap-2">
           <button onClick={() => navigate("/help")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
