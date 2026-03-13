@@ -13,13 +13,16 @@ import {
   Target, Activity, Shield, ArrowUpRight, ArrowDownRight,
   Eye, EyeOff, Percent, Zap, Key, LayoutDashboard, ChevronDown,
   LogOut, HelpCircle, Home, PieChart, Menu, X, Plus,
-  Settings, CreditCard
+  Settings, CreditCard, Filter
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell
 } from "recharts";
+import TradingObjectives from "@/components/dashboard/TradingObjectives";
+import TradingCalendar from "@/components/dashboard/TradingCalendar";
+import SymbolsPieChart from "@/components/dashboard/SymbolsPieChart";
 
 interface Profile {
   referral_code: string | null;
@@ -71,7 +74,9 @@ interface TradingCredential {
 const REFERRAL_DOMAIN = "https://fundingpulze.com";
 
 type AccountFilter = "all" | "1-step" | "2-step" | "ongoing" | "breached" | "funded" | "completed";
-type SidebarTab = "overview" | "affiliate" | "certificates" | "payout";
+type SidebarTab = "overview" | "affiliate";
+type StepFilter = "all" | "1-step" | "2-step";
+type StatusFilter = "all" | "ongoing" | "funded" | "breached" | "completed";
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -79,6 +84,15 @@ const Dashboard = () => {
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
+    // Add noindex meta tag
+    let meta = document.querySelector('meta[name="robots"]') as HTMLMetaElement;
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "robots";
+      document.head.appendChild(meta);
+    }
+    meta.content = "noindex, nofollow";
+    return () => { if (meta) meta.remove(); };
   }, []);
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -89,13 +103,16 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  const [accountFilter, setAccountFilter] = useState<AccountFilter>("all");
+  const [stepFilter, setStepFilter] = useState<StepFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [activeView, setActiveView] = useState<SidebarTab>("overview");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [certTemplates, setCertTemplates] = useState<Record<string, string>>({});
   const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
   const [credDialogPurchaseId, setCredDialogPurchaseId] = useState<string | null>(null);
+  const [stepDropdownOpen, setStepDropdownOpen] = useState(false);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -178,30 +195,20 @@ const Dashboard = () => {
 
   const filteredPurchases = useMemo(() => {
     return purchases.filter(p => {
-      if (accountFilter === "all") return true;
-      if (accountFilter === "1-step") return getStepType(p).includes("1");
-      if (accountFilter === "2-step") return getStepType(p).includes("2");
-      return getAccountStatus(p) === accountFilter;
+      // Step filter
+      if (stepFilter === "1-step" && !getStepType(p).includes("1")) return false;
+      if (stepFilter === "2-step" && !getStepType(p).includes("2")) return false;
+      // Status filter
+      if (statusFilter !== "all" && getAccountStatus(p) !== statusFilter) return false;
+      return true;
     });
-  }, [purchases, accountFilter]);
-
-  const filterCounts = useMemo(() => ({
-    all: purchases.length,
-    "1-step": purchases.filter(p => getStepType(p).includes("1")).length,
-    "2-step": purchases.filter(p => getStepType(p).includes("2")).length,
-    ongoing: purchases.filter(p => getAccountStatus(p) === "ongoing").length,
-    breached: purchases.filter(p => getAccountStatus(p) === "breached").length,
-    funded: purchases.filter(p => getAccountStatus(p) === "funded").length,
-    completed: purchases.filter(p => getAccountStatus(p) === "completed").length,
-  }), [purchases]);
+  }, [purchases, stepFilter, statusFilter]);
 
   const activeAccountStats = useMemo(() => {
     const activePurchase = selectedAccount ? purchases.find(p => p.id === selectedAccount) : purchases[0];
     if (!activePurchase) return null;
-    // Find the credential linked to this specific purchase
     const purchaseCred = credentials.find(c => c.purchase_id === activePurchase.id);
     const accountLogin = purchaseCred?.mt5_login || null;
-    // Find stats certificate matching this purchase (by purchase_id or account_number)
     const matchedCert = userCertificates.find(c =>
       c.purchase_id === activePurchase.id && c.stats && Object.keys(c.stats).length > 0
     ) || (accountLogin ? userCertificates.find(c =>
@@ -233,6 +240,7 @@ const Dashboard = () => {
       tradesLong: stats.tradesLong ?? 0, tradesShort: stats.tradesShort ?? 0,
       signalTrades: stats.signalTrades ?? 0, maxConsecutiveProfit: stats.maxConsecutiveProfit ?? 0,
       maxConsecutiveLoss: stats.maxConsecutiveLoss ?? 0, drawdownDetailChart: stats.drawdownDetailChart,
+      dailyDDPercent: stats.dailyDrawdownPercent ?? stats.maxDailyDrawdownPercent ?? 0,
     };
   }, [purchases, userCertificates, selectedAccount, credentials]);
 
@@ -313,11 +321,6 @@ const Dashboard = () => {
     : 0;
   const ddUsed = Number(activeAccountStats?.maxDrawdownPercent || 0);
 
-  // Get credential for a purchase
-  const getCredentialForPurchase = (purchaseId: string) => {
-    return credentials.find(c => c.purchase_id === purchaseId) || null;
-  };
-
   const openCredentialsPopup = (purchaseId: string) => {
     setCredDialogPurchaseId(purchaseId);
     setCredentialsDialogOpen(true);
@@ -354,24 +357,25 @@ const Dashboard = () => {
     completed: { label: "Passed", color: "text-[hsl(142,60%,50%)]", bg: "bg-[hsl(142,60%,50%)]/15" },
   };
 
-  const filterTabs: { key: AccountFilter; label: string }[] = [
+  const stepOptions: { key: StepFilter; label: string }[] = [
+    { key: "all", label: "All" },
+    { key: "1-step", label: "1-Step" },
+    { key: "2-step", label: "2-Step" },
+  ];
+
+  const statusOptions: { key: StatusFilter; label: string }[] = [
     { key: "all", label: "All" },
     { key: "ongoing", label: "Active" },
     { key: "funded", label: "Funded" },
     { key: "breached", label: "Not Passed" },
     { key: "completed", label: "Passed" },
-    { key: "1-step", label: "1-Step" },
-    { key: "2-step", label: "2-Step" },
   ];
 
   const navItems: { key: SidebarTab; label: string; icon: any }[] = [
     { key: "overview", label: "Overview", icon: Home },
-    { key: "certificates", label: "Certificates", icon: Award },
-    { key: "payout", label: "Payouts", icon: Wallet },
     { key: "affiliate", label: "Affiliate", icon: Users },
   ];
 
-  // Get all credentials for the popup
   const popupCredentials = credDialogPurchaseId
     ? credentials.filter(c => c.purchase_id === credDialogPurchaseId)
     : [];
@@ -425,7 +429,6 @@ const Dashboard = () => {
 
         {/* Icon-only nav strip */}
         <nav className="hidden lg:flex flex-col items-center w-16 bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)] py-4 gap-1 shrink-0">
-          {/* New Challenge + button */}
           <button
             onClick={() => navigate("/#rules")}
             className="w-10 h-10 rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] flex items-center justify-center text-white mb-4 transition-colors shadow-[0_0_16px_hsl(210,80%,55%,0.3)]"
@@ -451,7 +454,6 @@ const Dashboard = () => {
 
           <div className="flex-1" />
 
-          {/* User avatar at bottom */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(207,90%,77%)] to-[hsl(207,85%,65%)] flex items-center justify-center text-white font-bold text-xs cursor-pointer" title={profile?.display_name || "Profile"}>
             {(profile?.display_name || "T")[0].toUpperCase()}
           </div>
@@ -503,25 +505,69 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Filter pills */}
-          <div className="px-3 py-3 border-b border-[hsl(220,15%,12%)]">
-            <div className="flex flex-wrap gap-1.5">
-              {filterTabs.map(f => (
-                <button
-                  key={f.key}
-                  onClick={() => setAccountFilter(f.key)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                    accountFilter === f.key
-                      ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)] shadow-[0_0_8px_hsl(210,80%,55%,0.15)]"
-                      : "text-[hsl(220,15%,45%)] hover:text-[hsl(0,0%,80%)] hover:bg-[hsl(220,15%,10%)]"
-                  }`}
-                >
-                  {f.label}
-                  {filterCounts[f.key] > 0 && (
-                    <span className="ml-1 text-[10px] opacity-70">({filterCounts[f.key]})</span>
-                  )}
-                </button>
-              ))}
+          {/* Dropdown Filters */}
+          <div className="px-3 py-3 border-b border-[hsl(220,15%,12%)] space-y-2">
+            {/* All Accounts label */}
+            <div className="flex items-center gap-2 text-[11px] text-[hsl(220,15%,45%)] font-medium uppercase tracking-wider px-1">
+              <Home size={12} /> Home
+            </div>
+
+            {/* Step Type Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => { setStepDropdownOpen(!stepDropdownOpen); setStatusDropdownOpen(false); }}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] hover:border-[hsl(220,15%,20%)] transition-colors text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <Filter size={13} className="text-[hsl(220,15%,40%)]" />
+                  <span>{stepOptions.find(o => o.key === stepFilter)?.label || "All"}</span>
+                </div>
+                <ChevronDown size={14} className={`text-[hsl(220,15%,40%)] transition-transform ${stepDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              {stepDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[hsl(220,20%,8%)] border border-[hsl(220,15%,15%)] rounded-xl overflow-hidden z-10 shadow-xl">
+                  {stepOptions.map(o => (
+                    <button
+                      key={o.key}
+                      onClick={() => { setStepFilter(o.key); setStepDropdownOpen(false); }}
+                      className={`w-full text-left px-3 py-2.5 text-sm hover:bg-[hsl(220,15%,12%)] transition-colors ${
+                        stepFilter === o.key ? "text-[hsl(207,90%,77%)] bg-[hsl(207,90%,77%)]/5" : "text-[hsl(0,0%,80%)]"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Status Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => { setStatusDropdownOpen(!statusDropdownOpen); setStepDropdownOpen(false); }}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] hover:border-[hsl(220,15%,20%)] transition-colors text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <Filter size={13} className="text-[hsl(220,15%,40%)]" />
+                  <span>{statusOptions.find(o => o.key === statusFilter)?.label || "All"}</span>
+                </div>
+                <ChevronDown size={14} className={`text-[hsl(220,15%,40%)] transition-transform ${statusDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              {statusDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[hsl(220,20%,8%)] border border-[hsl(220,15%,15%)] rounded-xl overflow-hidden z-10 shadow-xl">
+                  {statusOptions.map(o => (
+                    <button
+                      key={o.key}
+                      onClick={() => { setStatusFilter(o.key); setStatusDropdownOpen(false); }}
+                      className={`w-full text-left px-3 py-2.5 text-sm hover:bg-[hsl(220,15%,12%)] transition-colors ${
+                        statusFilter === o.key ? "text-[hsl(207,90%,77%)] bg-[hsl(207,90%,77%)]/5" : "text-[hsl(0,0%,80%)]"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -552,7 +598,6 @@ const Dashboard = () => {
                         : "bg-[hsl(220,20%,7%)] border-[hsl(220,15%,12%)] hover:bg-[hsl(220,20%,8%)] hover:border-[hsl(220,15%,18%)]"
                     }`}
                   >
-                    {/* Header row */}
                     <div className="flex items-center justify-between mb-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -573,7 +618,6 @@ const Dashboard = () => {
                       </span>
                     </div>
 
-                    {/* Stats row */}
                     <div className="flex items-center gap-4 mt-1">
                       <div className="flex items-center gap-1.5">
                         <Activity size={12} className="text-[hsl(220,15%,35%)]" />
@@ -595,7 +639,6 @@ const Dashboard = () => {
                       </div>
                     </div>
 
-                    {/* Actions - only on active */}
                     {isActive && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -670,6 +713,18 @@ const Dashboard = () => {
                       </p>
                     </div>
                   </div>
+
+                  {/* Trading Objectives */}
+                  <TradingObjectives
+                    profitTarget={activeAccountStats.purchase.challenges?.profit_target || "8"}
+                    dailyDrawdown={activeAccountStats.purchase.challenges?.daily_drawdown || "5"}
+                    maxDrawdown={activeAccountStats.purchase.challenges?.max_drawdown || "10"}
+                    currentProfit={Number(activeAccountStats.profit)}
+                    currentDailyDD={Number(activeAccountStats.dailyDDPercent)}
+                    currentMaxDD={ddUsed}
+                    accountSize={activeAccountStats.accountSize}
+                    status={activeAccountStats.purchase.status}
+                  />
 
                   {/* Balance Chart */}
                   <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
@@ -773,6 +828,16 @@ const Dashboard = () => {
                     </div>
                   )}
 
+                  {/* Daily PnL Calendar */}
+                  <TradingCalendar
+                    balanceChart={activeAccountStats.balanceChart}
+                    profitByDay={activeAccountStats.profitByDay}
+                    symbols={activeAccountStats.symbols}
+                    totalTrades={activeAccountStats.totalTrades}
+                    profit={Number(activeAccountStats.profit)}
+                    accountSize={activeAccountStats.accountSize}
+                  />
+
                   {/* Trading Metrics Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                     {[
@@ -862,7 +927,10 @@ const Dashboard = () => {
                     </InfoCard>
                   </div>
 
-                  {/* Daily Profit */}
+                  {/* Symbols Pie Chart */}
+                  <SymbolsPieChart symbols={activeAccountStats.symbols} />
+
+                  {/* Daily Profit by Day of Week */}
                   {dailyProfitData.length > 0 && (
                     <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
                       <h3 className="font-display font-bold text-sm mb-4">Profit by Day of Week</h3>
@@ -884,19 +952,7 @@ const Dashboard = () => {
                     </div>
                   )}
 
-                  {/* Challenge Rules */}
-                  {activeAccountStats.purchase.challenges && (
-                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                      <h3 className="font-display font-bold text-sm mb-4">Challenge Rules</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <RuleCard label="Profit Target" value={activeAccountStats.purchase.challenges.profit_target} current={`${profitPercent >= 0 ? "+" : ""}${profitPercent.toFixed(2)}%`} status={profitPercent >= parseFloat(activeAccountStats.purchase.challenges.profit_target) ? "passed" : "in_progress"} />
-                        <RuleCard label="Daily Drawdown" value={activeAccountStats.purchase.challenges.daily_drawdown} current={`${ddUsed.toFixed(2)}%`} status={ddUsed < parseFloat(activeAccountStats.purchase.challenges.daily_drawdown) ? "safe" : "breached"} />
-                        <RuleCard label="Max Drawdown" value={activeAccountStats.purchase.challenges.max_drawdown} current={`${ddUsed.toFixed(2)}%`} status={ddUsed < parseFloat(activeAccountStats.purchase.challenges.max_drawdown) ? "safe" : "breached"} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Symbols */}
+                  {/* Symbols Table */}
                   {activeAccountStats.symbols && activeAccountStats.symbols.length > 0 && (
                     <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
                       <h3 className="font-display font-bold text-sm mb-4">Symbols Traded</h3>
@@ -1031,96 +1087,6 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* ═══ CERTIFICATES ═══ */}
-              {activeView === "certificates" && (
-                <div className="space-y-5">
-                  <h1 className="font-display text-xl font-bold">Certificates</h1>
-                  {userCertificates.filter(c => c.certificate_type !== "latest_stats").length === 0 ? (
-                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-10 text-center">
-                      <Award size={32} className="mx-auto mb-3 text-[hsl(220,15%,25%)]" />
-                      <p className="text-sm text-[hsl(220,15%,45%)]">No certificates earned yet.</p>
-                      <p className="text-xs text-[hsl(220,15%,35%)] mt-1">Complete challenges to earn certificates!</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {userCertificates.filter(c => c.certificate_type !== "latest_stats").map((cert) => {
-                        const typeColors: Record<string, string> = {
-                          phase1_passed: "border-[hsl(207,90%,77%)]/30",
-                          phase2_passed: "border-[hsl(180,60%,50%)]/30",
-                          funded: "border-[hsl(142,60%,50%)]/30",
-                          payout: "border-purple-500/30",
-                        };
-                        const bgImage = certTemplates[cert.certificate_type];
-                        return (
-                          <div key={cert.id} className={`rounded-xl overflow-hidden bg-[hsl(220,20%,7%)] border ${typeColors[cert.certificate_type] || "border-[hsl(220,15%,12%)]"} hover:shadow-lg transition-shadow`}>
-                            {bgImage ? (
-                              <div className="relative h-48">
-                                <img src={bgImage} alt={cert.title} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] bg-black/20 px-5 py-2 rounded-lg backdrop-blur-sm">
-                                    {profile?.display_name || "Trader"}
-                                  </span>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="h-32 bg-gradient-to-br from-[hsl(207,90%,77%)]/20 to-[hsl(207,85%,60%)]/10 flex items-center justify-center">
-                                <div className="text-center">
-                                  <Award size={28} className="mx-auto mb-1 text-[hsl(207,90%,77%)]" />
-                                  <p className="text-lg font-bold text-white">{profile?.display_name || "Trader"}</p>
-                                </div>
-                              </div>
-                            )}
-                            <div className="p-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-display font-bold text-sm">{cert.title}</h3>
-                              </div>
-                              <span className="text-xs text-[hsl(220,15%,45%)]">{cert.certificate_type.replace(/_/g, " ")}</span>
-                              {cert.stats && Object.keys(cert.stats).length > 0 && (
-                                <div className="grid grid-cols-2 gap-2 mt-3">
-                                  {cert.stats.balance != null && <MiniStat label="Balance" value={`$${Number(cert.stats.balance).toLocaleString()}`} />}
-                                  {cert.stats.profit != null && <MiniStat label="Profit" value={`$${Number(cert.stats.profit).toFixed(2)}`} positive={Number(cert.stats.profit) >= 0} />}
-                                </div>
-                              )}
-                              <p className="text-[10px] text-[hsl(220,15%,35%)] mt-3">{new Date(cert.created_at).toLocaleDateString()}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ═══ PAYOUT ═══ */}
-              {activeView === "payout" && (
-                <div className="space-y-5">
-                  <h1 className="font-display text-xl font-bold">Payout</h1>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <DashStatCard icon={DollarSign} value={`$${totalEarnings.toFixed(2)}`} label="Lifetime Earnings" highlight />
-                    <DashStatCard icon={Clock} value={`$${pendingEarnings.toFixed(2)}`} label="Pending Payout" />
-                  </div>
-                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                    <h2 className="font-display font-bold text-sm mb-4">Payout Information</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {[
-                        { icon: Percent, label: "Profit Split", value: "90%" },
-                        { icon: Target, label: "Scaling", value: "Up to $1M" },
-                        { icon: Calendar, label: "Min Trading Days", value: "7 Days" },
-                        { icon: Clock, label: "Processing Time", value: "24 – 48 hrs" },
-                      ].map(item => (
-                        <div key={item.label} className="flex items-center gap-3 p-4 rounded-xl bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,14%)]">
-                          <item.icon size={18} className="text-[hsl(207,90%,77%)] shrink-0" />
-                          <div><p className="text-[11px] text-[hsl(220,15%,45%)]">{item.label}</p><p className="text-base font-bold">{item.value}</p></div>
-                        </div>
-                      ))}
-                    </div>
-                    <Button className="mt-5 rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] text-white" onClick={() => navigate("/help")}>
-                      Contact Support
-                    </Button>
-                  </div>
-                </div>
-              )}
-
             </motion.div>
           </AnimatePresence>
         </main>
@@ -1203,33 +1169,6 @@ const InfoCard = ({ title, children }: { title: string; children: React.ReactNod
   <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-4">
     <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-3 font-semibold">{title}</p>
     <div className="space-y-2.5">{children}</div>
-  </div>
-);
-
-const RuleCard = ({ label, value, current, status }: { label: string; value: string; current: string; status: string }) => {
-  const statusColors: Record<string, string> = {
-    passed: "text-[hsl(142,60%,50%)] bg-[hsl(142,60%,50%)]/10 border-[hsl(142,60%,50%)]/20",
-    safe: "text-[hsl(142,60%,50%)] bg-[hsl(142,60%,50%)]/10 border-[hsl(142,60%,50%)]/20",
-    in_progress: "text-[hsl(207,90%,77%)] bg-[hsl(207,90%,77%)]/10 border-[hsl(207,90%,77%)]/20",
-    breached: "text-[hsl(0,70%,55%)] bg-[hsl(0,70%,55%)]/10 border-[hsl(0,70%,55%)]/20",
-  };
-  const statusLabels: Record<string, string> = { passed: "Passed ✓", safe: "Safe ✓", in_progress: "In Progress", breached: "Breached ✕" };
-  return (
-    <div className="p-4 rounded-xl bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,14%)]">
-      <p className="text-xs text-[hsl(220,15%,45%)] mb-1">{label}</p>
-      <p className="text-lg font-bold mb-2">Target: {value}</p>
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-mono">Current: {current}</span>
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${statusColors[status] || ""}`}>{statusLabels[status] || status}</span>
-      </div>
-    </div>
-  );
-};
-
-const MiniStat = ({ label, value, positive }: { label: string; value: any; positive?: boolean }) => (
-  <div className="bg-[hsl(220,15%,10%)] rounded-lg px-3 py-2">
-    <p className="text-[10px] text-[hsl(220,15%,40%)]">{label}</p>
-    <p className={`text-sm font-bold ${positive === true ? "text-[hsl(142,60%,50%)]" : positive === false ? "text-[hsl(0,70%,55%)]" : ""}`}>{value}</p>
   </div>
 );
 
