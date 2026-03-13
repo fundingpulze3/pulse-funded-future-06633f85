@@ -678,9 +678,19 @@ const Dashboard = () => {
               {activeView === "overview" && activeAccountStats && (
                 <>
                   {/* Account Overview Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                      <h1 className="font-display text-lg font-bold">Account Overview</h1>
+                      <div className="flex items-center gap-2">
+                        <h1 className="font-display text-lg font-bold">Account Overview</h1>
+                        {(() => {
+                          const rank = getRank(activeAccountStats.purchase);
+                          return (
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-md bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] ${rank.color}`}>
+                              {rank.emoji} {rank.label}
+                            </span>
+                          );
+                        })()}
+                      </div>
                       <p className="text-[11px] text-[hsl(220,15%,45%)]">
                         {activeAccountStats.accountNumber || activeAccountStats.purchase.id.slice(0, 8)} · {new Date(activeAccountStats.purchase.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </p>
