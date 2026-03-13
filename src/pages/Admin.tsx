@@ -816,7 +816,7 @@ const Admin = () => {
                   </div>
                   <Button size="sm" variant="outline" onClick={() => exportCSV(utmSourceStats, "utm-sources")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
                 </div>
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]">
                   <thead><tr className="bg-[hsl(0,0%,97%)] text-[hsl(0,0%,45%)] text-xs uppercase tracking-wider">
                     <th className="text-left px-5 py-3 font-medium">Source</th>
                     <th className="text-left px-5 py-3 font-medium">Visits</th>
