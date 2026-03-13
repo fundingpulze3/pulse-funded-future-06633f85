@@ -15,6 +15,7 @@ import {
   LogOut, HelpCircle, Home, PieChart, Menu, X, Plus,
   Settings, CreditCard, Filter
 } from "lucide-react";
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
