@@ -1,6 +1,7 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
 import { Body, Container, Head, Heading, Html, Img, Preview, Section, Text, Button } from 'npm:@react-email/components@0.0.22'
+import { SocialFooter } from './social-footer.tsx'
 
 interface Props { siteName: string; siteUrl: string; recipient: string; displayName: string; reviewNote: string }
 
@@ -25,6 +26,7 @@ export const KYCRejectedEmail = ({ siteName = 'Funding Pulze', siteUrl = 'https:
         <Text style={text}>Common reasons for rejection include unclear document photos, mismatched information, or incomplete video verification. Please ensure all documents are clearly visible and up to date.</Text>
         <Button style={button} href={`${siteUrl}/dashboard/kyc`}>Resubmit KYC</Button>
         <Text style={footer}>Need help? Reply to this email or contact our support team.</Text>
+        <SocialFooter />
       </Container>
     </Body>
   </Html>

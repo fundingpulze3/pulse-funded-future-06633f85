@@ -1,6 +1,7 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
 import { Body, Container, Head, Heading, Html, Img, Preview, Section, Text, Button } from 'npm:@react-email/components@0.0.22'
+import { SocialFooter } from './social-footer.tsx'
 
 interface Props { siteName: string; siteUrl: string; recipient: string; accountNumber: string; profit: string; profitPercent: string }
 
@@ -24,6 +25,7 @@ export const Phase2PassedEmail = ({ siteName = 'Funding Pulze', siteUrl = 'https
         <Text style={text}>Your funded account credentials will be set up shortly. You'll receive another email with your new trading details.</Text>
         <Button style={button} href={`${siteUrl}/dashboard`}>View Your Dashboard</Button>
         <Text style={footer}>Welcome to the funded traders club! 💪</Text>
+        <SocialFooter />
       </Container>
     </Body>
   </Html>

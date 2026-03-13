@@ -1,6 +1,7 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
 import { Body, Container, Head, Heading, Html, Img, Preview, Section, Text, Button } from 'npm:@react-email/components@0.0.22'
+import { SocialFooter } from './social-footer.tsx'
 
 interface Props { siteName: string; siteUrl: string; recipient: string; mt5Login: string; mt5Password: string; mt5Server: string; challengeName: string; accountSize: string }
 
@@ -23,6 +24,7 @@ export const CredentialsEmail = ({ siteName = 'Funding Pulze', siteUrl = 'https:
         <Text style={text}>Download MetaTrader 5 and enter these credentials to start trading. Remember to follow the challenge rules — we're rooting for you!</Text>
         <Button style={button} href={`${siteUrl}/dashboard`}>Go to Dashboard</Button>
         <Text style={footer}>Keep these credentials safe. If you need help, reply to this email or contact our 24/7 support.</Text>
+        <SocialFooter />
       </Container>
     </Body>
   </Html>

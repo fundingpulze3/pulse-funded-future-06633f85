@@ -1,6 +1,7 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
 import { Body, Container, Head, Heading, Html, Img, Preview, Section, Text, Button } from 'npm:@react-email/components@0.0.22'
+import { SocialFooter } from './social-footer.tsx'
 
 interface Props { siteName: string; siteUrl: string; recipient: string; accountNumber: string; breachValue: string; limit: string }
 
@@ -24,6 +25,7 @@ export const MaxDDBreachEmail = ({ siteName = 'Funding Pulze', siteUrl = 'https:
         <Text style={text}>Don't give up! Many successful traders fail multiple times before passing. Try again with a fresh challenge.</Text>
         <Button style={button} href={siteUrl}>Start a New Challenge</Button>
         <Text style={footer}>If you believe this is an error, please contact support immediately.</Text>
+        <SocialFooter />
       </Container>
     </Body>
   </Html>
