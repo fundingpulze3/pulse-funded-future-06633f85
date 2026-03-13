@@ -386,14 +386,14 @@ const Dashboard = () => {
     <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
       <DashboardSidebar profile={profile} />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         {/* Left Panel - Account List */}
         {/* Spacer for desktop sidebar */}
         <div className="hidden lg:block w-16 shrink-0" />
 
         <aside className={`
           hidden lg:flex w-[320px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
-          flex-col overflow-hidden
+          flex-col sticky top-14 self-start h-[calc(100vh-3.5rem)]
         `}>
 
           {/* User info */}
@@ -594,7 +594,7 @@ const Dashboard = () => {
         </aside>
 
         {/* Right Panel - Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 min-w-0">
           <AnimatePresence>
             <motion.div
               key={activeView + (selectedAccount || "")}
