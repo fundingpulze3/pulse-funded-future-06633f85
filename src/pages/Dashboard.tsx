@@ -536,7 +536,7 @@ const Dashboard = () => {
                 const isActive = selectedAccount === p.id;
                 const status = getAccountStatus(p);
                 const sc = statusConfig[status] || statusConfig.ongoing;
-                const cred = credentials.find(c => c.challenge_id === p.challenge_id);
+                const cred = credentials.find(c => c.purchase_id === p.id);
                 const challengeName = p.challenges?.name || "Account";
                 const stepType = p.challenges?.step_type || "—";
                 const accountNumber = cred?.mt5_login || p.id.slice(0, 8);
