@@ -583,16 +583,23 @@ const Checkout = () => {
                     <Button onClick={() => navigate("/auth")} className="w-full rounded-xl h-12 text-sm bg-[hsl(230,60%,55%)] hover:bg-[hsl(230,60%,50%)] text-white font-semibold">
                       Sign in to Continue
                     </Button>
-                  ) : !agreedTerms || !billingFilled ? (
-                    <Button disabled className="w-full rounded-xl h-12 text-sm bg-[hsl(230,60%,55%)]/50 text-white/50 font-semibold cursor-not-allowed">
-                      {!billingFilled ? "Fill billing details" : "Accept terms to continue"}
-                    </Button>
+                  ) : paypalLoadError ? (
+                    <div className="rounded-xl border border-[hsl(0,70%,35%)] bg-[hsl(0,40%,10%)] px-3 py-2 text-xs text-[hsl(0,70%,70%)]">
+                      {paypalLoadError}
+                    </div>
                   ) : !paypalReady ? (
                     <div className="flex items-center justify-center py-4 gap-2 text-[hsl(220,15%,45%)] text-sm">
                       <Loader2 size={14} className="animate-spin" /> Loading PayPal...
                     </div>
                   ) : (
-                    <div ref={paypalRef} className="min-h-[48px]" />
+                    <div className="space-y-2">
+                      <div ref={paypalRef} className="min-h-[48px]" />
+                      {(!agreedTerms || !billingFilled) && (
+                        <p className="text-[10px] text-[hsl(220,15%,45%)] text-center">
+                          Complete billing details and accept terms before clicking PayPal.
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
