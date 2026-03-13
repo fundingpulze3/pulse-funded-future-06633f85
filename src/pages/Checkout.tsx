@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,9 +14,9 @@ import {
   CreditCard,
   Bitcoin,
   ExternalLink,
+  ArrowLeft,
 } from "lucide-react";
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
-import Navbar from "@/components/Navbar";
 
 declare global {
   interface Window {
@@ -29,125 +29,86 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
   const paypalRef = useRef<HTMLDivElement>(null);
+  const purchaseIdRef = useRef<string | null>(null);
   const [paypalReady, setPaypalReady] = useState(false);
-  const [purchaseId, setPurchaseId] = useState<string | null>(null);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark);
-  }, [isDark]);
+  const [processing, setProcessing] = useState(false);
 
   const stepType = searchParams.get("step") || "2-step";
   const accountSize = searchParams.get("size") || "$50K";
   const basePrice = Number(searchParams.get("price") || "289");
 
   const [couponCode, setCouponCode] = useState("");
-  const [couponApplied, setCouponApplied] = useState<{
-    code: string;
-    type: string;
-    value: number;
-  } | null>(null);
+  const [couponApplied, setCouponApplied] = useState<{ code: string; type: string; value: number } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [processing, setProcessing] = useState(false);
-
-  const subtotal = basePrice;
+  const [payMethod, setPayMethod] = useState<"paypal" | "crypto" | "manual">("paypal");
 
   let discount = 0;
   if (couponApplied) {
-    if (couponApplied.type === "percentage") {
-      discount = Math.round(subtotal * (couponApplied.value / 100));
-    } else {
-      discount = Math.min(couponApplied.value, subtotal);
-    }
+    discount = couponApplied.type === "percentage"
+      ? Math.round(basePrice * (couponApplied.value / 100))
+      : Math.min(couponApplied.value, basePrice);
   }
-  const total = subtotal - discount;
+  const total = basePrice - discount;
+  const totalRef = useRef(total);
+  totalRef.current = total;
 
   // PayPal SDK init
   useEffect(() => {
     const interval = setInterval(() => {
-      if (window.paypal) {
-        setPaypalReady(true);
-        clearInterval(interval);
-      }
+      if (window.paypal) { setPaypalReady(true); clearInterval(interval); }
     }, 500);
     return () => clearInterval(interval);
   }, []);
 
-  // Render PayPal buttons
+  const createPurchaseRecord = useCallback(async () => {
+    if (!user) throw new Error("Not signed in");
+    const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
+    const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
+    const { data: challenge } = await supabase
+      .from("challenges").select("id")
+      .eq("step_type", dbStepType).eq("account_size", sizeNum).eq("is_active", true).maybeSingle();
+    if (!challenge) throw new Error("Challenge not found");
+    const utm = getStoredUtm();
+    const { data: purchase, error } = await supabase
+      .from("challenge_purchases")
+      .insert({
+        user_id: user.id, challenge_id: challenge.id, amount_paid: totalRef.current,
+        payment_status: "pending", status: "pending",
+        utm_source: utm.utm_source || null, utm_medium: utm.utm_medium || null,
+        utm_campaign: utm.utm_campaign || null, utm_term: utm.utm_term || null,
+        utm_content: utm.utm_content || null,
+      }).select().single();
+    if (error || !purchase) throw new Error("Failed to create order");
+    return purchase;
+  }, [user, accountSize, stepType]);
+
+  // Render PayPal buttons — NO purchaseId in deps to avoid destroying buttons mid-flow
   useEffect(() => {
     if (!paypalReady || !paypalRef.current || !user) return;
-
-    // Clear previous buttons
     paypalRef.current.innerHTML = "";
-
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
     window.paypal.Buttons({
-      style: {
-        layout: "vertical",
-        color: "black",
-        shape: "rect",
-        label: "pay",
-        height: 48,
-      },
+      style: { layout: "vertical", color: "black", shape: "rect", label: "pay", height: 40 },
       createOrder: async () => {
-        // First create the DB purchase record
-        const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
-        const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
-
-        const { data: challenge } = await supabase
-          .from("challenges")
-          .select("id")
-          .eq("step_type", dbStepType)
-          .eq("account_size", sizeNum)
-          .eq("is_active", true)
-          .maybeSingle();
-
-        if (!challenge) throw new Error("Challenge not found");
-
-        const utm = getStoredUtm();
-        const { data: purchase, error } = await supabase
-          .from("challenge_purchases")
-          .insert({
-            user_id: user.id,
-            challenge_id: challenge.id,
-            amount_paid: total,
-            payment_status: "pending",
-            status: "pending",
-            utm_source: utm.utm_source || null,
-            utm_medium: utm.utm_medium || null,
-            utm_campaign: utm.utm_campaign || null,
-            utm_term: utm.utm_term || null,
-            utm_content: utm.utm_content || null,
-          })
-          .select()
-          .single();
-
-        if (error || !purchase) throw new Error("Failed to create order");
-        setPurchaseId(purchase.id);
-
-        // Create PayPal order via edge function
+        const purchase = await createPurchaseRecord();
+        purchaseIdRef.current = purchase.id;
         const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch(
           `https://${projectId}.supabase.co/functions/v1/verify-paypal-order`,
           {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${session!.access_token}`,
-              "Content-Type": "application/json",
-            },
+            headers: { Authorization: `Bearer ${session!.access_token}`, "Content-Type": "application/json" },
             body: JSON.stringify({
               action: "create",
               orderData: {
-                amount: total.toFixed(2),
-                currency: "USD",
+                amount: totalRef.current.toFixed(2), currency: "USD",
                 description: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge — ${accountSize}`,
               },
             }),
           }
         );
-
         const data = await res.json();
         if (!data.orderID) throw new Error(data.error || "Failed to create PayPal order");
         return data.orderID;
@@ -160,393 +121,176 @@ const Checkout = () => {
             `https://${projectId}.supabase.co/functions/v1/verify-paypal-order`,
             {
               method: "POST",
-              headers: {
-                Authorization: `Bearer ${session!.access_token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                action: "capture",
-                orderID: data.orderID,
-                purchaseId,
-              }),
+              headers: { Authorization: `Bearer ${session!.access_token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "capture", orderID: data.orderID, purchaseId: purchaseIdRef.current }),
             }
           );
-
           const result = await res.json();
-          if (result.success) {
-            toast.success("Payment successful! Your account is being activated.");
-            navigate("/dashboard");
-          } else {
-            toast.error(result.error || "Payment verification failed.");
-          }
-        } catch (err) {
-          toast.error("Payment failed: " + String(err));
-        }
+          if (result.success) { toast.success("Payment successful!"); navigate("/dashboard"); }
+          else toast.error(result.error || "Payment verification failed.");
+        } catch (err) { toast.error("Payment failed: " + String(err)); }
         setProcessing(false);
       },
-      onError: (err: any) => {
-        console.error("PayPal error:", err);
-        toast.error("PayPal payment failed. Please try again.");
-      },
-      onCancel: () => {
-        toast.info("Payment cancelled.");
-      },
+      onError: (err: any) => { console.error("PayPal error:", err); toast.error("PayPal payment failed."); },
+      onCancel: () => toast.info("Payment cancelled."),
     }).render(paypalRef.current);
-  }, [paypalReady, user, total, stepType, accountSize, purchaseId]);
+  }, [paypalReady, user, createPurchaseRecord, stepType, accountSize]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
     setCouponLoading(true);
     const { data, error } = await supabase
-      .from("coupons")
-      .select("*")
-      .eq("code", couponCode.toUpperCase().trim())
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (error || !data) {
-      toast.error("Invalid or expired coupon code.");
-      setCouponLoading(false);
-      return;
-    }
-
-    if (data.max_uses && data.current_uses >= data.max_uses) {
-      toast.error("This coupon has reached its usage limit.");
-      setCouponLoading(false);
-      return;
-    }
-
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      toast.error("This coupon has expired.");
-      setCouponLoading(false);
-      return;
-    }
-
-    setCouponApplied({
-      code: data.code,
-      type: data.discount_type,
-      value: data.discount_value,
-    });
+      .from("coupons").select("*")
+      .eq("code", couponCode.toUpperCase().trim()).eq("is_active", true).maybeSingle();
+    if (error || !data) { toast.error("Invalid or expired coupon."); setCouponLoading(false); return; }
+    if (data.max_uses && data.current_uses >= data.max_uses) { toast.error("Coupon usage limit reached."); setCouponLoading(false); return; }
+    if (data.expires_at && new Date(data.expires_at) < new Date()) { toast.error("Coupon expired."); setCouponLoading(false); return; }
+    setCouponApplied({ code: data.code, type: data.discount_type, value: data.discount_value });
     toast.success(`Coupon "${data.code}" applied!`);
     setCouponLoading(false);
   };
 
-  const removeCoupon = () => {
-    setCouponApplied(null);
-    setCouponCode("");
-  };
-
-  // Manual payment fallback
-  const handleManualPayment = async () => {
-    if (!user) {
-      toast.error("Please sign in to continue.");
-      navigate("/auth");
-      return;
-    }
-
+  const handleCrypto = async () => {
+    if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
     setProcessing(true);
     try {
-      const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
-      const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
-
-      const { data: challenge } = await supabase
-        .from("challenges")
-        .select("id")
-        .eq("step_type", dbStepType)
-        .eq("account_size", sizeNum)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (!challenge) {
-        toast.error("Challenge not found.");
-        setProcessing(false);
-        return;
-      }
-
-      const utm = getStoredUtm();
-      const { error } = await supabase
-        .from("challenge_purchases")
-        .insert({
-          user_id: user.id,
-          challenge_id: challenge.id,
-          amount_paid: total,
-          payment_status: "pending",
-          status: "pending",
-          utm_source: utm.utm_source || null,
-          utm_medium: utm.utm_medium || null,
-          utm_campaign: utm.utm_campaign || null,
-          utm_term: utm.utm_term || null,
-          utm_content: utm.utm_content || null,
-        });
-
-      if (error) {
-        toast.error("Failed to create order.");
-        setProcessing(false);
-        return;
-      }
-
-      toast.success("Order placed! Payment is being reviewed.");
-      navigate("/dashboard");
-    } catch {
-      toast.error("Something went wrong.");
-    }
+      const purchase = await createPurchaseRecord();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/nowpayments-create`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session!.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create_invoice", amount: total, currency: "usd",
+          description: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge — ${accountSize}`,
+          purchaseId: purchase.id, orderId: purchase.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.invoiceUrl) { window.open(data.invoiceUrl, "_blank"); toast.success("Crypto payment page opened!"); }
+      else toast.error(data.error || "Failed to create crypto invoice.");
+    } catch (err) { toast.error("Error: " + String(err)); }
     setProcessing(false);
   };
 
+  const handleManual = async () => {
+    if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
+    setProcessing(true);
+    try {
+      await createPurchaseRecord();
+      toast.success("Order placed! Payment is being reviewed.");
+      navigate("/dashboard");
+    } catch { toast.error("Something went wrong."); }
+    setProcessing(false);
+  };
+
+  const stepLabel = stepType === "1-step" ? "1 Step" : "2 Step";
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Back */}
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
+          <ArrowLeft size={14} /> Back
+        </button>
 
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <h1 className="font-display text-3xl sm:text-4xl font-bold mb-2">Checkout</h1>
-        <p className="text-muted-foreground mb-10">Complete your purchase to start trading.</p>
-
-        <div className="grid lg:grid-cols-5 gap-8">
-          {/* LEFT — Payment Methods */}
-          <div className="lg:col-span-3 space-y-8">
-            {/* Challenge Summary Card */}
-            <div className="glass-card p-6">
-              <h3 className="font-display text-lg font-semibold mb-4">Your Challenge</h3>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {stepType === "1-step" ? "1 Step" : "2 Step"} Challenge
-                  </p>
-                  <p className="font-display text-2xl font-bold mt-1">{accountSize}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-display text-3xl font-bold">${basePrice}</p>
-                </div>
-              </div>
+        {/* Main Card */}
+        <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          {/* Order header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">{stepLabel} Challenge</p>
+              <p className="font-display text-lg font-bold">{accountSize}</p>
             </div>
-
-            {/* Coupon Code */}
-            <div className="glass-card p-6">
-              <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
-                <Tag size={18} /> Coupon Code
-              </h3>
-              {couponApplied ? (
-                <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <Check size={18} className="text-primary" />
-                    <div>
-                      <p className="text-sm font-bold font-mono tracking-wider">
-                        {couponApplied.code}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {couponApplied.type === "percentage"
-                          ? `${couponApplied.value}% off`
-                          : `$${couponApplied.value} off`}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={removeCoupon}
-                    className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Input
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    placeholder="Enter coupon code"
-                    className="rounded-xl bg-secondary border-border font-mono uppercase tracking-wider"
-                    onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
-                  />
-                  <Button
-                    onClick={applyCoupon}
-                    variant="outline"
-                    className="rounded-xl px-6 border-border"
-                    disabled={couponLoading || !couponCode.trim()}
-                  >
-                    {couponLoading ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      "Apply"
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* PayPal Payment */}
-            <div className="glass-card p-6">
-              <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
-                <CreditCard size={18} /> Pay with PayPal
-              </h3>
-              {!user ? (
-                <div className="text-center py-6">
-                  <p className="text-sm text-muted-foreground mb-3">Please sign in to proceed with payment</p>
-                  <Button onClick={() => navigate("/auth")} variant="outline" className="rounded-xl">
-                    Sign In
-                  </Button>
-                </div>
-              ) : !paypalReady ? (
-                <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
-                  <Loader2 size={18} className="animate-spin" />
-                  <span className="text-sm">Loading PayPal...</span>
-                </div>
-              ) : (
-                <div ref={paypalRef} className="min-h-[60px]" />
-              )}
-
-              {processing && (
-                <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 size={16} className="animate-spin" />
-                  Verifying payment...
-                </div>
-              )}
-            </div>
-
-            {/* Crypto Payment via NOWPayments */}
-            <div className="glass-card p-6">
-              <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
-                <Bitcoin size={18} /> Pay with Crypto
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Pay with BTC, ETH, USDT, and 200+ cryptocurrencies via NOWPayments. Payment is confirmed automatically.
-              </p>
-              <Button
-                onClick={async () => {
-                  if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
-                  setProcessing(true);
-                  try {
-                    const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
-                    const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
-                    const { data: challenge } = await supabase
-                      .from("challenges").select("id")
-                      .eq("step_type", dbStepType).eq("account_size", sizeNum).eq("is_active", true).maybeSingle();
-                    if (!challenge) { toast.error("Challenge not found."); setProcessing(false); return; }
-
-                    const utm = getStoredUtm();
-                    const { data: purchase, error } = await supabase
-                      .from("challenge_purchases")
-                      .insert({
-                        user_id: user.id, challenge_id: challenge.id, amount_paid: total,
-                        payment_status: "pending", status: "pending",
-                        utm_source: utm.utm_source || null, utm_medium: utm.utm_medium || null,
-                        utm_campaign: utm.utm_campaign || null, utm_term: utm.utm_term || null,
-                        utm_content: utm.utm_content || null,
-                      }).select().single();
-
-                    if (error || !purchase) { toast.error("Failed to create order."); setProcessing(false); return; }
-
-                    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-                    const { data: { session } } = await supabase.auth.getSession();
-                    const res = await fetch(
-                      `https://${projectId}.supabase.co/functions/v1/nowpayments-create`,
-                      {
-                        method: "POST",
-                        headers: { Authorization: `Bearer ${session!.access_token}`, "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          action: "create_invoice",
-                          amount: total,
-                          currency: "usd",
-                          description: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge — ${accountSize}`,
-                          purchaseId: purchase.id,
-                          orderId: purchase.id,
-                        }),
-                      }
-                    );
-                    const data = await res.json();
-                    if (data.invoiceUrl) {
-                      window.open(data.invoiceUrl, "_blank");
-                      toast.success("Crypto payment page opened! Complete payment there.");
-                    } else {
-                      toast.error(data.error || "Failed to create crypto invoice.");
-                    }
-                  } catch (err) {
-                    toast.error("Error: " + String(err));
-                  }
-                  setProcessing(false);
-                }}
-                disabled={processing}
-                className="w-full rounded-xl py-5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold"
-              >
-                {processing ? (
-                  <span className="flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Creating invoice...</span>
-                ) : (
-                  <span className="flex items-center gap-2"><Bitcoin size={16} /> Pay with Crypto — ${total} <ExternalLink size={14} /></span>
-                )}
-              </Button>
-              <p className="text-[10px] text-muted-foreground mt-2 text-center">BTC • ETH • USDT • SOL • and 200+ coins supported</p>
-            </div>
-
-            {/* Manual Payment Fallback */}
-            <div className="glass-card p-6">
-              <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
-                <CreditCard size={18} /> Manual Payment (Crypto / Bank Transfer)
-              </h3>
-              <div className="bg-secondary/50 border border-border rounded-xl p-4 space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Pay via crypto or bank transfer, then click <strong>"I Have Paid"</strong>. Our team will verify and activate within 24 hours.
-                </p>
-                <Button
-                  onClick={handleManualPayment}
-                  disabled={processing}
-                  variant="outline"
-                  className="w-full rounded-xl py-5"
-                >
-                  {processing ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 size={16} className="animate-spin" /> Processing...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Check size={16} /> I Have Paid — ${total}
-                    </span>
-                  )}
-                </Button>
-              </div>
+            <div className="text-right">
+              {discount > 0 && <p className="text-xs text-muted-foreground line-through">${basePrice}</p>}
+              <p className="font-display text-2xl font-bold">${total}</p>
             </div>
           </div>
 
-          {/* RIGHT — Order Summary Sticky */}
-          <div className="lg:col-span-2">
-            <div className="glass-card p-6 lg:sticky lg:top-24">
-              <h3 className="font-display text-lg font-semibold mb-6">Order Summary</h3>
-
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    {stepType === "1-step" ? "1 Step" : "2 Step"} — {accountSize}
-                  </span>
-                  <span className="font-medium">${basePrice}</span>
-                </div>
-
-                {couponApplied && (
-                  <div className="flex justify-between text-primary">
-                    <span>Coupon ({couponApplied.code})</span>
-                    <span className="font-medium">-${discount}</span>
-                  </div>
-                )}
-
-                <div className="border-t border-border/50 pt-3 mt-3">
-                  <div className="flex justify-between items-end">
-                    <span className="text-muted-foreground">Total</span>
-                    <span className="font-display text-3xl font-bold">${total}</span>
-                  </div>
-                </div>
+          {/* Coupon */}
+          {couponApplied ? (
+            <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2">
+                <Check size={14} className="text-primary" />
+                <span className="text-xs font-mono font-bold">{couponApplied.code}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({couponApplied.type === "percentage" ? `${couponApplied.value}%` : `$${couponApplied.value}`} off)
+                </span>
               </div>
-
-              <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <Shield size={14} />
-                <span>256-bit SSL encrypted payment</span>
-              </div>
-
-              {/* Trust badges */}
-              <div className="mt-6 pt-4 border-t border-border/50 grid grid-cols-2 gap-3">
-                {["Instant Access", "24/7 Support"].map((badge) => (
-                  <div key={badge} className="text-center">
-                    <Check size={14} className="text-primary mx-auto mb-1" />
-                    <p className="text-[10px] text-muted-foreground leading-tight">{badge}</p>
-                  </div>
-                ))}
-              </div>
+              <button onClick={() => { setCouponApplied(null); setCouponCode(""); }} className="text-muted-foreground hover:text-destructive"><X size={14} /></button>
             </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="Coupon code"
+                className="h-8 text-xs rounded-lg bg-secondary border-border font-mono uppercase" onKeyDown={(e) => e.key === "Enter" && applyCoupon()} />
+              <Button onClick={applyCoupon} variant="outline" size="sm" className="h-8 rounded-lg px-3 text-xs" disabled={couponLoading || !couponCode.trim()}>
+                {couponLoading ? <Loader2 size={12} className="animate-spin" /> : "Apply"}
+              </Button>
+            </div>
+          )}
+
+          <div className="border-t border-border/50" />
+
+          {/* Payment method tabs */}
+          <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
+            {([["paypal", "PayPal", CreditCard], ["crypto", "Crypto", Bitcoin], ["manual", "Manual", Check]] as const).map(([key, label, Icon]) => (
+              <button key={key} onClick={() => setPayMethod(key as any)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium transition-all ${payMethod === key ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                <Icon size={13} /> {label}
+              </button>
+            ))}
+          </div>
+
+          {/* PayPal */}
+          {payMethod === "paypal" && (
+            <div>
+              {!user ? (
+                <Button onClick={() => navigate("/auth")} variant="outline" className="w-full rounded-lg h-10 text-sm">Sign in to pay</Button>
+              ) : !paypalReady ? (
+                <div className="flex items-center justify-center py-4 gap-2 text-muted-foreground text-sm">
+                  <Loader2 size={14} className="animate-spin" /> Loading PayPal...
+                </div>
+              ) : (
+                <div ref={paypalRef} className="min-h-[48px]" />
+              )}
+            </div>
+          )}
+
+          {/* Crypto */}
+          {payMethod === "crypto" && (
+            <div className="space-y-2">
+              <Button onClick={handleCrypto} disabled={processing}
+                className="w-full rounded-lg h-10 text-sm bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold">
+                {processing ? <><Loader2 size={14} className="animate-spin" /> Creating invoice...</>
+                  : <><Bitcoin size={14} /> Pay ${total} with Crypto <ExternalLink size={12} /></>}
+              </Button>
+              <p className="text-[10px] text-muted-foreground text-center">BTC • ETH • USDT • SOL • 200+ coins</p>
+            </div>
+          )}
+
+          {/* Manual */}
+          {payMethod === "manual" && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Pay via crypto or bank transfer, then click below. We'll verify within 24h.</p>
+              <Button onClick={handleManual} disabled={processing} variant="outline" className="w-full rounded-lg h-10 text-sm">
+                {processing ? <><Loader2 size={14} className="animate-spin" /> Processing...</>
+                  : <><Check size={14} /> I Have Paid — ${total}</>}
+              </Button>
+            </div>
+          )}
+
+          {processing && (
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Loader2 size={12} className="animate-spin" /> Verifying payment...
+            </div>
+          )}
+
+          {/* Trust */}
+          <div className="flex items-center justify-center gap-4 pt-2 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1"><Shield size={10} /> SSL Encrypted</span>
+            <span className="flex items-center gap-1"><Check size={10} /> Instant Access</span>
+            <span className="flex items-center gap-1"><Check size={10} /> 24/7 Support</span>
           </div>
         </div>
       </div>
