@@ -834,7 +834,7 @@ const Admin = () => {
                     ))}
                     {utmSourceStats.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-[hsl(0,0%,60%)]">No visit data yet.</td></tr>}
                   </tbody>
-                </table>
+                </table></div>
               </div>
 
               {/* By Campaign */}
