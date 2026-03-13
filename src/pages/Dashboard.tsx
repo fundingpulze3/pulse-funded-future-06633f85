@@ -594,7 +594,7 @@ const Dashboard = () => {
         </aside>
 
         {/* Right Panel - Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 min-w-0">
           <AnimatePresence>
             <motion.div
               key={activeView + (selectedAccount || "")}
