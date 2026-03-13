@@ -818,7 +818,18 @@ const Dashboard = () => {
                     </div>
                   )}
 
-                  {/* Daily PnL Calendar */}
+                  {/* Trading Objectives — compact row */}
+                  <TradingObjectives
+                    profitTarget={activeAccountStats.purchase.challenges?.profit_target || "8"}
+                    dailyDrawdown={activeAccountStats.purchase.challenges?.daily_drawdown || "5"}
+                    maxDrawdown={activeAccountStats.purchase.challenges?.max_drawdown || "10"}
+                    currentProfit={Number(activeAccountStats.profit)}
+                    currentDailyDD={Number(activeAccountStats.dailyDDPercent)}
+                    currentMaxDD={ddUsed}
+                    accountSize={activeAccountStats.accountSize}
+                    status={activeAccountStats.purchase.status}
+                  />
+
                   <TradingCalendar
                     balanceChart={activeAccountStats.balanceChart}
                     profitByDay={activeAccountStats.profitByDay}
