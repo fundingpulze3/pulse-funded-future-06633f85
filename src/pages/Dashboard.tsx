@@ -371,9 +371,11 @@ const Dashboard = () => {
     { key: "completed", label: "Passed" },
   ];
 
-  const navItems: { key: SidebarTab; label: string; icon: any }[] = [
+  const navItems: { key: SidebarTab | string; label: string; icon: any; route?: string }[] = [
     { key: "overview", label: "Overview", icon: Home },
     { key: "affiliate", label: "Affiliate", icon: Users },
+    { key: "certificates", label: "Certificates", icon: Award, route: "/dashboard/certificates" },
+    { key: "payouts", label: "Payouts", icon: Wallet, route: "/dashboard/payouts" },
   ];
 
   const popupCredentials = credDialogPurchaseId
@@ -440,9 +442,9 @@ const Dashboard = () => {
           {navItems.map(item => (
             <button
               key={item.key}
-              onClick={() => setActiveView(item.key)}
+              onClick={() => item.route ? navigate(item.route) : setActiveView(item.key as SidebarTab)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                activeView === item.key
+                !item.route && activeView === item.key
                   ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
                   : "text-[hsl(220,15%,40%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
               }`}
@@ -478,9 +480,9 @@ const Dashboard = () => {
               {navItems.map(item => (
                 <button
                   key={item.key}
-                  onClick={() => { setActiveView(item.key); setMobileSidebarOpen(false); }}
+                  onClick={() => { if (item.route) { navigate(item.route); } else { setActiveView(item.key as SidebarTab); } setMobileSidebarOpen(false); }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                    activeView === item.key
+                    !item.route && activeView === item.key
                       ? "bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)]"
                       : "text-[hsl(220,15%,50%)] hover:text-[hsl(0,0%,85%)] hover:bg-[hsl(220,15%,10%)]"
                   }`}
@@ -698,37 +700,25 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
-              className="p-4 lg:p-6 space-y-5 max-w-[1200px]"
+              className="p-3 lg:p-5 space-y-3 max-w-[1200px]"
             >
 
               {/* ═══ OVERVIEW ═══ */}
               {activeView === "overview" && activeAccountStats && (
                 <>
                   {/* Account Overview Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                      <h1 className="font-display text-xl font-bold">Account Overview</h1>
-                      <p className="text-xs text-[hsl(220,15%,45%)]">
-                        {activeAccountStats.accountNumber || activeAccountStats.purchase.id.slice(0, 8)} · Created: {new Date(activeAccountStats.purchase.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      <h1 className="font-display text-lg font-bold">Account Overview</h1>
+                      <p className="text-[11px] text-[hsl(220,15%,45%)]">
+                        {activeAccountStats.accountNumber || activeAccountStats.purchase.id.slice(0, 8)} · {new Date(activeAccountStats.purchase.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </p>
                     </div>
                   </div>
 
-                  {/* Trading Objectives */}
-                  <TradingObjectives
-                    profitTarget={activeAccountStats.purchase.challenges?.profit_target || "8"}
-                    dailyDrawdown={activeAccountStats.purchase.challenges?.daily_drawdown || "5"}
-                    maxDrawdown={activeAccountStats.purchase.challenges?.max_drawdown || "10"}
-                    currentProfit={Number(activeAccountStats.profit)}
-                    currentDailyDD={Number(activeAccountStats.dailyDDPercent)}
-                    currentMaxDD={ddUsed}
-                    accountSize={activeAccountStats.accountSize}
-                    status={activeAccountStats.purchase.status}
-                  />
-
                   {/* Balance Chart */}
-                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                    <div className="h-[280px]">
+                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-4">
+                    <div className="h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                           <defs>
@@ -828,7 +818,18 @@ const Dashboard = () => {
                     </div>
                   )}
 
-                  {/* Daily PnL Calendar */}
+                  {/* Trading Objectives — compact row */}
+                  <TradingObjectives
+                    profitTarget={activeAccountStats.purchase.challenges?.profit_target || "8"}
+                    dailyDrawdown={activeAccountStats.purchase.challenges?.daily_drawdown || "5"}
+                    maxDrawdown={activeAccountStats.purchase.challenges?.max_drawdown || "10"}
+                    currentProfit={Number(activeAccountStats.profit)}
+                    currentDailyDD={Number(activeAccountStats.dailyDDPercent)}
+                    currentMaxDD={ddUsed}
+                    accountSize={activeAccountStats.accountSize}
+                    status={activeAccountStats.purchase.status}
+                  />
+
                   <TradingCalendar
                     balanceChart={activeAccountStats.balanceChart}
                     profitByDay={activeAccountStats.profitByDay}
