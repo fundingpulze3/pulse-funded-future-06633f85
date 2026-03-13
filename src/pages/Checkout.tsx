@@ -328,17 +328,6 @@ const Checkout = () => {
     setProcessing(false);
   };
 
-  const handleManual = async () => {
-    if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
-    if (!agreedTerms) { toast.error("Please agree to the terms."); return; }
-    setProcessing(true);
-    try {
-      await createPurchaseRecord();
-      toast.success("Order placed! Payment is being reviewed.");
-      navigate("/dashboard");
-    } catch (err) { toast.error("Something went wrong: " + String(err)); }
-    setProcessing(false);
-  };
 
 
   return (
