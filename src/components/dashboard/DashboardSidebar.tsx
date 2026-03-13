@@ -1,11 +1,12 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X, Receipt } from "lucide-react";
+import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X, Receipt, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const navItems = [
   { key: "overview", label: "Overview", route: "/dashboard", icon: Home },
+  { key: "ai", label: "FP AI", route: "/dashboard/ai", icon: Sparkles },
   { key: "affiliate", label: "Affiliate", route: "/dashboard?view=affiliate", icon: Users },
   { key: "certificates", label: "Certificates", route: "/dashboard/certificates", icon: Award },
   { key: "payouts", label: "Payouts", route: "/dashboard/payouts", icon: Wallet },

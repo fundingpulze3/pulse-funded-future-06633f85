@@ -49,13 +49,13 @@ const CertificateShowcase = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-foreground/[0.05] border border-border/50 text-xs font-medium text-muted-foreground mb-5">
             <Award size={13} />
-            Verified & Certified
+            Trusted & Verified
           </div>
           <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight">
-            Our Credentials
+            Our Testimonials
           </h2>
           <p className="mt-3 text-muted-foreground max-w-md mx-auto text-sm md:text-base">
-            Trusted by traders worldwide. Here are our certifications and partnerships.
+            Trusted by traders worldwide. See what our partners and certifications say about us.
           </p>
         </motion.div>
 

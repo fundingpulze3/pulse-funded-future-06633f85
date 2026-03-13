@@ -17,3 +17,5 @@ project_id = "rpshiyvndmnogbhbgmfm"
     verify_jwt = false
   [functions.nowpayments-webhook]
     verify_jwt = false
+  [functions.dashboard-ai]
+    verify_jwt = false
