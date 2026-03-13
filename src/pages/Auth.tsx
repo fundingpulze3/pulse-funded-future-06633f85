@@ -59,7 +59,18 @@ const Auth = () => {
           },
         });
         if (error) { toast.error(error.message); }
-        else { toast.success("Account created successfully!"); navigate("/"); }
+        else {
+          toast.success("Account created successfully!");
+          // Send welcome email
+          try {
+            await supabase.functions.invoke('send-transactional-email', {
+              body: { type: 'welcome', data: { displayName: username || '' } },
+            });
+          } catch (err) {
+            console.error('Failed to send welcome email:', err);
+          }
+          navigate("/");
+        }
       }
     } catch (err) {
       toast.error("An unexpected error occurred");
