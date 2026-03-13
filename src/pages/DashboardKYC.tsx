@@ -7,7 +7,7 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { motion } from "framer-motion";
 import {
   ShieldCheck, Upload, Camera, FileText, CheckCircle2,
-  Clock, XCircle, Lock, ShoppingCart, Loader2, Video
+  Clock, XCircle, Loader2, Video
 } from "lucide-react";
 
 type KYCStatus = "pending" | "approved" | "rejected" | "not_started";
@@ -31,7 +31,6 @@ const DashboardKYC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ display_name: string | null } | null>(null);
-  const [hasPurchase, setHasPurchase] = useState(false);
   const [checking, setChecking] = useState(true);
   const [kycStatus, setKycStatus] = useState<KYCStatus>("not_started");
   const [kycData, setKycData] = useState<any>(null);
@@ -69,13 +68,11 @@ const DashboardKYC = () => {
   const checkAccess = async () => {
     if (!user) return;
     setChecking(true);
-    const [profileRes, purchasesRes, kycRes] = await Promise.all([
+    const [profileRes, kycRes] = await Promise.all([
       supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle(),
-      supabase.from("challenge_purchases").select("id").eq("user_id", user.id).in("payment_status", ["paid", "confirmed", "completed"]).limit(1),
       supabase.from("kyc_submissions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
     ]);
     setProfile(profileRes.data);
-    setHasPurchase((purchasesRes.data?.length || 0) > 0);
     if (kycRes.data && kycRes.data.length > 0) {
       const kyc = kycRes.data[0] as any;
       setKycData(kyc);
@@ -201,28 +198,6 @@ const DashboardKYC = () => {
     );
   }
 
-  if (!hasPurchase) {
-    return (
-      <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
-        <DashboardSidebar profile={profile} />
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="hidden lg:block w-16 shrink-0" />
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md text-center">
-            <div className="w-20 h-20 rounded-2xl bg-[hsl(207,90%,77%)]/10 flex items-center justify-center mx-auto mb-6">
-              <Lock size={32} className="text-[hsl(207,90%,77%)]" />
-            </div>
-            <h1 className="font-display text-2xl font-bold mb-3">KYC Verification Required</h1>
-            <p className="text-[hsl(220,15%,50%)] text-sm mb-6 leading-relaxed">
-              Complete your identity verification after purchasing a challenge. This is required for payouts and account security.
-            </p>
-            <button onClick={() => navigate("/#rules")} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] text-white font-bold text-sm transition-colors">
-              <ShoppingCart size={16} /> Get a Challenge First
-            </button>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
 
   const statusBadge = {
     pending: { icon: Clock, label: "Under Review", color: "text-[hsl(45,90%,55%)]", bg: "bg-[hsl(45,90%,55%)]/10" },
