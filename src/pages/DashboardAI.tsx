@@ -398,7 +398,7 @@ const DashboardAI = () => {
             </button>
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="text-[hsl(207,90%,77%)]" />
-              <span className="text-sm font-bold">FP AI</span>
+              <span className="text-sm font-bold">PulzeX</span>
             </div>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-[hsl(207,90%,77%)]/10 text-[hsl(207,90%,77%)] font-medium">Premium</span>
           </div>
