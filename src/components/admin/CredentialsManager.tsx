@@ -253,6 +253,9 @@ const CredentialsManager = () => {
         <Button size="sm" variant="outline" className="rounded-lg border-[hsl(0,0%,88%)]" onClick={() => setBulkDialogOpen(true)}>
           Bulk Import
         </Button>
+        <Button size="sm" variant="outline" className="rounded-lg border-orange-300 text-orange-600 hover:bg-orange-50" onClick={openPendingDialog}>
+          <AlertCircle size={14} className="mr-1" /> Pending
+        </Button>
       </div>
 
       {/* Folder View */}
