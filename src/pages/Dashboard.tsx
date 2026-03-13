@@ -64,6 +64,7 @@ interface TradingCredential {
   mt5_password: string;
   mt5_server: string;
   challenge_id: string;
+  purchase_id: string | null;
 }
 
 const REFERRAL_DOMAIN = "https://fundingpulze.com";
