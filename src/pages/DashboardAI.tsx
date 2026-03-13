@@ -509,7 +509,7 @@ const DashboardAI = () => {
                 </button>
               </div>
               <p className="text-[10px] text-[hsl(220,15%,25%)] text-center mt-2">
-                FP AI has access to your account data. Responses are AI-generated and may not always be accurate.
+                PulzeX has access to your account data. Responses are AI-generated and may not always be accurate.
               </p>
             </div>
           </div>
