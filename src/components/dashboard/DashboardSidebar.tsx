@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const navItems = [
   { key: "overview", label: "Overview", route: "/dashboard", icon: Home },
+  { key: "ai", label: "FP AI", route: "/dashboard/ai", icon: Sparkles },
   { key: "affiliate", label: "Affiliate", route: "/dashboard?view=affiliate", icon: Users },
   { key: "certificates", label: "Certificates", route: "/dashboard/certificates", icon: Award },
   { key: "payouts", label: "Payouts", route: "/dashboard/payouts", icon: Wallet },
