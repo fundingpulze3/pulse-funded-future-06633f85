@@ -594,7 +594,52 @@ const Dashboard = () => {
         </aside>
 
         {/* Right Panel - Content */}
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 overflow-x-hidden">
+          {/* Mobile Account Selector */}
+          <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,20%,5%)]">
+            {filteredPurchases.length > 0 ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] font-semibold">Your Accounts</p>
+                  <span className="text-[10px] text-[hsl(220,15%,35%)]">{filteredPurchases.length} account{filteredPurchases.length > 1 ? "s" : ""}</span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+                  {filteredPurchases.slice(0, 10).map(p => {
+                    const isActive = selectedAccount === p.id;
+                    const status = getAccountStatus(p);
+                    const sc = statusConfig[status] || statusConfig.ongoing;
+                    const cred = credentials.find(c => c.purchase_id === p.id);
+                    const accountNumber = cred?.mt5_login || p.id.slice(0, 8);
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); }}
+                        className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all text-left ${
+                          isActive
+                            ? "bg-[hsl(220,20%,9%)] border-[hsl(207,90%,77%)]/30"
+                            : "bg-[hsl(220,20%,7%)] border-[hsl(220,15%,12%)] hover:border-[hsl(220,15%,18%)]"
+                        }`}
+                      >
+                        <div>
+                          <p className="text-xs font-bold whitespace-nowrap">FP {accountNumber}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className={`text-[9px] font-bold ${sc.color}`}>{sc.label}</span>
+                            <span className="text-[9px] text-[hsl(220,15%,40%)]">${(p.challenges?.account_size || 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-xs text-[hsl(220,15%,40%)]">No accounts yet</p>
+                <button onClick={() => navigate("/#rules")} className="mt-2 text-xs font-bold text-[hsl(207,90%,77%)]">Get a Challenge →</button>
+              </div>
+            )}
+          </div>
+
           <AnimatePresence>
             <motion.div
               key={activeView + (selectedAccount || "")}
