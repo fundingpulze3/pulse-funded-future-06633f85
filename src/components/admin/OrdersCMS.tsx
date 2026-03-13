@@ -253,7 +253,8 @@ export default function OrdersCMS({
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
