@@ -536,10 +536,10 @@ const Dashboard = () => {
                     <div className="px-3.5 py-3">
                       {/* Header row */}
                       <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors overflow-hidden ${
                           isActive ? `bg-[hsl(${accent})]/12` : "bg-[hsl(220,15%,11%)] group-hover:bg-[hsl(220,15%,13%)]"
                         }`}>
-                          <img src={fpLogoIcon} alt="FP" className={`w-5 h-5 object-contain transition-opacity ${isActive ? "opacity-100" : "opacity-50 group-hover:opacity-70"}`} />
+                          <img src={rank.img} alt={rank.label} className={`w-8 h-8 object-cover transition-opacity ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-90"}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -552,7 +552,7 @@ const Dashboard = () => {
                             <span className="text-[10px] text-[hsl(220,15%,45%)] truncate">{challengeName}</span>
                             <span className="text-[9px] px-1 py-px rounded bg-[hsl(220,15%,12%)] text-[hsl(220,15%,55%)] font-medium">{stepType}</span>
                             <span className={`flex items-center gap-0.5 ml-auto shrink-0`}>
-                              <img src={rank.img} alt={rank.label} className="w-4 h-4 rounded-full object-cover" />
+                              <img src={fpLogoIcon} alt="FP" className="w-3.5 h-3.5 object-contain opacity-40" />
                             </span>
                           </div>
                         </div>
