@@ -57,6 +57,8 @@ const AppRoutes = () => {
       <Route path="/auth" element={<Auth />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard/certificates" element={<DashboardCertificates />} />
+      <Route path="/dashboard/payouts" element={<DashboardPayouts />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/about" element={<About />} />
