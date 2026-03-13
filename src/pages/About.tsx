@@ -274,7 +274,7 @@ const About = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
             >
-              <p className="font-display text-4xl sm:text-5xl font-bold tracking-tight">
+              <p className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
                 <AnimatedNumber value={stat.value} suffix={stat.suffix} />
               </p>
               <p className="text-sm text-muted-foreground mt-2 tracking-wide">{stat.label}</p>
