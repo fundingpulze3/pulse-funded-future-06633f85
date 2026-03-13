@@ -31,6 +31,7 @@ import UserPhaseManager from "@/components/admin/UserPhaseManager";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import SEOManager from "@/components/admin/SEOManager";
 import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
+import KYCManager from "@/components/admin/KYCManager";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
