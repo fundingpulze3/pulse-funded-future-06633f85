@@ -1,5 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import fpLogoIcon from "@/assets/fp-logo-icon.png";
+import rankStudentImg from "@/assets/rank-student.png";
+import rankPractitionerImg from "@/assets/rank-practitioner.png";
+import rankMasterImg from "@/assets/rank-master.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -199,17 +202,15 @@ const Dashboard = () => {
 
   const getStepType = (purchase: Purchase): string => purchase.challenges?.step_type?.toLowerCase() || "";
 
-  const getRank = (purchase: Purchase): { label: string; emoji: string; color: string } => {
+  const getRank = (purchase: Purchase): { label: string; img: string; color: string } => {
     const status = purchase.status.toLowerCase();
     const stepType = (purchase.challenges?.step_type || "").toLowerCase();
-    if (status === "funded") return { label: "Master", emoji: "👑", color: "text-[hsl(45,90%,55%)]" };
+    if (status === "funded") return { label: "Master", img: rankMasterImg, color: "text-[hsl(45,90%,55%)]" };
     if (stepType.includes("one") || stepType.includes("1")) {
-      // 1-step: only one phase before funded → Practitioner
-      return { label: "Practitioner", emoji: "⚔️", color: "text-[hsl(270,70%,65%)]" };
+      return { label: "Practitioner", img: rankPractitionerImg, color: "text-[hsl(270,70%,65%)]" };
     }
-    // 2-step
-    if (status === "phase2") return { label: "Practitioner", emoji: "⚔️", color: "text-[hsl(270,70%,65%)]" };
-    return { label: "Student", emoji: "🎓", color: "text-[hsl(207,80%,65%)]" };
+    if (status === "phase2") return { label: "Practitioner", img: rankPractitionerImg, color: "text-[hsl(270,70%,65%)]" };
+    return { label: "Student", img: rankStudentImg, color: "text-[hsl(207,80%,65%)]" };
   };
 
   const filteredPurchases = useMemo(() => {
@@ -550,8 +551,8 @@ const Dashboard = () => {
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[10px] text-[hsl(220,15%,45%)] truncate">{challengeName}</span>
                             <span className="text-[9px] px-1 py-px rounded bg-[hsl(220,15%,12%)] text-[hsl(220,15%,55%)] font-medium">{stepType}</span>
-                            <span className={`text-[9px] font-semibold ${rank.color} ml-auto shrink-0`}>
-                              {rank.emoji} {rank.label}
+                            <span className={`flex items-center gap-0.5 ml-auto shrink-0`}>
+                              <img src={rank.img} alt={rank.label} className="w-4 h-4 rounded-full object-cover" />
                             </span>
                           </div>
                         </div>
@@ -656,7 +657,7 @@ const Dashboard = () => {
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className={`text-[9px] font-bold ${sc.color}`}>{sc.label}</span>
                             <span className="text-[9px] text-[hsl(220,15%,40%)]">${(p.challenges?.account_size || 0).toLocaleString()}</span>
-                            {(() => { const r = getRank(p); return <span className={`text-[9px] font-semibold ${r.color}`}>{r.emoji}</span>; })()}
+                            {(() => { const r = getRank(p); return <img src={r.img} alt={r.label} className="w-4 h-4 rounded-full object-cover" />; })()}
                           </div>
                         </div>
                       </button>
@@ -693,8 +694,9 @@ const Dashboard = () => {
                         {(() => {
                           const rank = getRank(activeAccountStats.purchase);
                           return (
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-md bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] ${rank.color}`}>
-                              {rank.emoji} {rank.label}
+                            <span className={`flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-md bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] ${rank.color}`}>
+                              <img src={rank.img} alt={rank.label} className="w-5 h-5 rounded-full object-cover" />
+                              {rank.label}
                             </span>
                           );
                         })()}
