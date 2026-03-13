@@ -293,7 +293,7 @@ const DashboardAI = () => {
             <h1 className="font-display text-2xl font-bold mb-3">Premium AI Assistant</h1>
             <p className="text-[hsl(220,15%,50%)] text-sm mb-6 leading-relaxed">
               Get a personalized AI trading assistant that knows your accounts, stats, and trading history.
-              Purchase a challenge to unlock FP AI.
+              Purchase a challenge to unlock PulzeX AI.
             </p>
             <button
               onClick={() => navigate("/#rules")}
