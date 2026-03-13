@@ -53,7 +53,7 @@ const DashboardSidebar = ({ profile }: Props) => {
           <button onClick={() => navigate("/help")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
             <HelpCircle size={16} />
           </button>
-          <button onClick={() => navigate("/")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
+          <button onClick={() => navigate("/dashboard/settings")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
             <Settings size={16} />
           </button>
           <button onClick={async () => { await signOut(); navigate("/"); }} className="p-2 rounded-lg hover:bg-[hsl(0,70%,55%)]/10 text-[hsl(220,15%,50%)] hover:text-[hsl(0,70%,55%)] transition-colors">
