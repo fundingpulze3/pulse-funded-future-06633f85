@@ -198,28 +198,6 @@ const DashboardKYC = () => {
     );
   }
 
-  if (!hasPurchase) {
-    return (
-      <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
-        <DashboardSidebar profile={profile} />
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="hidden lg:block w-16 shrink-0" />
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md text-center">
-            <div className="w-20 h-20 rounded-2xl bg-[hsl(207,90%,77%)]/10 flex items-center justify-center mx-auto mb-6">
-              <Lock size={32} className="text-[hsl(207,90%,77%)]" />
-            </div>
-            <h1 className="font-display text-2xl font-bold mb-3">KYC Verification Required</h1>
-            <p className="text-[hsl(220,15%,50%)] text-sm mb-6 leading-relaxed">
-              Complete your identity verification after purchasing a challenge. This is required for payouts and account security.
-            </p>
-            <button onClick={() => navigate("/#rules")} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] text-white font-bold text-sm transition-colors">
-              <ShoppingCart size={16} /> Get a Challenge First
-            </button>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
 
   const statusBadge = {
     pending: { icon: Clock, label: "Under Review", color: "text-[hsl(45,90%,55%)]", bg: "bg-[hsl(45,90%,55%)]/10" },

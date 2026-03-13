@@ -330,7 +330,7 @@ const Admin = () => {
     utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
     credentials: "Credentials", user_certificates: "User Certificates",
-    cert_templates: "Certificate Templates", user_phases: "User Phases",
+    cert_templates: "Certificate Templates", user_phases: "User Phases", kyc: "KYC Verification",
   };
 
   // Helper to assign/change a user's role
