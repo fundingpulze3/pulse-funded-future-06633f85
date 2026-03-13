@@ -63,13 +63,37 @@ const KYCManager = () => {
 
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id);
+    const sub = submissions.find(s => s.id === id);
     const { error } = await supabase.from("kyc_submissions").update({
       status,
       review_note: reviewNote || null,
       reviewed_at: new Date().toISOString(),
     }).eq("id", id);
-    if (error) { toast.error(error.message); }
-    else { toast.success(`KYC ${status}!`); setExpandedId(null); setReviewNote(""); fetchData(); }
+    if (error) { toast.error(error.message); setUpdating(null); return; }
+
+    // Send email notification
+    if (sub && (status === "approved" || status === "rejected")) {
+      const profile = getProfile(sub.user_id);
+      try {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            type: status === "approved" ? "kyc_approved" : "kyc_rejected",
+            recipientUserId: sub.user_id,
+            data: {
+              displayName: profile?.display_name || "",
+              reviewNote: reviewNote || "",
+            },
+          },
+        });
+      } catch (err) {
+        console.error("Failed to send KYC email:", err);
+      }
+    }
+
+    toast.success(`KYC ${status}!`);
+    setExpandedId(null);
+    setReviewNote("");
+    fetchData();
     setUpdating(null);
   };
 
