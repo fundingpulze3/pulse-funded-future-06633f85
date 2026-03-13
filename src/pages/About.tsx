@@ -440,7 +440,7 @@ const About = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            <h2 className="font-display text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight mb-6">
               Ready to Start?
             </h2>
             <p className="text-xl text-muted-foreground max-w-xl mx-auto mb-10 font-light">
