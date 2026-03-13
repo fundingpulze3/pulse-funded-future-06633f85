@@ -551,8 +551,8 @@ const Dashboard = () => {
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[10px] text-[hsl(220,15%,45%)] truncate">{challengeName}</span>
                             <span className="text-[9px] px-1 py-px rounded bg-[hsl(220,15%,12%)] text-[hsl(220,15%,55%)] font-medium">{stepType}</span>
-                            <span className={`text-[9px] font-semibold ${rank.color} ml-auto shrink-0`}>
-                              {rank.emoji} {rank.label}
+                            <span className={`flex items-center gap-0.5 ml-auto shrink-0`}>
+                              <img src={rank.img} alt={rank.label} className="w-4 h-4 rounded-full object-cover" />
                             </span>
                           </div>
                         </div>
