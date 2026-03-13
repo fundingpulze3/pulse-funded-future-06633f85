@@ -198,6 +198,19 @@ const Dashboard = () => {
 
   const getStepType = (purchase: Purchase): string => purchase.challenges?.step_type?.toLowerCase() || "";
 
+  const getRank = (purchase: Purchase): { label: string; emoji: string; color: string } => {
+    const status = purchase.status.toLowerCase();
+    const stepType = (purchase.challenges?.step_type || "").toLowerCase();
+    if (status === "funded") return { label: "Master", emoji: "👑", color: "text-[hsl(45,90%,55%)]" };
+    if (stepType.includes("one") || stepType.includes("1")) {
+      // 1-step: only one phase before funded → Practitioner
+      return { label: "Practitioner", emoji: "⚔️", color: "text-[hsl(270,70%,65%)]" };
+    }
+    // 2-step
+    if (status === "phase2") return { label: "Practitioner", emoji: "⚔️", color: "text-[hsl(270,70%,65%)]" };
+    return { label: "Student", emoji: "🎓", color: "text-[hsl(207,80%,65%)]" };
+  };
+
   const filteredPurchases = useMemo(() => {
     return purchases.filter(p => {
       // Step filter
@@ -517,9 +530,19 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${sc.bg} ${sc.color}`}>
-                        {sc.label}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${sc.bg} ${sc.color}`}>
+                          {sc.label}
+                        </span>
+                        {(() => {
+                          const rank = getRank(p);
+                          return (
+                            <span className={`text-[10px] font-semibold ${rank.color}`}>
+                              {rank.emoji} {rank.label}
+                            </span>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-4 mt-1">
@@ -625,6 +648,7 @@ const Dashboard = () => {
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className={`text-[9px] font-bold ${sc.color}`}>{sc.label}</span>
                             <span className="text-[9px] text-[hsl(220,15%,40%)]">${(p.challenges?.account_size || 0).toLocaleString()}</span>
+                            {(() => { const r = getRank(p); return <span className={`text-[9px] font-semibold ${r.color}`}>{r.emoji}</span>; })()}
                           </div>
                         </div>
                       </button>
@@ -654,9 +678,19 @@ const Dashboard = () => {
               {activeView === "overview" && activeAccountStats && (
                 <>
                   {/* Account Overview Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                      <h1 className="font-display text-lg font-bold">Account Overview</h1>
+                      <div className="flex items-center gap-2">
+                        <h1 className="font-display text-lg font-bold">Account Overview</h1>
+                        {(() => {
+                          const rank = getRank(activeAccountStats.purchase);
+                          return (
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-md bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,15%)] ${rank.color}`}>
+                              {rank.emoji} {rank.label}
+                            </span>
+                          );
+                        })()}
+                      </div>
                       <p className="text-[11px] text-[hsl(220,15%,45%)]">
                         {activeAccountStats.accountNumber || activeAccountStats.purchase.id.slice(0, 8)} · {new Date(activeAccountStats.purchase.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </p>
