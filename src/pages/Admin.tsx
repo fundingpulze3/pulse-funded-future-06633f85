@@ -872,7 +872,8 @@ const Admin = () => {
           {tab === "credentials" && <CredentialsManager />}
           {tab === "user_certificates" && <UserCertificatesCMS />}
           {tab === "cert_templates" && <CertificateTemplateManager />}
-          {tab === "user_phases" && <UserPhaseManager />}
+           {tab === "user_phases" && <UserPhaseManager />}
+           {tab === "kyc" && <KYCManager />}
         </div>
       </div>
 
