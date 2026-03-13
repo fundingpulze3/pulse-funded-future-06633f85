@@ -55,7 +55,9 @@ const Checkout = () => {
   const paypalRef = useRef<HTMLDivElement>(null);
   const purchaseIdRef = useRef<string | null>(null);
   const [paypalReady, setPaypalReady] = useState(false);
+  const [paypalLoadError, setPaypalLoadError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const PAYPAL_CLIENT_ID = "BAAwk3bjO1bqRcrVytA9YTQC4dW6smqK2ocXDSrlDZn3pWNo2pNumzgqwzr8SwlEk7mZ4z9dpmxMCRDz5Q";
 
   const initialStep = searchParams.get("step") || "2-step";
   const initialSize = searchParams.get("size") || "$50K";
