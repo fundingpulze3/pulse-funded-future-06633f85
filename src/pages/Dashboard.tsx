@@ -393,7 +393,7 @@ const Dashboard = () => {
 
         <aside className={`
           hidden lg:flex w-[320px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
-          flex-col overflow-hidden
+          flex-col sticky top-14 self-start h-[calc(100vh-3.5rem)]
         `}>
 
           {/* User info */}
