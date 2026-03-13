@@ -552,7 +552,7 @@ const Dashboard = () => {
                             <span className="text-[10px] text-[hsl(220,15%,45%)] truncate">{challengeName}</span>
                             <span className="text-[9px] px-1 py-px rounded bg-[hsl(220,15%,12%)] text-[hsl(220,15%,55%)] font-medium">{stepType}</span>
                             <span className={`flex items-center gap-0.5 ml-auto shrink-0`}>
-                              <img src={rank.img} alt={rank.label} className="w-4 h-4 rounded-full object-cover" />
+                              <img src={fpLogoIcon} alt="FP" className="w-3.5 h-3.5 object-contain opacity-40" />
                             </span>
                           </div>
                         </div>
