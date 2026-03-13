@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Shield,
   Check,
-  Tag,
   X,
   Loader2,
   CreditCard,
@@ -24,6 +24,8 @@ declare global {
   }
 }
 
+const accountSizes = ["$5K", "$10K", "$25K", "$50K", "$100K"];
+
 const Checkout = () => {
   useUtmTracking();
   const navigate = useNavigate();
@@ -35,23 +37,47 @@ const Checkout = () => {
   const [processing, setProcessing] = useState(false);
 
   const stepType = searchParams.get("step") || "2-step";
-  const accountSize = searchParams.get("size") || "$50K";
-  const basePrice = Number(searchParams.get("price") || "289");
+  const initialSize = searchParams.get("size") || "$50K";
+  const initialPrice = Number(searchParams.get("price") || "289");
+
+  const [selectedSize, setSelectedSize] = useState(initialSize);
+  const [swapFree, setSwapFree] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
+
+  // Prices per account size (approximate — real prices come from DB via shop)
+  const [challenges, setChallenges] = useState<any[]>([]);
+
+  useEffect(() => {
+    const dbStep = stepType === "1-step" ? "one_step" : "two_step";
+    supabase.from("challenges").select("*").eq("step_type", dbStep).eq("is_active", true)
+      .then(({ data }) => setChallenges(data || []));
+  }, [stepType]);
+
+  const matchedChallenge = challenges.find(c => {
+    const sizeNum = parseInt(selectedSize.replace(/[$,K]/gi, "")) * 1000;
+    return c.account_size === sizeNum;
+  });
+
+  const basePrice = matchedChallenge?.price ?? initialPrice;
+  const swapFreeExtra = swapFree ? Math.round(basePrice * 0.1) : 0; // 10% surcharge for swap-free
 
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState<{ code: string; type: string; value: number } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [payMethod, setPayMethod] = useState<"paypal" | "crypto" | "manual">("paypal");
 
+  const priceBeforeDiscount = basePrice + swapFreeExtra;
   let discount = 0;
   if (couponApplied) {
     discount = couponApplied.type === "percentage"
-      ? Math.round(basePrice * (couponApplied.value / 100))
-      : Math.min(couponApplied.value, basePrice);
+      ? Math.round(priceBeforeDiscount * (couponApplied.value / 100))
+      : Math.min(couponApplied.value, priceBeforeDiscount);
   }
-  const total = basePrice - discount;
+  const total = priceBeforeDiscount - discount;
   const totalRef = useRef(total);
   totalRef.current = total;
+
+  const sizeNum = parseInt(selectedSize.replace(/[$,K]/gi, "")) * 1000;
 
   // PayPal SDK init
   useEffect(() => {
@@ -63,7 +89,6 @@ const Checkout = () => {
 
   const createPurchaseRecord = useCallback(async () => {
     if (!user) throw new Error("Not signed in");
-    const sizeNum = parseInt(accountSize.replace(/[$,K]/gi, "")) * 1000;
     const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
     const { data: challenge } = await supabase
       .from("challenges").select("id")
@@ -74,23 +99,22 @@ const Checkout = () => {
       .from("challenge_purchases")
       .insert({
         user_id: user.id, challenge_id: challenge.id, amount_paid: totalRef.current,
-        payment_status: "pending", status: "pending",
+        payment_status: "pending", status: "pending", swap_free: swapFree,
         utm_source: utm.utm_source || null, utm_medium: utm.utm_medium || null,
         utm_campaign: utm.utm_campaign || null, utm_term: utm.utm_term || null,
         utm_content: utm.utm_content || null,
       }).select().single();
     if (error || !purchase) throw new Error("Failed to create order");
     return purchase;
-  }, [user, accountSize, stepType]);
+  }, [user, sizeNum, stepType, swapFree]);
 
-  // Render PayPal buttons — NO purchaseId in deps to avoid destroying buttons mid-flow
   useEffect(() => {
     if (!paypalReady || !paypalRef.current || !user) return;
     paypalRef.current.innerHTML = "";
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
     window.paypal.Buttons({
-      style: { layout: "vertical", color: "black", shape: "rect", label: "pay", height: 40 },
+      style: { layout: "vertical", color: "black", shape: "rect", label: "pay", height: 45 },
       createOrder: async () => {
         const purchase = await createPurchaseRecord();
         purchaseIdRef.current = purchase.id;
@@ -104,7 +128,7 @@ const Checkout = () => {
               action: "create",
               orderData: {
                 amount: totalRef.current.toFixed(2), currency: "USD",
-                description: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge — ${accountSize}`,
+                description: `${stepLabel} Challenge — ${selectedSize}`,
               },
             }),
           }
@@ -134,7 +158,7 @@ const Checkout = () => {
       onError: (err: any) => { console.error("PayPal error:", err); toast.error("PayPal payment failed."); },
       onCancel: () => toast.info("Payment cancelled."),
     }).render(paypalRef.current);
-  }, [paypalReady, user, createPurchaseRecord, stepType, accountSize]);
+  }, [paypalReady, user, createPurchaseRecord, stepType, selectedSize]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -152,6 +176,7 @@ const Checkout = () => {
 
   const handleCrypto = async () => {
     if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
+    if (!agreedTerms) { toast.error("Please agree to the terms."); return; }
     setProcessing(true);
     try {
       const purchase = await createPurchaseRecord();
@@ -162,7 +187,7 @@ const Checkout = () => {
         headers: { Authorization: `Bearer ${session!.access_token}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "create_invoice", amount: total, currency: "usd",
-          description: `${stepType === "1-step" ? "1 Step" : "2 Step"} Challenge — ${accountSize}`,
+          description: `${stepLabel} Challenge — ${selectedSize}`,
           purchaseId: purchase.id, orderId: purchase.id,
         }),
       });
@@ -175,6 +200,7 @@ const Checkout = () => {
 
   const handleManual = async () => {
     if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
+    if (!agreedTerms) { toast.error("Please agree to the terms."); return; }
     setProcessing(true);
     try {
       await createPurchaseRecord();
@@ -184,113 +210,276 @@ const Checkout = () => {
     setProcessing(false);
   };
 
+  const handleContinuePayment = () => {
+    if (!agreedTerms) { toast.error("Please agree to the terms first."); return; }
+    if (payMethod === "crypto") handleCrypto();
+    else if (payMethod === "manual") handleManual();
+    // PayPal handled by its own buttons
+  };
+
   const stepLabel = stepType === "1-step" ? "1 Step" : "2 Step";
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-[hsl(230,25%,7%)] text-white">
+      {/* Promo banner */}
+      <div className="bg-gradient-to-r from-[hsl(260,80%,55%)] to-[hsl(280,80%,50%)] py-2.5 text-center text-xs font-medium tracking-wide">
+        Haven't purchased yet? Use code <span className="font-bold">HELLO</span> & Get 20% OFF now on your first purchase!
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-8 lg:py-12">
         {/* Back */}
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-[hsl(220,15%,55%)] hover:text-white mb-6 transition-colors">
           <ArrowLeft size={14} /> Back
         </button>
 
-        {/* Main Card */}
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-          {/* Order header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">{stepLabel} Challenge</p>
-              <p className="font-display text-lg font-bold">{accountSize}</p>
-            </div>
-            <div className="text-right">
-              {discount > 0 && <p className="text-xs text-muted-foreground line-through">${basePrice}</p>}
-              <p className="font-display text-2xl font-bold">${total}</p>
-            </div>
-          </div>
-
-          {/* Coupon */}
-          {couponApplied ? (
-            <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-3 py-2">
-              <div className="flex items-center gap-2">
-                <Check size={14} className="text-primary" />
-                <span className="text-xs font-mono font-bold">{couponApplied.code}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({couponApplied.type === "percentage" ? `${couponApplied.value}%` : `$${couponApplied.value}`} off)
-                </span>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8">
+          {/* LEFT — Configuration */}
+          <div className="space-y-6">
+            {/* Swap Free */}
+            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-6">
+              <h2 className="text-lg font-bold mb-1">Swap Free</h2>
+              <p className="text-sm text-[hsl(220,15%,50%)] mb-4">Choose options for swap free</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setSwapFree(false)}
+                  className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${
+                    !swapFree
+                      ? "border-[hsl(230,60%,55%)] bg-[hsl(230,40%,15%)]"
+                      : "border-[hsl(220,15%,15%)] bg-[hsl(230,20%,8%)] hover:border-[hsl(220,15%,25%)]"
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    !swapFree ? "border-[hsl(230,60%,55%)]" : "border-[hsl(220,15%,30%)]"
+                  }`}>
+                    {!swapFree && <div className="w-2 h-2 rounded-full bg-[hsl(230,60%,55%)]" />}
+                  </div>
+                  <div className="text-left">
+                    <span className="text-sm font-semibold">No</span>
+                    <span className="ml-3 text-xs text-[hsl(220,15%,45%)]">Default</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setSwapFree(true)}
+                  className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${
+                    swapFree
+                      ? "border-[hsl(230,60%,55%)] bg-[hsl(230,40%,15%)]"
+                      : "border-[hsl(220,15%,15%)] bg-[hsl(230,20%,8%)] hover:border-[hsl(220,15%,25%)]"
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    swapFree ? "border-[hsl(230,60%,55%)]" : "border-[hsl(220,15%,30%)]"
+                  }`}>
+                    {swapFree && <div className="w-2 h-2 rounded-full bg-[hsl(230,60%,55%)]" />}
+                  </div>
+                  <div className="text-left flex items-center gap-2">
+                    <span className="text-sm font-semibold">Yes</span>
+                    <span className="text-xs text-[hsl(220,15%,45%)]">+${swapFreeExtra}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-[hsl(220,15%,25%)] text-[hsl(220,15%,55%)]">MT5 Only</span>
+                  </div>
+                </button>
               </div>
-              <button onClick={() => { setCouponApplied(null); setCouponCode(""); }} className="text-muted-foreground hover:text-destructive"><X size={14} /></button>
             </div>
-          ) : (
-            <div className="flex gap-2">
-              <Input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="Coupon code"
-                className="h-8 text-xs rounded-lg bg-secondary border-border font-mono uppercase" onKeyDown={(e) => e.key === "Enter" && applyCoupon()} />
-              <Button onClick={applyCoupon} variant="outline" size="sm" className="h-8 rounded-lg px-3 text-xs" disabled={couponLoading || !couponCode.trim()}>
-                {couponLoading ? <Loader2 size={12} className="animate-spin" /> : "Apply"}
-              </Button>
+
+            {/* Account Size */}
+            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-6">
+              <h2 className="text-lg font-bold mb-1">Account Size</h2>
+              <p className="text-sm text-[hsl(220,15%,50%)] mb-4">Select your preferred account size</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {accountSizes.map(size => {
+                  const sNum = parseInt(size.replace(/[$,K]/gi, "")) * 1000;
+                  const ch = challenges.find(c => c.account_size === sNum);
+                  const price = ch?.price;
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`p-4 rounded-xl border text-left transition-all ${
+                        selectedSize === size
+                          ? "border-[hsl(230,60%,55%)] bg-[hsl(230,40%,15%)]"
+                          : "border-[hsl(220,15%,15%)] bg-[hsl(230,20%,8%)] hover:border-[hsl(220,15%,25%)]"
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full border-2 mb-3 flex items-center justify-center ${
+                        selectedSize === size ? "border-[hsl(230,60%,55%)]" : "border-[hsl(220,15%,30%)]"
+                      }`}>
+                        {selectedSize === size && <div className="w-2 h-2 rounded-full bg-[hsl(230,60%,55%)]" />}
+                      </div>
+                      <p className="text-base font-bold">${sNum.toLocaleString()}</p>
+                      {price != null && <p className="text-xs text-[hsl(220,15%,45%)] mt-0.5">${price}</p>}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
-
-          <div className="border-t border-border/50" />
-
-          {/* Payment method tabs */}
-          <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
-            {([["paypal", "PayPal", CreditCard], ["crypto", "Crypto", Bitcoin], ["manual", "Manual", Check]] as const).map(([key, label, Icon]) => (
-              <button key={key} onClick={() => setPayMethod(key as any)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium transition-all ${payMethod === key ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-                <Icon size={13} /> {label}
-              </button>
-            ))}
           </div>
 
-          {/* PayPal */}
-          {payMethod === "paypal" && (
-            <div>
-              {!user ? (
-                <Button onClick={() => navigate("/auth")} variant="outline" className="w-full rounded-lg h-10 text-sm">Sign in to pay</Button>
-              ) : !paypalReady ? (
-                <div className="flex items-center justify-center py-4 gap-2 text-muted-foreground text-sm">
-                  <Loader2 size={14} className="animate-spin" /> Loading PayPal...
+          {/* RIGHT — Order Summary */}
+          <div className="space-y-4 lg:sticky lg:top-8 self-start">
+            {/* Coupon */}
+            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-5">
+              <h3 className="text-sm font-bold mb-1">Coupon Code</h3>
+              <p className="text-xs text-[hsl(220,15%,45%)] mb-3">Enter a coupon code to get a discount on your challenge</p>
+              {couponApplied ? (
+                <div className="flex items-center justify-between bg-[hsl(142,60%,50%)]/10 border border-[hsl(142,60%,50%)]/20 rounded-xl px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <Check size={14} className="text-[hsl(142,60%,50%)]" />
+                    <span className="text-xs font-mono font-bold">{couponApplied.code}</span>
+                    <span className="text-xs text-[hsl(220,15%,45%)]">
+                      ({couponApplied.type === "percentage" ? `${couponApplied.value}%` : `$${couponApplied.value}`} off)
+                    </span>
+                  </div>
+                  <button onClick={() => { setCouponApplied(null); setCouponCode(""); }} className="text-[hsl(220,15%,45%)] hover:text-[hsl(0,70%,55%)]"><X size={14} /></button>
                 </div>
               ) : (
-                <div ref={paypalRef} className="min-h-[48px]" />
+                <div className="flex gap-2">
+                  <Input
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Enter coupon code"
+                    className="h-10 text-sm rounded-xl bg-[hsl(230,20%,8%)] border-[hsl(220,15%,15%)] text-white font-mono uppercase placeholder:text-[hsl(220,15%,30%)] placeholder:normal-case"
+                    onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                  />
+                  <Button
+                    onClick={applyCoupon}
+                    variant="outline"
+                    className="h-10 rounded-xl px-5 text-sm border-[hsl(220,15%,20%)] text-white hover:bg-[hsl(220,15%,15%)]"
+                    disabled={couponLoading || !couponCode.trim()}
+                  >
+                    {couponLoading ? <Loader2 size={14} className="animate-spin" /> : "Apply"}
+                  </Button>
+                </div>
               )}
             </div>
-          )}
 
-          {/* Crypto */}
-          {payMethod === "crypto" && (
-            <div className="space-y-2">
-              <Button onClick={handleCrypto} disabled={processing}
-                className="w-full rounded-lg h-10 text-sm bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold">
-                {processing ? <><Loader2 size={14} className="animate-spin" /> Creating invoice...</>
-                  : <><Bitcoin size={14} /> Pay ${total} with Crypto <ExternalLink size={12} /></>}
-              </Button>
-              <p className="text-[10px] text-muted-foreground text-center">BTC • ETH • USDT • SOL • 200+ coins</p>
+            {/* Order Summary Card */}
+            <div className="rounded-2xl border border-[hsl(230,60%,55%)]/30 bg-[hsl(230,20%,10%)] p-5 shadow-[0_0_30px_-10px_hsl(230,60%,55%,0.2)]">
+              <h3 className="text-lg font-bold mb-4">Order Summary</h3>
+
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[hsl(220,15%,60%)]">
+                    ${sizeNum.toLocaleString()} — {stepLabel} Funding Pulze
+                  </span>
+                  <span className="text-sm font-semibold">${basePrice.toFixed(2)}</span>
+                </div>
+                <p className="text-xs text-[hsl(220,15%,40%)]">Platform: MetaTrader 5</p>
+
+                {swapFree && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[hsl(220,15%,60%)]">Swap Free Add-on</span>
+                    <span className="font-semibold">+${swapFreeExtra.toFixed(2)}</span>
+                  </div>
+                )}
+
+                {discount > 0 && (
+                  <div className="flex items-center justify-between text-sm text-[hsl(142,60%,50%)]">
+                    <span>Discount ({couponApplied?.code})</span>
+                    <span className="font-semibold">-${discount.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-[hsl(220,15%,15%)] pt-3 flex items-center justify-between">
+                <span className="text-base font-bold">Total</span>
+                <span className="text-2xl font-bold text-[hsl(142,60%,50%)]">${total.toFixed(2)}</span>
+              </div>
             </div>
-          )}
 
-          {/* Manual */}
-          {payMethod === "manual" && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Pay via crypto or bank transfer, then click below. We'll verify within 24h.</p>
-              <Button onClick={handleManual} disabled={processing} variant="outline" className="w-full rounded-lg h-10 text-sm">
-                {processing ? <><Loader2 size={14} className="animate-spin" /> Processing...</>
-                  : <><Check size={14} /> I Have Paid — ${total}</>}
-              </Button>
+            {/* Terms */}
+            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-5">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="terms"
+                  checked={agreedTerms}
+                  onCheckedChange={(v) => setAgreedTerms(!!v)}
+                  className="mt-0.5 border-[hsl(220,15%,25%)] data-[state=checked]:bg-[hsl(230,60%,55%)] data-[state=checked]:border-[hsl(230,60%,55%)]"
+                />
+                <label htmlFor="terms" className="text-xs text-[hsl(220,15%,55%)] leading-relaxed cursor-pointer">
+                  <span className="font-semibold text-white block mb-1.5">I agree with all the following terms:</span>
+                  <ul className="space-y-1 list-disc list-inside">
+                    <li>I have read and agreed to the <a href="/terms" className="text-[hsl(230,60%,65%)] hover:underline">Terms of Use</a>.</li>
+                    <li>All information provided is correct and matches government-issued ID.</li>
+                    <li>I have read and agree with the <a href="/terms" className="text-[hsl(230,60%,65%)] hover:underline">Terms & Conditions</a>.</li>
+                    <li>I confirm that I am not a U.S. citizen or resident.</li>
+                  </ul>
+                </label>
+              </div>
             </div>
-          )}
 
-          {processing && (
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <Loader2 size={12} className="animate-spin" /> Verifying payment...
+            {/* Payment */}
+            <div className="space-y-3">
+              {/* Payment method tabs */}
+              <div className="flex gap-1 p-1 rounded-xl bg-[hsl(230,20%,8%)] border border-[hsl(220,15%,15%)]">
+                {([["paypal", "PayPal", CreditCard], ["crypto", "Crypto", Bitcoin], ["manual", "Manual", Check]] as const).map(([key, label, Icon]) => (
+                  <button key={key} onClick={() => setPayMethod(key as any)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                      payMethod === key
+                        ? "bg-[hsl(230,20%,15%)] text-white shadow-sm"
+                        : "text-[hsl(220,15%,45%)] hover:text-white"
+                    }`}>
+                    <Icon size={13} /> {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* PayPal */}
+              {payMethod === "paypal" && (
+                <div>
+                  {!user ? (
+                    <Button onClick={() => navigate("/auth")} className="w-full rounded-xl h-12 text-sm bg-[hsl(230,60%,55%)] hover:bg-[hsl(230,60%,50%)] text-white font-semibold">
+                      Sign in to Continue
+                    </Button>
+                  ) : !agreedTerms ? (
+                    <Button disabled className="w-full rounded-xl h-12 text-sm bg-[hsl(230,60%,55%)]/50 text-white/50 font-semibold cursor-not-allowed">
+                      Accept terms to continue
+                    </Button>
+                  ) : !paypalReady ? (
+                    <div className="flex items-center justify-center py-4 gap-2 text-[hsl(220,15%,45%)] text-sm">
+                      <Loader2 size={14} className="animate-spin" /> Loading PayPal...
+                    </div>
+                  ) : (
+                    <div ref={paypalRef} className="min-h-[48px]" />
+                  )}
+                </div>
+              )}
+
+              {/* Crypto */}
+              {payMethod === "crypto" && (
+                <div className="space-y-2">
+                  <Button onClick={handleCrypto} disabled={processing || !agreedTerms}
+                    className="w-full rounded-xl h-12 text-sm bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold">
+                    {processing ? <><Loader2 size={14} className="animate-spin" /> Creating invoice...</>
+                      : <><Bitcoin size={14} /> Pay ${total.toFixed(2)} with Crypto <ExternalLink size={12} /></>}
+                  </Button>
+                  <p className="text-[10px] text-[hsl(220,15%,40%)] text-center">BTC • ETH • USDT • SOL • 200+ coins</p>
+                </div>
+              )}
+
+              {/* Manual */}
+              {payMethod === "manual" && (
+                <div className="space-y-2">
+                  <p className="text-xs text-[hsl(220,15%,45%)]">Pay via crypto or bank transfer, then click below. We'll verify within 24h.</p>
+                  <Button onClick={handleManual} disabled={processing || !agreedTerms}
+                    className="w-full rounded-xl h-12 text-sm bg-[hsl(230,20%,15%)] hover:bg-[hsl(230,20%,20%)] text-white border border-[hsl(220,15%,20%)] font-semibold">
+                    {processing ? <><Loader2 size={14} className="animate-spin" /> Processing...</>
+                      : <><Check size={14} /> I Have Paid — ${total.toFixed(2)}</>}
+                  </Button>
+                </div>
+              )}
+
+              {processing && (
+                <div className="flex items-center justify-center gap-2 text-xs text-[hsl(220,15%,45%)]">
+                  <Loader2 size={12} className="animate-spin" /> Verifying payment...
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Trust */}
-          <div className="flex items-center justify-center gap-4 pt-2 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1"><Shield size={10} /> SSL Encrypted</span>
-            <span className="flex items-center gap-1"><Check size={10} /> Instant Access</span>
-            <span className="flex items-center gap-1"><Check size={10} /> 24/7 Support</span>
+            {/* Trust */}
+            <div className="flex items-center justify-center gap-5 pt-1 text-[10px] text-[hsl(220,15%,40%)]">
+              <span className="flex items-center gap-1"><Shield size={10} /> SSL Encrypted</span>
+              <span className="flex items-center gap-1"><Check size={10} /> Instant Access</span>
+              <span className="flex items-center gap-1"><Check size={10} /> 24/7 Support</span>
+            </div>
           </div>
         </div>
       </div>
