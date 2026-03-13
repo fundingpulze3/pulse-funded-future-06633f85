@@ -231,7 +231,7 @@ const About = () => {
             <span className="tracking-wide">Our Story</span>
           </div>
 
-          <h1 className="about-title font-display text-6xl sm:text-7xl lg:text-8xl font-bold leading-[0.95] tracking-tight mb-8 opacity-0 whitespace-pre-line">
+          <h1 className="about-title font-display text-4xl sm:text-6xl lg:text-8xl font-bold leading-[0.95] tracking-tight mb-8 opacity-0 whitespace-pre-line">
             {hero.title}
           </h1>
 
