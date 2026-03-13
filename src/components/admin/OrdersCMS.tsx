@@ -9,6 +9,7 @@ interface OrdersCMSProps {
   profiles: any[];
   challenges: any[];
   getProfileName: (userId: string) => string;
+  getProfileByUserId: (userId: string) => any;
   getChallengeNameById: (id: string) => string;
   onRefresh: () => void;
 }
