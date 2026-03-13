@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings } from "lucide-react";
+import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings, RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface Credential {
@@ -41,6 +41,9 @@ const CredentialsManager = () => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [defaultServer, setDefaultServer] = useState("MetaQuotes-Demo");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingDialogOpen, setPendingDialogOpen] = useState(false);
+  const [pendingPurchases, setPendingPurchases] = useState<any[]>([]);
+  const [assigning, setAssigning] = useState(false);
 
   const [form, setForm] = useState({
     challenge_id: "",
@@ -127,7 +130,66 @@ const CredentialsManager = () => {
     fetchData();
   };
 
-  // Group credentials by challenge (deduplicate by label)
+  // Fetch purchases that are confirmed/completed but have no credentials assigned
+  const fetchPending = async () => {
+    // Get all confirmed/completed purchases
+    const { data: purchases } = await supabase
+      .from("challenge_purchases")
+      .select("id, challenge_id, user_id, payment_status, created_at, challenges(name, account_size, step_type)")
+      .in("payment_status", ["confirmed", "completed", "paid"])
+      .order("created_at", { ascending: false });
+    if (!purchases) return;
+    // Get all assigned credential purchase_ids
+    const { data: assignedCreds } = await supabase
+      .from("trading_credentials")
+      .select("purchase_id")
+      .not("purchase_id", "is", null);
+    const assignedPurchaseIds = new Set((assignedCreds || []).map(c => c.purchase_id));
+    const pending = purchases.filter(p => !assignedPurchaseIds.has(p.id));
+    setPendingPurchases(pending);
+  };
+
+  const openPendingDialog = async () => {
+    await fetchPending();
+    setPendingDialogOpen(true);
+  };
+
+  // Auto-assign credentials to all pending purchases
+  const assignAllPending = async () => {
+    setAssigning(true);
+    let assigned = 0;
+    let failed = 0;
+    for (const p of pendingPurchases) {
+      const { data: freeCred } = await supabase
+        .from("trading_credentials")
+        .select("id")
+        .eq("challenge_id", p.challenge_id)
+        .eq("is_assigned", false)
+        .limit(1)
+        .maybeSingle();
+      if (freeCred) {
+        const { error } = await supabase
+          .from("trading_credentials")
+          .update({
+            is_assigned: true,
+            assigned_to: p.user_id,
+            assigned_at: new Date().toISOString(),
+            purchase_id: p.id,
+          })
+          .eq("id", freeCred.id)
+          .eq("is_assigned", false);
+        if (!error) assigned++;
+        else failed++;
+      } else {
+        failed++;
+      }
+    }
+    toast.success(`${assigned} credentials assigned${failed > 0 ? `, ${failed} failed (no free creds)` : ""}`);
+    setAssigning(false);
+    fetchData();
+    await fetchPending();
+  };
+
   const grouped = (() => {
     const map = new Map<string, { challenge: Challenge; challengeIds: string[]; credentials: Credential[]; total: number; available: number; assigned: number }>();
     challenges.forEach(ch => {
@@ -190,6 +252,9 @@ const CredentialsManager = () => {
         </Button>
         <Button size="sm" variant="outline" className="rounded-lg border-[hsl(0,0%,88%)]" onClick={() => setBulkDialogOpen(true)}>
           Bulk Import
+        </Button>
+        <Button size="sm" variant="outline" className="rounded-lg border-orange-300 text-orange-600 hover:bg-orange-50" onClick={openPendingDialog}>
+          <AlertCircle size={14} className="mr-1" /> Pending
         </Button>
       </div>
 
@@ -366,6 +431,56 @@ const CredentialsManager = () => {
             <Button className="rounded-lg bg-[hsl(0,0%,0%)] text-white hover:bg-[hsl(0,0%,15%)]" onClick={() => { setSettingsOpen(false); toast.success("Default server updated"); }}>
               Save
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pending Credentials Dialog */}
+      <Dialog open={pendingDialogOpen} onOpenChange={setPendingDialogOpen}>
+        <DialogContent className="bg-white border-[hsl(0,0%,90%)] rounded-2xl max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-[hsl(0,0%,5%)]">
+              Pending Credential Assignments ({pendingPurchases.length})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[350px] overflow-y-auto">
+            {pendingPurchases.length === 0 ? (
+              <div className="text-center py-8 text-[hsl(0,0%,50%)] text-sm">
+                <CheckCircle2 size={28} className="mx-auto mb-2 text-green-500" />
+                All purchases have credentials assigned!
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {pendingPurchases.map(p => {
+                  const ch = p.challenges as any;
+                  const availForChallenge = credentials.filter(c => c.challenge_id === p.challenge_id && !c.is_assigned).length;
+                  return (
+                    <div key={p.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,92%)]">
+                      <div>
+                        <p className="text-sm font-medium text-[hsl(0,0%,10%)]">
+                          ${ch?.account_size?.toLocaleString()} - {ch?.step_type === "one_step" ? "1 Step" : "2 Step"}
+                        </p>
+                        <p className="text-[10px] text-[hsl(0,0%,50%)]">
+                          Purchase: {new Date(p.created_at).toLocaleDateString()} • User: {p.user_id.slice(0, 8)}...
+                        </p>
+                      </div>
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${availForChallenge > 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"}`}>
+                        {availForChallenge > 0 ? `${availForChallenge} free` : "No creds"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-lg border-[hsl(0,0%,88%)]" onClick={() => setPendingDialogOpen(false)}>Close</Button>
+            {pendingPurchases.length > 0 && (
+              <Button className="rounded-lg bg-[hsl(0,0%,0%)] text-white hover:bg-[hsl(0,0%,15%)]" onClick={assignAllPending} disabled={assigning}>
+                <RefreshCw size={14} className={`mr-1 ${assigning ? "animate-spin" : ""}`} />
+                {assigning ? "Assigning..." : `Assign All (${pendingPurchases.length})`}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
