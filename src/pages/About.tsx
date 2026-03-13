@@ -320,7 +320,7 @@ const About = () => {
             transition={{ duration: 0.7 }}
           >
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-4">Core Values</p>
-            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+             <h2 className="font-display text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight">
               What We <span className="text-gradient">Stand For</span>
             </h2>
           </motion.div>
