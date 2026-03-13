@@ -9,6 +9,8 @@ const navItems = [
   { key: "affiliate", label: "Affiliate", route: "/dashboard?view=affiliate", icon: Users },
   { key: "certificates", label: "Certificates", route: "/dashboard/certificates", icon: Award },
   { key: "payouts", label: "Payouts", route: "/dashboard/payouts", icon: Wallet },
+  { key: "billing", label: "Billing", route: "/dashboard/billing", icon: Receipt },
+  { key: "settings", label: "Settings", route: "/dashboard/settings", icon: Settings },
 ];
 
 interface Props {

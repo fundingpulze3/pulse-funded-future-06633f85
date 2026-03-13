@@ -61,6 +61,8 @@ const AppRoutes = () => {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/dashboard/certificates" element={<DashboardCertificates />} />
       <Route path="/dashboard/payouts" element={<DashboardPayouts />} />
+      <Route path="/dashboard/settings" element={<DashboardSettings />} />
+      <Route path="/dashboard/billing" element={<DashboardBilling />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/about" element={<About />} />
