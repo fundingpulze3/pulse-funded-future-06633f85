@@ -24,6 +24,7 @@ const navLinks = [
 const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdminCheck();
