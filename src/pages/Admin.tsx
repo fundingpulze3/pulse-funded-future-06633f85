@@ -74,6 +74,7 @@ const Admin = () => {
   const [pageVisits, setPageVisits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
