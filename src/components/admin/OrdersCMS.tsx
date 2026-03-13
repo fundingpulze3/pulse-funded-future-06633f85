@@ -17,7 +17,7 @@ interface OrdersCMSProps {
 type StatusFilter = "all" | "pending" | "completed" | "cancelled";
 
 export default function OrdersCMS({
-  purchases, profiles, challenges, getProfileName, getChallengeNameById, onRefresh,
+  purchases, profiles, challenges, getProfileName, getProfileByUserId, getChallengeNameById, onRefresh,
 }: OrdersCMSProps) {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
