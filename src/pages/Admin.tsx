@@ -260,7 +260,6 @@ const Admin = () => {
       items: [
         { id: "user_certificates" as Tab, label: "PDF / Certs", icon: <FileText size={18} /> },
         { id: "cert_templates" as Tab, label: "Cert Templates", icon: <ImageIcon size={18} /> },
-        { id: "user_phases" as Tab, label: "User Phases", icon: <Shield size={18} /> },
       ],
       roles: ["administrator"],
     },
@@ -277,6 +276,7 @@ const Admin = () => {
     {
       label: "Management",
       items: [
+        { id: "user_phases" as Tab, label: "User Accounts", icon: <Shield size={18} /> },
         { id: "users" as Tab, label: "Users", icon: <Users size={18} /> },
         { id: "challenges" as Tab, label: "Challenges", icon: <Trophy size={18} /> },
         { id: "orders" as Tab, label: "Orders", icon: <ShoppingCart size={18} /> },
