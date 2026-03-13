@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X } from "lucide-react";
+import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X, Receipt } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -9,6 +9,8 @@ const navItems = [
   { key: "affiliate", label: "Affiliate", route: "/dashboard?view=affiliate", icon: Users },
   { key: "certificates", label: "Certificates", route: "/dashboard/certificates", icon: Award },
   { key: "payouts", label: "Payouts", route: "/dashboard/payouts", icon: Wallet },
+  { key: "billing", label: "Billing", route: "/dashboard/billing", icon: Receipt },
+  { key: "settings", label: "Settings", route: "/dashboard/settings", icon: Settings },
 ];
 
 interface Props {
@@ -51,7 +53,7 @@ const DashboardSidebar = ({ profile }: Props) => {
           <button onClick={() => navigate("/help")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
             <HelpCircle size={16} />
           </button>
-          <button onClick={() => navigate("/")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
+          <button onClick={() => navigate("/dashboard/settings")} className="p-2 rounded-lg hover:bg-[hsl(220,15%,12%)] text-[hsl(220,15%,50%)] hover:text-white transition-colors">
             <Settings size={16} />
           </button>
           <button onClick={async () => { await signOut(); navigate("/"); }} className="p-2 rounded-lg hover:bg-[hsl(0,70%,55%)]/10 text-[hsl(220,15%,50%)] hover:text-[hsl(0,70%,55%)] transition-colors">

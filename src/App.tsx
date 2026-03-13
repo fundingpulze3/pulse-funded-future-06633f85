@@ -23,6 +23,8 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import DashboardCertificates from "./pages/DashboardCertificates";
 import DashboardPayouts from "./pages/DashboardPayouts";
+import DashboardSettings from "./pages/DashboardSettings";
+import DashboardBilling from "./pages/DashboardBilling";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,8 @@ const AppRoutes = () => {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/dashboard/certificates" element={<DashboardCertificates />} />
       <Route path="/dashboard/payouts" element={<DashboardPayouts />} />
+      <Route path="/dashboard/settings" element={<DashboardSettings />} />
+      <Route path="/dashboard/billing" element={<DashboardBilling />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/about" element={<About />} />
