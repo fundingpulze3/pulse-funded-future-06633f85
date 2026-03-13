@@ -56,6 +56,7 @@ interface UserCertificate {
   description: string | null;
   created_at: string;
   credential_id: string | null;
+  purchase_id: string | null;
 }
 
 interface TradingCredential {
