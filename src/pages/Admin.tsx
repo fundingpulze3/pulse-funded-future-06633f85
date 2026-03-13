@@ -497,7 +497,7 @@ const Admin = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6 bg-[hsl(0,0%,96%)]">
+        <div className="flex-1 overflow-auto p-3 md:p-6 bg-[hsl(0,0%,96%)]">
 
           {/* ===== Dashboard Tab ===== */}
           {tab === "dashboard" && (
