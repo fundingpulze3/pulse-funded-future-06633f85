@@ -707,26 +707,14 @@ const Dashboard = () => {
               {activeView === "overview" && activeAccountStats && (
                 <>
                   {/* Account Overview Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                      <h1 className="font-display text-xl font-bold">Account Overview</h1>
-                      <p className="text-xs text-[hsl(220,15%,45%)]">
-                        {activeAccountStats.accountNumber || activeAccountStats.purchase.id.slice(0, 8)} · Created: {new Date(activeAccountStats.purchase.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      <h1 className="font-display text-lg font-bold">Account Overview</h1>
+                      <p className="text-[11px] text-[hsl(220,15%,45%)]">
+                        {activeAccountStats.accountNumber || activeAccountStats.purchase.id.slice(0, 8)} · {new Date(activeAccountStats.purchase.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </p>
                     </div>
                   </div>
-
-                  {/* Trading Objectives */}
-                  <TradingObjectives
-                    profitTarget={activeAccountStats.purchase.challenges?.profit_target || "8"}
-                    dailyDrawdown={activeAccountStats.purchase.challenges?.daily_drawdown || "5"}
-                    maxDrawdown={activeAccountStats.purchase.challenges?.max_drawdown || "10"}
-                    currentProfit={Number(activeAccountStats.profit)}
-                    currentDailyDD={Number(activeAccountStats.dailyDDPercent)}
-                    currentMaxDD={ddUsed}
-                    accountSize={activeAccountStats.accountSize}
-                    status={activeAccountStats.purchase.status}
-                  />
 
                   {/* Balance Chart */}
                   <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
