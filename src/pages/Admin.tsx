@@ -296,6 +296,7 @@ const Admin = () => {
         { id: "credentials" as Tab, label: "Credentials", icon: <Key size={18} /> },
         { id: "referrals" as Tab, label: "Referrals", icon: <Link2 size={18} /> },
         { id: "coupons" as Tab, label: "Coupons", icon: <Ticket size={18} /> },
+        { id: "kyc" as Tab, label: "KYC", icon: <ShieldCheck size={18} /> },
         { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
       ],
       roles: ["administrator", "admin"],
