@@ -750,8 +750,8 @@ const Admin = () => {
                   </Button>
                 </div>
               </div>
-              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
-                <table className="w-full">
+              <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden overflow-x-auto">
+                <table className="w-full min-w-[600px]">
                   <thead>
                     <tr className="text-left text-[11px] uppercase tracking-wider text-[hsl(0,0%,45%)] border-b border-[hsl(0,0%,92%)]">
                       <th className="px-5 py-3 font-medium">Code</th>
