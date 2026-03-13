@@ -34,7 +34,7 @@ import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
