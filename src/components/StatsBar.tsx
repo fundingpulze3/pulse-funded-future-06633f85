@@ -43,7 +43,7 @@ const CountUp = ({
   }, [trigger, target]);
 
   return (
-    <span className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-highlight">
+    <span className="font-display text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight text-highlight">
       {prefix}
       {current.toFixed(decimals)}
       {suffix}
@@ -56,7 +56,7 @@ const StatsBar = () => {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section className="relative py-16 px-6">
+    <section className="relative py-12 sm:py-16 px-4 sm:px-6">
       <div
         ref={ref}
         className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4"

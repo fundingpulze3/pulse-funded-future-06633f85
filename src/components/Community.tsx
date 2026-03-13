@@ -149,7 +149,7 @@ const Community = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative py-24 sm:py-32 overflow-hidden"
+      className="relative py-16 sm:py-32 overflow-hidden"
     >
       {/* Interactive dot-grid canvas */}
       <canvas
@@ -158,7 +158,7 @@ const Community = () => {
         aria-hidden="true"
       />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <motion.div
           className="text-center mb-16"

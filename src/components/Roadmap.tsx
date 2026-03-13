@@ -42,7 +42,7 @@ const Roadmap = () => {
   const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
   return (
-    <section className="py-28 px-6 relative overflow-hidden">
+    <section className="py-16 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
       {/* Ambient */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full bg-foreground/[0.015] blur-[150px] pointer-events-none" />
 

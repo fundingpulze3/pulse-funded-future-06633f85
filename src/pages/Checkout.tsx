@@ -342,11 +342,11 @@ const Checkout = () => {
           <ArrowLeft size={14} /> Back
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* LEFT — Configuration */}
           <div className="space-y-6">
             {/* Step Type Selector */}
-            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-6">
+            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-4 sm:p-6">
               <h2 className="text-lg font-bold mb-1">Challenge Type</h2>
               <p className="text-sm text-[hsl(220,15%,50%)] mb-4">Choose your evaluation path</p>
               <div className="grid grid-cols-2 gap-3">
@@ -377,7 +377,7 @@ const Checkout = () => {
             </div>
 
             {/* Account Size */}
-            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-6">
+            <div className="rounded-2xl border border-[hsl(220,15%,15%)] bg-[hsl(230,20%,10%)] p-4 sm:p-6">
               <h2 className="text-lg font-bold mb-1">Account Size</h2>
               <p className="text-sm text-[hsl(220,15%,50%)] mb-4">Select your preferred account size</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

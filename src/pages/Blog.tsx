@@ -99,12 +99,12 @@ const Blog = () => {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Hero Section */}
-      <section className="pt-32 pb-12 px-6">
+      <section className="pt-24 sm:pt-32 pb-8 sm:pb-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-display text-5xl md:text-7xl font-bold tracking-tight"
+            className="font-display text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight"
           >
             FP Blog
           </motion.h1>
@@ -147,7 +147,7 @@ const Blog = () => {
       ) : (
         <>
           {/* Featured + Latest Layout */}
-          <section className="px-6 pb-16">
+          <section className="px-4 sm:px-6 pb-16">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Featured / Latest Post — Large Card */}
               {featuredPost && (

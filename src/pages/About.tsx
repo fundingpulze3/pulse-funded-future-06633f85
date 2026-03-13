@@ -231,7 +231,7 @@ const About = () => {
             <span className="tracking-wide">Our Story</span>
           </div>
 
-          <h1 className="about-title font-display text-6xl sm:text-7xl lg:text-8xl font-bold leading-[0.95] tracking-tight mb-8 opacity-0 whitespace-pre-line">
+          <h1 className="about-title font-display text-4xl sm:text-6xl lg:text-8xl font-bold leading-[0.95] tracking-tight mb-8 opacity-0 whitespace-pre-line">
             {hero.title}
           </h1>
 
@@ -263,7 +263,7 @@ const About = () => {
       </section>
 
       {/* ═══ STATS BAR ═══ */}
-      <section className="py-20 px-6 border-y border-border/30">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 border-y border-border/30">
         <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x divide-border/30">
           {stats.map((stat, i) => (
             <motion.div
@@ -274,7 +274,7 @@ const About = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
             >
-              <p className="font-display text-4xl sm:text-5xl font-bold tracking-tight">
+              <p className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
                 <AnimatedNumber value={stat.value} suffix={stat.suffix} />
               </p>
               <p className="text-sm text-muted-foreground mt-2 tracking-wide">{stat.label}</p>
@@ -284,7 +284,7 @@ const About = () => {
       </section>
 
       {/* ═══ MISSION & VISION ═══ */}
-      <section id="mission" className="py-32 px-6">
+      <section id="mission" className="py-20 sm:py-32 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           {/* Mission — Full width cinematic */}
           <MissionCard
@@ -309,7 +309,7 @@ const About = () => {
       </section>
 
       {/* ═══ VALUES ═══ */}
-      <section className="py-32 px-6 relative">
+      <section className="py-20 sm:py-32 px-4 sm:px-6 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-foreground/[0.01] to-transparent" />
         <div className="max-w-6xl mx-auto relative z-10">
           <motion.div
@@ -320,7 +320,7 @@ const About = () => {
             transition={{ duration: 0.7 }}
           >
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-4">Core Values</p>
-            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+             <h2 className="font-display text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight">
               What We <span className="text-gradient">Stand For</span>
             </h2>
           </motion.div>
@@ -350,7 +350,7 @@ const About = () => {
       </section>
 
       {/* ═══ TIMELINE ═══ */}
-      <section ref={timelineRef} className="py-32 px-6">
+      <section ref={timelineRef} className="py-20 sm:py-32 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
             className="text-center mb-20"
@@ -395,11 +395,11 @@ const About = () => {
       </section>
 
       {/* ═══ FOUNDER ═══ */}
-      <section className="py-32 px-6 relative">
+      <section className="py-20 sm:py-32 px-4 sm:px-6 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-foreground/[0.015] to-transparent" />
         <div className="max-w-3xl mx-auto relative z-10">
           <motion.div
-            className="relative rounded-[2rem] border border-border/50 p-12 sm:p-16 text-center overflow-hidden"
+            className="relative rounded-2xl sm:rounded-[2rem] border border-border/50 p-8 sm:p-12 md:p-16 text-center overflow-hidden"
             initial={{ opacity: 0, y: 40, scale: 0.97 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true }}
@@ -432,7 +432,7 @@ const About = () => {
       </section>
 
       {/* ═══ CTA ═══ */}
-      <section className="py-32 px-6">
+      <section className="py-20 sm:py-32 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -440,7 +440,7 @@ const About = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            <h2 className="font-display text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight mb-6">
               Ready to Start?
             </h2>
             <p className="text-xl text-muted-foreground max-w-xl mx-auto mb-10 font-light">
@@ -471,7 +471,7 @@ const MissionCard = ({ icon, label, title, content, direction }: {
   return (
     <motion.div
       ref={ref}
-      className={`relative rounded-[2rem] border border-border/40 p-10 sm:p-14 overflow-hidden bg-card/30 backdrop-blur-sm ${
+      className={`relative rounded-2xl sm:rounded-[2rem] border border-border/40 p-6 sm:p-10 md:p-14 overflow-hidden bg-card/30 backdrop-blur-sm ${
         direction === "right" ? "lg:ml-auto lg:max-w-2xl" : "lg:mr-auto lg:max-w-2xl"
       }`}
       initial={{ opacity: 0, x: direction === "left" ? -60 : 60 }}
