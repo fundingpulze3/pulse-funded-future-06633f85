@@ -550,7 +550,7 @@ const Checkout = () => {
             {/* Payment */}
             <div className="space-y-3">
               <div className="flex gap-1 p-1 rounded-xl bg-[hsl(230,20%,8%)] border border-[hsl(220,15%,15%)]">
-                {([["paypal", "PayPal", CreditCard], ["crypto", "Crypto", Bitcoin], ["manual", "Manual", Check]] as const).map(([key, label, Icon]) => (
+                {([["paypal", "PayPal & Cards", CreditCard], ["crypto", "Crypto", Bitcoin]] as const).map(([key, label, Icon]) => (
                   <button key={key} onClick={() => setPayMethod(key as any)}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                       payMethod === key
