@@ -56,6 +56,7 @@ interface UserCertificate {
   description: string | null;
   created_at: string;
   credential_id: string | null;
+  purchase_id: string | null;
 }
 
 interface TradingCredential {
@@ -64,6 +65,7 @@ interface TradingCredential {
   mt5_password: string;
   mt5_server: string;
   challenge_id: string;
+  purchase_id: string | null;
 }
 
 const REFERRAL_DOMAIN = "https://fundingpulze.com";
@@ -131,7 +133,7 @@ const Dashboard = () => {
           supabase.from("affiliate_referrals").select("*").eq("referrer_id", user.id),
           supabase.from("challenge_purchases").select("*, challenges(name, account_size, profit_target, daily_drawdown, max_drawdown, step_type)").eq("user_id", user.id).in("payment_status", ["paid", "confirmed", "completed"]).order("created_at", { ascending: false }),
           supabase.from("user_certificates").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-          supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id").eq("assigned_to", user.id),
+          supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id, purchase_id").eq("assigned_to", user.id),
           supabase.from("certificate_templates").select("certificate_type, background_image_url"),
         ])
       );
@@ -196,11 +198,17 @@ const Dashboard = () => {
   const activeAccountStats = useMemo(() => {
     const activePurchase = selectedAccount ? purchases.find(p => p.id === selectedAccount) : purchases[0];
     if (!activePurchase) return null;
-    const latestStats = userCertificates.find(c => c.certificate_type === "latest_stats" && c.stats && Object.keys(c.stats).length > 0);
-    const anyCert = userCertificates.find(c => c.stats && Object.keys(c.stats).length > 0 && c.certificate_type !== "latest_stats");
-    const cert = latestStats || anyCert;
+    // Find the credential linked to this specific purchase
+    const purchaseCred = credentials.find(c => c.purchase_id === activePurchase.id);
+    const accountLogin = purchaseCred?.mt5_login || null;
+    // Find stats certificate matching this purchase (by purchase_id or account_number)
+    const matchedCert = userCertificates.find(c =>
+      c.purchase_id === activePurchase.id && c.stats && Object.keys(c.stats).length > 0
+    ) || (accountLogin ? userCertificates.find(c =>
+      c.account_number === accountLogin && c.stats && Object.keys(c.stats).length > 0
+    ) : null);
     const accountSize = activePurchase.challenges?.account_size || 0;
-    const stats = cert?.stats || {};
+    const stats = matchedCert?.stats || {};
     return {
       purchase: activePurchase,
       stats, balance: stats.balance ?? accountSize, equity: stats.equity ?? stats.balance ?? accountSize,
@@ -217,7 +225,7 @@ const Dashboard = () => {
       balanceChart: stats.balanceChart, growthChart: stats.growthChart, drawdownChart: stats.drawdownChart,
       profitByDay: stats.profitByDay, symbols: stats.symbols, monthlyPL: stats.monthlyPL, accountSize,
       broker: stats.broker ?? "", currency: stats.currency ?? "USD", accountType: stats.accountType ?? "",
-      accountNumber: stats.accountNumber ?? "", name: stats.name ?? "", withdrawal: stats.withdrawal ?? 0,
+      accountNumber: accountLogin || stats.accountNumber || "", name: stats.name ?? "", withdrawal: stats.withdrawal ?? 0,
       withdrawalCount: stats.withdrawalCount ?? 0, depositCount: stats.depositCount ?? 0,
       growthPercent: stats.growthPercent ?? 0, longNetPL: stats.longNetPL ?? 0, shortNetPL: stats.shortNetPL ?? 0,
       avgPLLong: stats.avgPLLong ?? 0, avgPLShort: stats.avgPLShort ?? 0,
@@ -226,7 +234,7 @@ const Dashboard = () => {
       signalTrades: stats.signalTrades ?? 0, maxConsecutiveProfit: stats.maxConsecutiveProfit ?? 0,
       maxConsecutiveLoss: stats.maxConsecutiveLoss ?? 0, drawdownDetailChart: stats.drawdownDetailChart,
     };
-  }, [purchases, userCertificates, selectedAccount]);
+  }, [purchases, userCertificates, selectedAccount, credentials]);
 
   const chartData = useMemo(() => {
     if (!activeAccountStats?.balanceChart || !Array.isArray(activeAccountStats.balanceChart)) {
@@ -307,9 +315,7 @@ const Dashboard = () => {
 
   // Get credential for a purchase
   const getCredentialForPurchase = (purchaseId: string) => {
-    const purchase = purchases.find(p => p.id === purchaseId);
-    if (!purchase) return null;
-    return credentials.find(c => c.challenge_id === purchase.challenge_id) || credentials[0] || null;
+    return credentials.find(c => c.purchase_id === purchaseId) || null;
   };
 
   const openCredentialsPopup = (purchaseId: string) => {
@@ -367,12 +373,8 @@ const Dashboard = () => {
 
   // Get all credentials for the popup
   const popupCredentials = credDialogPurchaseId
-    ? (() => {
-        const purchase = purchases.find(p => p.id === credDialogPurchaseId);
-        if (!purchase) return [];
-        return credentials.filter(c => c.challenge_id === purchase.challenge_id);
-      })()
-    : credentials;
+    ? credentials.filter(c => c.purchase_id === credDialogPurchaseId)
+    : [];
 
   return (
     <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
@@ -530,7 +532,7 @@ const Dashboard = () => {
                 const isActive = selectedAccount === p.id;
                 const status = getAccountStatus(p);
                 const sc = statusConfig[status] || statusConfig.ongoing;
-                const cred = credentials.find(c => c.challenge_id === p.challenge_id);
+                const cred = credentials.find(c => c.purchase_id === p.id);
                 const challengeName = p.challenges?.name || "Account";
                 const stepType = p.challenges?.step_type || "—";
                 const accountNumber = cred?.mt5_login || p.id.slice(0, 8);
@@ -577,7 +579,11 @@ const Dashboard = () => {
                         <Activity size={12} className="text-[hsl(220,15%,35%)]" />
                         <div>
                           <p className="text-[10px] text-[hsl(220,15%,40%)]">No. of trades</p>
-                          <p className="text-sm font-bold">{activeAccountStats?.totalTrades || 0}</p>
+                          <p className="text-sm font-bold">{(() => {
+                            const purchaseCert = userCertificates.find(c => c.purchase_id === p.id && c.stats && Object.keys(c.stats).length > 0)
+                              || (cred ? userCertificates.find(c => c.account_number === cred.mt5_login && c.stats && Object.keys(c.stats).length > 0) : null);
+                            return purchaseCert?.stats?.totalTrades ?? 0;
+                          })()}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
