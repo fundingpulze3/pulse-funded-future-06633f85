@@ -471,12 +471,15 @@ const Admin = () => {
       {/* ===== Main Content ===== */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <div className="h-14 border-b border-[hsl(0,0%,90%)] flex items-center justify-between px-6 shrink-0 bg-[hsl(0,0%,100%)]">
-          <div>
-            <h1 className="font-display text-lg font-bold text-[hsl(0,0%,5%)]">{tabLabels[tab]}</h1>
+        <div className="h-14 border-b border-[hsl(0,0%,90%)] flex items-center justify-between px-3 md:px-6 shrink-0 bg-[hsl(0,0%,100%)]">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMobileSidebarOpen(true)} className="md:hidden p-1.5 rounded-lg hover:bg-[hsl(0,0%,93%)]">
+              <Menu size={20} className="text-[hsl(0,0%,30%)]" />
+            </button>
+            <h1 className="font-display text-base md:text-lg font-bold text-[hsl(0,0%,5%)]">{tabLabels[tab]}</h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <SearchIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[hsl(0,0%,55%)]" />
               <input
                 value={searchQuery}
