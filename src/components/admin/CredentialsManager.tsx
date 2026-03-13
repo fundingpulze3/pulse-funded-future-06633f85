@@ -41,6 +41,9 @@ const CredentialsManager = () => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [defaultServer, setDefaultServer] = useState("MetaQuotes-Demo");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingDialogOpen, setPendingDialogOpen] = useState(false);
+  const [pendingPurchases, setPendingPurchases] = useState<any[]>([]);
+  const [assigning, setAssigning] = useState(false);
 
   const [form, setForm] = useState({
     challenge_id: "",
