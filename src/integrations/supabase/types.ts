@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          new_status: string
+          note: string | null
+          old_status: string | null
+          purchase_id: string
+          user_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_status: string
+          note?: string | null
+          old_status?: string | null
+          purchase_id: string
+          user_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_status?: string
+          note?: string | null
+          old_status?: string | null
+          purchase_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_status_history_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_referrals: {
         Row: {
           commission_amount: number | null
