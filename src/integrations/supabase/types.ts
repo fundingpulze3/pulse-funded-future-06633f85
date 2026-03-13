@@ -136,6 +136,33 @@ export type Database = {
         }
         Relationships: []
       }
+      certificate_templates: {
+        Row: {
+          background_image_url: string
+          certificate_type: string
+          created_at: string
+          id: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          background_image_url: string
+          certificate_type: string
+          created_at?: string
+          id?: string
+          label?: string
+          updated_at?: string
+        }
+        Update: {
+          background_image_url?: string
+          certificate_type?: string
+          created_at?: string
+          id?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           created_at: string
