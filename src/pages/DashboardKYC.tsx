@@ -83,8 +83,7 @@ const DashboardKYC = () => {
       setDocumentType(kyc.document_type || "passport");
       setStrategy(kyc.preferred_trading_strategy || "");
       setExperience(kyc.trading_experience || "");
-      setOccupation(kyc.occupation || "");
-      setSourceOfFunds(kyc.source_of_funds || "");
+      setTradingStyle(kyc.occupation || "");
     }
     setChecking(false);
   };
