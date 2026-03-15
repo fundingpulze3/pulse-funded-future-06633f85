@@ -296,7 +296,7 @@ const DashboardAI = () => {
               Purchase a challenge to unlock PulzeX AI.
             </p>
             <button
-              onClick={() => navigate("/#rules")}
+              onClick={() => navigate("/#challenges")}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] text-white font-bold text-sm transition-colors"
             >
               <ShoppingCart size={16} /> Get a Challenge

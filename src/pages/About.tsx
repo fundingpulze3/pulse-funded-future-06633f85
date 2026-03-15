@@ -447,7 +447,7 @@ const About = () => {
               Join thousands of traders who trust Funding Pulze to fuel their journey.
             </p>
             <a
-              href="/#rules"
+              href="/#challenges"
               className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-foreground text-background font-semibold hover:opacity-90 transition-opacity text-lg"
             >
               View Challenges <ArrowRight size={20} />
