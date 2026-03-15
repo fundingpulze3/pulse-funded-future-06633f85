@@ -70,7 +70,7 @@ const Shop = () => {
   const sizeNum = account.replace("$", "").replace("K", "k");
 
   return (
-    <section ref={sectionRef} id="rules" className="py-16 sm:py-24 px-4 sm:px-6">
+    <section ref={sectionRef} id="challenges" className="py-16 sm:py-24 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         <div className="section-header text-center mb-10 sm:mb-14">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">

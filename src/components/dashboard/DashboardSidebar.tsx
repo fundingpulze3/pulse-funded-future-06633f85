@@ -79,7 +79,7 @@ const DashboardSidebar = ({ profile }: Props) => {
       {/* Icon-only nav strip (desktop) */}
       <nav className="hidden lg:flex fixed top-14 left-0 bottom-0 flex-col items-center w-16 bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)] py-4 gap-1 z-40">
         <button
-          onClick={() => navigate("/#rules")}
+          onClick={() => navigate("/#challenges")}
           className="w-10 h-10 rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)] flex items-center justify-center text-white mb-4 transition-colors shadow-[0_0_16px_hsl(210,80%,55%,0.3)]"
           title="New Challenge"
         >
@@ -119,7 +119,7 @@ const DashboardSidebar = ({ profile }: Props) => {
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
       `}>
         <button
-          onClick={() => { navigate("/#rules"); setMobileOpen(false); }}
+          onClick={() => { navigate("/#challenges"); setMobileOpen(false); }}
           className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)] mb-2"
         >
           <Plus size={14} /> New Challenge

@@ -621,7 +621,7 @@ const Dashboard = () => {
           {/* Buy challenge CTA */}
           <div className="p-3 border-t border-[hsl(220,15%,12%)]">
             <button
-              onClick={() => navigate("/#rules")}
+              onClick={() => navigate("/#challenges")}
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[hsl(207,90%,77%)] to-[hsl(207,90%,72%)] text-white text-xs font-bold hover:opacity-90 transition-opacity"
             >
               + New Challenge
@@ -672,7 +672,7 @@ const Dashboard = () => {
             ) : (
               <div className="text-center py-4">
                 <p className="text-xs text-[hsl(220,15%,40%)]">No accounts yet</p>
-                <button onClick={() => navigate("/#rules")} className="mt-2 text-xs font-bold text-[hsl(207,90%,77%)]">Get a Challenge →</button>
+                <button onClick={() => navigate("/#challenges")} className="mt-2 text-xs font-bold text-[hsl(207,90%,77%)]">Get a Challenge →</button>
               </div>
             )}
           </div>
@@ -1018,7 +1018,7 @@ const Dashboard = () => {
                     <BarChart3 size={40} className="mx-auto mb-4 text-[hsl(220,15%,25%)]" />
                     <p className="text-lg font-bold mb-2">No account selected</p>
                     <p className="text-sm text-[hsl(220,15%,40%)] mb-4">Select an account from the left panel or purchase a challenge.</p>
-                    <Button onClick={() => navigate("/#rules")} className="rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)]">
+                    <Button onClick={() => navigate("/#challenges")} className="rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)]">
                       Browse Challenges
                     </Button>
                   </div>
