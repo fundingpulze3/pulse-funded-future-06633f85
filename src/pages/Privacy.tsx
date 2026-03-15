@@ -43,7 +43,7 @@ const sections = [
 const defaultSections = sections;
 
 const Privacy = () => {
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const [isDark, setIsDark] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const { hasCmsContent, orderedSections } = usePageContent("privacy");
 
