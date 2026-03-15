@@ -542,6 +542,11 @@ const Admin = () => {
             <SEOManager />
           )}
 
+          {/* ===== SEO AI Writer Tab ===== */}
+          {tab === "seo_ai" && (
+            <SEOAIWriter />
+          )}
+
           {/* ===== Users Tab ===== */}
           {tab === "users" && (
             <div>
