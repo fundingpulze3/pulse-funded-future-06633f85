@@ -137,7 +137,7 @@ export default function TradingCalendar({
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {cells.map((day, i) => {
           if (day === null) {
-            return <div key={`e-${i}`} className="aspect-square rounded-lg bg-[hsl(220,15%,6%)]" />;
+            return <div key={`e-${i}`} className="aspect-square rounded-md sm:rounded-lg bg-[hsl(220,15%,6%)]" />;
           }
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const data = dailyData.get(dateStr);
