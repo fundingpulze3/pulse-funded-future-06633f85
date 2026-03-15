@@ -125,9 +125,9 @@ export default function TradingCalendar({
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1">
         {dayNames.map(d => (
-          <div key={d} className="text-center text-[10px] font-bold uppercase tracking-wider text-[hsl(220,15%,40%)] py-1">
+          <div key={d} className="text-center text-[8px] sm:text-[10px] font-bold uppercase tracking-wider text-[hsl(220,15%,40%)] py-1">
             {d}
           </div>
         ))}
