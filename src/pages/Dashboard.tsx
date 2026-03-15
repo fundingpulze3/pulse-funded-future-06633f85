@@ -759,11 +759,11 @@ const Dashboard = () => {
                   {(growthData.length > 0 || drawdownData.length > 0) && (
                     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                       {growthData.length > 0 && (
-                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                          <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 sm:p-5">
+                          <h3 className="font-display font-bold text-sm mb-3 sm:mb-4 flex items-center gap-2">
                             <TrendingUp size={14} className="text-[hsl(142,60%,50%)]" /> Growth %
                           </h3>
-                          <div className="h-[200px]">
+                          <div className="h-[160px] sm:h-[200px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={growthData}>
                                 <defs>
