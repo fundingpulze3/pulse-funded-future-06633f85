@@ -300,7 +300,7 @@ const Auth = () => {
 
                 <div className="relative">
                   <Input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -308,7 +308,9 @@ const Auth = () => {
                     minLength={6}
                     className="h-12 bg-transparent border-0 border-b-2 border-border rounded-none px-0 pr-8 focus:border-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground text-foreground"
                   />
-                  <Lock size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
 
                 <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl font-medium">
