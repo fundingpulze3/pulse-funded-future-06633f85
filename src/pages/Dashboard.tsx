@@ -672,7 +672,7 @@ const Dashboard = () => {
             ) : (
               <div className="text-center py-4">
                 <p className="text-xs text-[hsl(220,15%,40%)]">No accounts yet</p>
-                <button onClick={() => navigate("/#rules")} className="mt-2 text-xs font-bold text-[hsl(207,90%,77%)]">Get a Challenge →</button>
+                <button onClick={() => navigate("/#challenges")} className="mt-2 text-xs font-bold text-[hsl(207,90%,77%)]">Get a Challenge →</button>
               </div>
             )}
           </div>
