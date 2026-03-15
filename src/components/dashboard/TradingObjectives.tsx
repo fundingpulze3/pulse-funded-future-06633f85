@@ -69,7 +69,7 @@ export default function TradingObjectives({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2">
       {objectives.map((obj, i) => (
         <motion.div
           key={obj.label}

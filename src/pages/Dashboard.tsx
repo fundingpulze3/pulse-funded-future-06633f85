@@ -1136,12 +1136,12 @@ const Dashboard = () => {
 const DashStatCard = ({ icon: Icon, value, label, subValue, trend, highlight }: {
   icon: any; value: string; label: string; subValue?: string; trend?: "up" | "down"; highlight?: boolean;
 }) => (
-  <div className={`rounded-xl bg-[hsl(220,20%,7%)] border p-4 transition-all ${
+  <div className={`rounded-xl bg-[hsl(220,20%,7%)] border p-3 sm:p-4 transition-all ${
     highlight ? "border-[hsl(207,90%,77%)]/20" : "border-[hsl(220,15%,12%)]"
   }`}>
-    <div className="flex items-center justify-between mb-2">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${highlight ? "bg-[hsl(207,90%,77%)]/10" : "bg-[hsl(220,15%,12%)]"}`}>
-        <Icon size={16} className={highlight ? "text-[hsl(207,90%,77%)]" : "text-[hsl(220,15%,40%)]"} />
+    <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+      <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center ${highlight ? "bg-[hsl(207,90%,77%)]/10" : "bg-[hsl(220,15%,12%)]"}`}>
+        <Icon size={14} className={`sm:w-4 sm:h-4 ${highlight ? "text-[hsl(207,90%,77%)]" : "text-[hsl(220,15%,40%)]"}`} />
       </div>
       {trend && (
         <div className={`flex items-center gap-0.5 text-xs font-medium ${trend === "up" ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`}>
@@ -1149,10 +1149,10 @@ const DashStatCard = ({ icon: Icon, value, label, subValue, trend, highlight }: 
         </div>
       )}
     </div>
-    <p className="text-xl font-bold font-display">{value}</p>
-    <div className="flex items-center gap-2 mt-0.5">
-      <p className="text-[11px] text-[hsl(220,15%,45%)]">{label}</p>
-      {subValue && <span className={`text-xs font-medium ${trend === "up" ? "text-[hsl(142,60%,50%)]" : trend === "down" ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,45%)]"}`}>{subValue}</span>}
+    <p className="text-base sm:text-xl font-bold font-display truncate">{value}</p>
+    <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
+      <p className="text-[10px] sm:text-[11px] text-[hsl(220,15%,45%)]">{label}</p>
+      {subValue && <span className={`text-[10px] sm:text-xs font-medium ${trend === "up" ? "text-[hsl(142,60%,50%)]" : trend === "down" ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,45%)]"}`}>{subValue}</span>}
     </div>
   </div>
 );

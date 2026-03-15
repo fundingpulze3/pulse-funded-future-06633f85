@@ -159,7 +159,7 @@ export default function TradingCalendar({
                 {data && <TrendingUp size={8} className={`hidden sm:block ${data.pnl >= 0 ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`} />}
               </div>
               {data && (
-                <div className="mt-auto">
+                <div className="mt-auto hidden sm:block">
                   <p className="text-[9px] text-[hsl(220,15%,45%)]">Trades</p>
                   <p className="text-[10px] font-bold">{data.trades}</p>
                   <p className={`text-[10px] font-bold font-mono ${data.pnl >= 0 ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`}>
@@ -174,6 +174,12 @@ export default function TradingCalendar({
                   <p className={`text-[9px] font-mono font-bold mt-0.5 ${data.pnl >= 0 ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`}>
                     {data.pnlPercent >= 0 ? "+" : ""}{data.pnlPercent.toFixed(1)}%
                   </p>
+                </div>
+              )}
+              {/* Mobile: just show colored dot */}
+              {data && (
+                <div className="mt-auto sm:hidden flex justify-center">
+                  <div className={`w-1.5 h-1.5 rounded-full ${data.pnl >= 0 ? "bg-[hsl(142,60%,50%)]" : "bg-[hsl(0,70%,55%)]"}`} />
                 </div>
               )}
             </div>
