@@ -153,10 +153,10 @@ export default function TradingCalendar({
               }`}
             >
               <div className="flex items-start justify-between">
-                <span className={`text-[11px] font-bold ${isToday ? "text-[hsl(207,90%,77%)]" : "text-[hsl(220,15%,50%)]"}`}>
+                <span className={`text-[8px] sm:text-[11px] font-bold ${isToday ? "text-[hsl(207,90%,77%)]" : "text-[hsl(220,15%,50%)]"}`}>
                   {day}
                 </span>
-                {data && <TrendingUp size={10} className={data.pnl >= 0 ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"} />}
+                {data && <TrendingUp size={8} className={`hidden sm:block ${data.pnl >= 0 ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`} />}
               </div>
               {data && (
                 <div className="mt-auto">
