@@ -831,7 +831,7 @@ const Dashboard = () => {
                   />
 
                   {/* Trading Metrics Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {[
                       { label: "Win Rate", value: `${Number(activeAccountStats.winRate).toFixed(1)}%`, color: "text-[hsl(207,90%,77%)]" },
                       { label: "Profit Factor", value: Number(activeAccountStats.profitFactor) === -1 ? "∞" : String(activeAccountStats.profitFactor ?? "—"), color: "" },
