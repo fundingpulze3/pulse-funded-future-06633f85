@@ -14,7 +14,7 @@ import {
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
-  Image as ImageIcon, ShieldCheck, Menu, X as XIcon,
+  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles,
 
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
@@ -32,11 +32,12 @@ import UserPhaseManager from "@/components/admin/UserPhaseManager";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import SEOManager from "@/components/admin/SEOManager";
 import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
+import SEOAIWriter from "@/components/admin/SEOAIWriter";
 import KYCManager from "@/components/admin/KYCManager";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "seo_ai" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
@@ -315,6 +316,7 @@ const Admin = () => {
         { id: "helpcenter" as Tab, label: "Help Center", icon: <BookOpen size={18} /> },
         { id: "support" as Tab, label: "Support", icon: <Headphones size={18} /> },
         { id: "blog" as Tab, label: "Blog", icon: <FileText size={18} /> },
+        { id: "seo_ai" as Tab, label: "SEO AI Writer", icon: <Sparkles size={18} /> },
         { id: "certificates" as Tab, label: "Certificates", icon: <Award size={18} /> },
         { id: "pages" as Tab, label: "Pages", icon: <Layers size={18} /> },
         { id: "knowledgebase" as Tab, label: "PULZEX KB", icon: <Brain size={18} /> },
@@ -333,7 +335,7 @@ const Admin = () => {
   const sidebarGroups = allSidebarGroups.filter(g => g.roles.includes(userRole || ""));
 
   const tabLabels: Record<Tab, string> = {
-    dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager",
+    dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager", seo_ai: "SEO AI Writer",
     users: "Users", challenges: "Challenges", orders: "Orders", referrals: "Referrals", coupons: "Coupons",
     utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
@@ -538,6 +540,11 @@ const Admin = () => {
           {/* ===== SEO Tab ===== */}
           {tab === "seo" && (
             <SEOManager />
+          )}
+
+          {/* ===== SEO AI Writer Tab ===== */}
+          {tab === "seo_ai" && (
+            <SEOAIWriter />
           )}
 
           {/* ===== Users Tab ===== */}
