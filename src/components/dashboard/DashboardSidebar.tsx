@@ -17,7 +17,7 @@ const navItems = [
 ];
 
 interface Props {
-  profile?: { display_name: string | null } | null;
+  profile?: { display_name: string | null; avatar_url: string | null } | null;
 }
 
 const DashboardSidebar = ({ profile }: Props) => {
