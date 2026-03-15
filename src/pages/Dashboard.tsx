@@ -729,16 +729,16 @@ const Dashboard = () => {
                   </div>
 
                   {/* Key Stats Bar */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                     {[
                       { label: "Account balance", value: `$${Number(activeAccountStats.balance).toLocaleString(undefined, { minimumFractionDigits: 1 })}`, color: "" },
                       { label: "Average win", value: `$${Number(activeAccountStats.bestTrade || 0).toFixed(2)}`, color: "text-[hsl(142,60%,50%)]" },
                       { label: "Average loss", value: `$${Math.abs(Number(activeAccountStats.worstTrade || 0)).toFixed(2)}`, color: "text-[hsl(0,70%,55%)]" },
                       { label: "Win ratio", value: `${Number(activeAccountStats.winRate || 0).toFixed(1)}%`, color: "" },
                     ].map(s => (
-                      <div key={s.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-4 text-center">
-                        <p className="text-[11px] text-[hsl(220,15%,45%)] mb-1">{s.label}</p>
-                        <p className={`text-lg font-bold font-display ${s.color}`}>{s.value}</p>
+                      <div key={s.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 text-center">
+                        <p className="text-[10px] sm:text-[11px] text-[hsl(220,15%,45%)] mb-1">{s.label}</p>
+                        <p className={`text-base sm:text-lg font-bold font-display ${s.color}`}>{s.value}</p>
                       </div>
                     ))}
                   </div>
