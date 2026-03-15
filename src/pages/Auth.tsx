@@ -19,6 +19,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
