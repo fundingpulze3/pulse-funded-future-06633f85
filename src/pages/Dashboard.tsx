@@ -848,7 +848,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* P&L + Direction + Activity + Streaks */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
                     <InfoCard title="P&L Breakdown">
                       {[
                         { label: "Gross Profit", value: `$${Number(activeAccountStats.grossProfit).toFixed(2)}`, cls: "text-[hsl(142,60%,50%)]" },
