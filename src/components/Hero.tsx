@@ -80,12 +80,14 @@ const Hero = () => {
 
         <div className="hero-buttons flex flex-col sm:flex-row items-center justify-center gap-4">
           <MagneticButton>
-            <Button size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 glow-box">
+            <Button size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 glow-box"
+              onClick={() => document.getElementById("challenges")?.scrollIntoView({ behavior: "smooth" })}>
               Start Challenge <ArrowRight size={18} className="ml-2" />
             </Button>
           </MagneticButton>
           <MagneticButton>
-            <Button variant="outline" size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6">
+            <Button variant="outline" size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6"
+              onClick={() => document.getElementById("challenges")?.scrollIntoView({ behavior: "smooth" })}>
               View Rules
             </Button>
           </MagneticButton>

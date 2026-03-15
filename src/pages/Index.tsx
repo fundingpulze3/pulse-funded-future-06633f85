@@ -25,6 +25,16 @@ const Index = () => {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
+  // Scroll to hash section on load
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      setTimeout(() => {
+        document.querySelector(hash)?.scrollIntoView({ behavior: "smooth" });
+      }, 400);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <ScrollProgress />
