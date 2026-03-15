@@ -14,7 +14,7 @@ import {
   Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered,
   Code, Link, Image, Quote, Minus, ArrowLeft, Search, Star,
   BarChart3, Globe, Copy, Upload, X, AlertCircle, Check,
-  TrendingUp, BookOpen,
+  TrendingUp, BookOpen, Sparkles, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
