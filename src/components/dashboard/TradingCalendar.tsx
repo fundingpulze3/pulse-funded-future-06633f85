@@ -134,7 +134,7 @@ export default function TradingCalendar({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {cells.map((day, i) => {
           if (day === null) {
             return <div key={`e-${i}`} className="aspect-square rounded-lg bg-[hsl(220,15%,6%)]" />;
