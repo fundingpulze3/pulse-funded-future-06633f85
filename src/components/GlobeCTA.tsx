@@ -2,7 +2,7 @@ import { useRef, useCallback, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoCircle from "@/assets/logo-circle.png";
+import logo from "@/assets/logo.png";
 
 const GlobeCTA = () => {
   const sectionRef = useRef<HTMLElement>(null);
