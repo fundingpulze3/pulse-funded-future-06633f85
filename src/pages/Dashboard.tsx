@@ -680,7 +680,7 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
-              className="p-3 lg:p-5 space-y-3 max-w-[1200px]"
+              className="p-3 sm:p-4 lg:p-5 space-y-3 max-w-[1200px]"
             >
 
               {/* ═══ OVERVIEW ═══ */}
