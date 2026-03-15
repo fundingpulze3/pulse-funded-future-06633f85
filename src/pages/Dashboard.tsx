@@ -680,7 +680,7 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
-              className="p-3 lg:p-5 space-y-3 max-w-[1200px]"
+              className="p-3 sm:p-4 lg:p-5 space-y-3 max-w-[1200px]"
             >
 
               {/* ═══ OVERVIEW ═══ */}
@@ -708,8 +708,8 @@ const Dashboard = () => {
                   </div>
 
                   {/* Balance Chart */}
-                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-4">
-                    <div className="h-[220px]">
+                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 sm:p-4">
+                    <div className="h-[160px] sm:h-[200px] lg:h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                           <defs>
@@ -729,22 +729,22 @@ const Dashboard = () => {
                   </div>
 
                   {/* Key Stats Bar */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                     {[
                       { label: "Account balance", value: `$${Number(activeAccountStats.balance).toLocaleString(undefined, { minimumFractionDigits: 1 })}`, color: "" },
                       { label: "Average win", value: `$${Number(activeAccountStats.bestTrade || 0).toFixed(2)}`, color: "text-[hsl(142,60%,50%)]" },
                       { label: "Average loss", value: `$${Math.abs(Number(activeAccountStats.worstTrade || 0)).toFixed(2)}`, color: "text-[hsl(0,70%,55%)]" },
                       { label: "Win ratio", value: `${Number(activeAccountStats.winRate || 0).toFixed(1)}%`, color: "" },
                     ].map(s => (
-                      <div key={s.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-4 text-center">
-                        <p className="text-[11px] text-[hsl(220,15%,45%)] mb-1">{s.label}</p>
-                        <p className={`text-lg font-bold font-display ${s.color}`}>{s.value}</p>
+                      <div key={s.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 text-center">
+                        <p className="text-[10px] sm:text-[11px] text-[hsl(220,15%,45%)] mb-1">{s.label}</p>
+                        <p className={`text-base sm:text-lg font-bold font-display ${s.color}`}>{s.value}</p>
                       </div>
                     ))}
                   </div>
 
                   {/* Top Stats Row */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
                     {[
                       { label: "Balance", value: `$${Number(activeAccountStats.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, icon: DollarSign, trend: Number(activeAccountStats.profit) >= 0 ? "up" as const : "down" as const },
                       { label: "Equity", value: `$${Number(activeAccountStats.equity).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, icon: Activity },
@@ -757,13 +757,13 @@ const Dashboard = () => {
 
                   {/* Growth & Drawdown */}
                   {(growthData.length > 0 || drawdownData.length > 0) && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                       {growthData.length > 0 && (
-                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                          <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 sm:p-5">
+                          <h3 className="font-display font-bold text-sm mb-3 sm:mb-4 flex items-center gap-2">
                             <TrendingUp size={14} className="text-[hsl(142,60%,50%)]" /> Growth %
                           </h3>
-                          <div className="h-[200px]">
+                          <div className="h-[160px] sm:h-[200px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={growthData}>
                                 <defs>
@@ -783,11 +783,11 @@ const Dashboard = () => {
                         </div>
                       )}
                       {drawdownData.length > 0 && (
-                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                          <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 sm:p-5">
+                          <h3 className="font-display font-bold text-sm mb-3 sm:mb-4 flex items-center gap-2">
                             <TrendingDown size={14} className="text-[hsl(0,70%,55%)]" /> Drawdown %
                           </h3>
-                          <div className="h-[200px]">
+                          <div className="h-[160px] sm:h-[200px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={drawdownData}>
                                 <defs>
@@ -831,7 +831,7 @@ const Dashboard = () => {
                   />
 
                   {/* Trading Metrics Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {[
                       { label: "Win Rate", value: `${Number(activeAccountStats.winRate).toFixed(1)}%`, color: "text-[hsl(207,90%,77%)]" },
                       { label: "Profit Factor", value: Number(activeAccountStats.profitFactor) === -1 ? "∞" : String(activeAccountStats.profitFactor ?? "—"), color: "" },
@@ -840,15 +840,15 @@ const Dashboard = () => {
                       { label: "Worst Trade", value: `$${Number(activeAccountStats.worstTrade).toFixed(2)}`, color: "text-[hsl(0,70%,55%)]" },
                       { label: "Total Trades", value: String(activeAccountStats.totalTrades), color: "" },
                     ].map(stat => (
-                      <div key={stat.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3">
-                        <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">{stat.label}</p>
-                        <p className={`text-base font-bold font-display ${stat.color}`}>{stat.value}</p>
+                      <div key={stat.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-2.5 sm:p-3">
+                        <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">{stat.label}</p>
+                        <p className={`text-sm sm:text-base font-bold font-display ${stat.color}`}>{stat.value}</p>
                       </div>
                     ))}
                   </div>
 
                   {/* P&L + Direction + Activity + Streaks */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
                     <InfoCard title="P&L Breakdown">
                       {[
                         { label: "Gross Profit", value: `$${Number(activeAccountStats.grossProfit).toFixed(2)}`, cls: "text-[hsl(142,60%,50%)]" },
@@ -924,9 +924,9 @@ const Dashboard = () => {
 
                   {/* Daily Profit by Day of Week */}
                   {dailyProfitData.length > 0 && (
-                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                      <h3 className="font-display font-bold text-sm mb-4">Profit by Day of Week</h3>
-                      <div className="h-[180px]">
+                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 sm:p-5">
+                      <h3 className="font-display font-bold text-sm mb-3 sm:mb-4">Profit by Day of Week</h3>
+                      <div className="h-[150px] sm:h-[180px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={dailyProfitData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,12%)" />
@@ -1136,12 +1136,12 @@ const Dashboard = () => {
 const DashStatCard = ({ icon: Icon, value, label, subValue, trend, highlight }: {
   icon: any; value: string; label: string; subValue?: string; trend?: "up" | "down"; highlight?: boolean;
 }) => (
-  <div className={`rounded-xl bg-[hsl(220,20%,7%)] border p-4 transition-all ${
+  <div className={`rounded-xl bg-[hsl(220,20%,7%)] border p-3 sm:p-4 transition-all ${
     highlight ? "border-[hsl(207,90%,77%)]/20" : "border-[hsl(220,15%,12%)]"
   }`}>
-    <div className="flex items-center justify-between mb-2">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${highlight ? "bg-[hsl(207,90%,77%)]/10" : "bg-[hsl(220,15%,12%)]"}`}>
-        <Icon size={16} className={highlight ? "text-[hsl(207,90%,77%)]" : "text-[hsl(220,15%,40%)]"} />
+    <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+      <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center ${highlight ? "bg-[hsl(207,90%,77%)]/10" : "bg-[hsl(220,15%,12%)]"}`}>
+        <Icon size={14} className={`sm:w-4 sm:h-4 ${highlight ? "text-[hsl(207,90%,77%)]" : "text-[hsl(220,15%,40%)]"}`} />
       </div>
       {trend && (
         <div className={`flex items-center gap-0.5 text-xs font-medium ${trend === "up" ? "text-[hsl(142,60%,50%)]" : "text-[hsl(0,70%,55%)]"}`}>
@@ -1149,10 +1149,10 @@ const DashStatCard = ({ icon: Icon, value, label, subValue, trend, highlight }: 
         </div>
       )}
     </div>
-    <p className="text-xl font-bold font-display">{value}</p>
-    <div className="flex items-center gap-2 mt-0.5">
-      <p className="text-[11px] text-[hsl(220,15%,45%)]">{label}</p>
-      {subValue && <span className={`text-xs font-medium ${trend === "up" ? "text-[hsl(142,60%,50%)]" : trend === "down" ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,45%)]"}`}>{subValue}</span>}
+    <p className="text-base sm:text-xl font-bold font-display truncate">{value}</p>
+    <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
+      <p className="text-[10px] sm:text-[11px] text-[hsl(220,15%,45%)]">{label}</p>
+      {subValue && <span className={`text-[10px] sm:text-xs font-medium ${trend === "up" ? "text-[hsl(142,60%,50%)]" : trend === "down" ? "text-[hsl(0,70%,55%)]" : "text-[hsl(220,15%,45%)]"}`}>{subValue}</span>}
     </div>
   </div>
 );
