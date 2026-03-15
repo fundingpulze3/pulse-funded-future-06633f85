@@ -403,10 +403,21 @@ const BlogCMS = () => {
               <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,88%)] p-6 min-h-[400px] prose max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(form.content) }} />
             ) : (
               <div>
-                <div className="flex items-center gap-0.5 p-1 bg-[hsl(0,0%,96%)] rounded-t-lg border border-b-0 border-[hsl(0,0%,88%)]">
-                  {toolbarButtons.map((btn, i) => (
-                    <button key={i} onClick={btn.action} title={btn.title} className="p-2 rounded hover:bg-[hsl(0,0%,88%)] text-[hsl(0,0%,35%)] transition-colors">{btn.icon}</button>
-                  ))}
+                <div className="flex items-center justify-between p-1 bg-[hsl(0,0%,96%)] rounded-t-lg border border-b-0 border-[hsl(0,0%,88%)]">
+                  <div className="flex items-center gap-0.5">
+                    {toolbarButtons.map((btn, i) => (
+                      <button key={i} onClick={btn.action} title={btn.title} className="p-2 rounded hover:bg-[hsl(0,0%,88%)] text-[hsl(0,0%,35%)] transition-colors">{btn.icon}</button>
+                    ))}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={generateWithAI}
+                    disabled={aiGenerating}
+                    className="h-7 text-xs gap-1 mr-1 border-[hsl(45,80%,55%)] text-[hsl(45,70%,35%)] hover:bg-[hsl(45,80%,92%)]"
+                  >
+                    {aiGenerating ? <><Loader2 size={12} className="animate-spin" /> Generating...</> : <><Sparkles size={12} /> AI Write</>}
+                  </Button>
                 </div>
                 <Textarea
                   id="blog-content"
