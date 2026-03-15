@@ -47,8 +47,7 @@ const DashboardKYC = () => {
   const [faceVideoFile, setFaceVideoFile] = useState<File | null>(null);
   const [strategy, setStrategy] = useState("");
   const [experience, setExperience] = useState("");
-  const [occupation, setOccupation] = useState("");
-  const [sourceOfFunds, setSourceOfFunds] = useState("");
+  const [tradingStyle, setTradingStyle] = useState("");
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
