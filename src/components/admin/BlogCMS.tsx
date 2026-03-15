@@ -14,7 +14,7 @@ import {
   Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered,
   Code, Link, Image, Quote, Minus, ArrowLeft, Search, Star,
   BarChart3, Globe, Copy, Upload, X, AlertCircle, Check,
-  TrendingUp, BookOpen,
+  TrendingUp, BookOpen, Sparkles, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,6 +78,50 @@ const BlogCMS = () => {
   const [previewMode, setPreviewMode] = useState(false);
   const [seoTab, setSeoTab] = useState<"basic" | "og" | "advanced">("basic");
   const [wordCount, setWordCount] = useState(0);
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const generateWithAI = async () => {
+    if (!form.title.trim()) { toast.error("Enter a title first"); return; }
+    setAiGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-seo-blog", {
+        body: {
+          topic: form.title.trim(),
+          primary_keyword: form.focus_keyword || form.title.trim(),
+          secondary_keywords: form.meta_keywords || "",
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.parse_error) {
+        toast.error("AI returned unparseable content");
+        return;
+      }
+
+      const faqMarkdown = data.faq_section?.length
+        ? "\n\n## Frequently Asked Questions\n\n" + data.faq_section.map((f: any) => `### ${f.question}\n\n${f.answer}`).join("\n\n")
+        : "";
+
+      setForm(prev => ({
+        ...prev,
+        content: data.blog_content + faqMarkdown,
+        excerpt: data.featured_snippet || prev.excerpt,
+        meta_title: data.seo_metadata?.seo_title || prev.meta_title,
+        meta_description: data.seo_metadata?.meta_description || prev.meta_description,
+        focus_keyword: data.keyword_strategy?.primary_keyword || prev.focus_keyword,
+        meta_keywords: [
+          ...(data.keyword_strategy?.secondary_keywords || []),
+          ...(data.keyword_strategy?.lsi_keywords?.slice(0, 5) || []),
+        ].join(", ") || prev.meta_keywords,
+        slug: autoSlug ? (data.seo_metadata?.url_slug || prev.slug) : prev.slug,
+      }));
+      toast.success("Content generated! Review and edit before publishing.");
+    } catch (err: any) {
+      toast.error(err.message || "AI generation failed");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const fetchPosts = useCallback(async () => {
     const { data } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false });
@@ -359,10 +403,21 @@ const BlogCMS = () => {
               <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,88%)] p-6 min-h-[400px] prose max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(form.content) }} />
             ) : (
               <div>
-                <div className="flex items-center gap-0.5 p-1 bg-[hsl(0,0%,96%)] rounded-t-lg border border-b-0 border-[hsl(0,0%,88%)]">
-                  {toolbarButtons.map((btn, i) => (
-                    <button key={i} onClick={btn.action} title={btn.title} className="p-2 rounded hover:bg-[hsl(0,0%,88%)] text-[hsl(0,0%,35%)] transition-colors">{btn.icon}</button>
-                  ))}
+                <div className="flex items-center justify-between p-1 bg-[hsl(0,0%,96%)] rounded-t-lg border border-b-0 border-[hsl(0,0%,88%)]">
+                  <div className="flex items-center gap-0.5">
+                    {toolbarButtons.map((btn, i) => (
+                      <button key={i} onClick={btn.action} title={btn.title} className="p-2 rounded hover:bg-[hsl(0,0%,88%)] text-[hsl(0,0%,35%)] transition-colors">{btn.icon}</button>
+                    ))}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={generateWithAI}
+                    disabled={aiGenerating}
+                    className="h-7 text-xs gap-1 mr-1 border-[hsl(45,80%,55%)] text-[hsl(45,70%,35%)] hover:bg-[hsl(45,80%,92%)]"
+                  >
+                    {aiGenerating ? <><Loader2 size={12} className="animate-spin" /> Generating...</> : <><Sparkles size={12} /> AI Write</>}
+                  </Button>
                 </div>
                 <Textarea
                   id="blog-content"
