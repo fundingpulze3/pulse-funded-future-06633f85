@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { ArrowRight, Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
