@@ -140,7 +140,7 @@ const DashboardKYC = () => {
       toast.error("Please record a face verification video");
       return;
     }
-    if (!strategy || !experience || !occupation || !sourceOfFunds) {
+    if (!strategy || !experience || !tradingStyle) {
       toast.error("Please fill in all additional questions");
       return;
     }
