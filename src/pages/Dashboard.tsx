@@ -621,7 +621,7 @@ const Dashboard = () => {
           {/* Buy challenge CTA */}
           <div className="p-3 border-t border-[hsl(220,15%,12%)]">
             <button
-              onClick={() => navigate("/#rules")}
+              onClick={() => navigate("/#challenges")}
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[hsl(207,90%,77%)] to-[hsl(207,90%,72%)] text-white text-xs font-bold hover:opacity-90 transition-opacity"
             >
               + New Challenge
