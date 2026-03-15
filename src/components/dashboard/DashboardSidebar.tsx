@@ -119,7 +119,7 @@ const DashboardSidebar = ({ profile }: Props) => {
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
       `}>
         <button
-          onClick={() => { navigate("/#rules"); setMobileOpen(false); }}
+          onClick={() => { navigate("/#challenges"); setMobileOpen(false); }}
           className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium bg-[hsl(207,90%,77%)]/15 text-[hsl(207,90%,77%)] mb-2"
         >
           <Plus size={14} /> New Challenge

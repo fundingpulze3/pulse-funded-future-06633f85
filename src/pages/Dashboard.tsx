@@ -1018,7 +1018,7 @@ const Dashboard = () => {
                     <BarChart3 size={40} className="mx-auto mb-4 text-[hsl(220,15%,25%)]" />
                     <p className="text-lg font-bold mb-2">No account selected</p>
                     <p className="text-sm text-[hsl(220,15%,40%)] mb-4">Select an account from the left panel or purchase a challenge.</p>
-                    <Button onClick={() => navigate("/#rules")} className="rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)]">
+                    <Button onClick={() => navigate("/#challenges")} className="rounded-xl bg-[hsl(207,90%,77%)] hover:bg-[hsl(207,90%,72%)]">
                       Browse Challenges
                     </Button>
                   </div>
