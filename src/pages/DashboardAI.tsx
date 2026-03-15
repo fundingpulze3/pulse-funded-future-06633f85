@@ -56,6 +56,8 @@ const DashboardAI = () => {
     if (user) checkAccess();
   }, [user, authLoading]);
 
+  const AI_WHITELIST_EMAILS = ["notchiragc@gmail.com"];
+
   const checkAccess = async () => {
     if (!user) return;
     setCheckingAccess(true);
@@ -64,9 +66,11 @@ const DashboardAI = () => {
       supabase.from("challenge_purchases").select("id").eq("user_id", user.id).in("payment_status", ["paid", "confirmed", "completed"]).limit(1),
     ]);
     setProfile(profileRes.data);
-    setHasActiveAccount((purchasesRes.data?.length || 0) > 0);
+    const whitelisted = AI_WHITELIST_EMAILS.includes(user.email || "");
+    const hasPurchase = (purchasesRes.data?.length || 0) > 0;
+    setHasActiveAccount(hasPurchase || whitelisted);
     setCheckingAccess(false);
-    if ((purchasesRes.data?.length || 0) > 0) loadConversations();
+    if (hasPurchase || whitelisted) loadConversations();
   };
 
   const loadConversations = async () => {
