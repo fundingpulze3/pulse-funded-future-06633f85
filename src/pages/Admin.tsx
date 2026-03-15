@@ -335,7 +335,7 @@ const Admin = () => {
   const sidebarGroups = allSidebarGroups.filter(g => g.roles.includes(userRole || ""));
 
   const tabLabels: Record<Tab, string> = {
-    dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager", seo_ai: "SEO AI Writer",
+    dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager",
     users: "Users", challenges: "Challenges", orders: "Orders", referrals: "Referrals", coupons: "Coupons",
     utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
