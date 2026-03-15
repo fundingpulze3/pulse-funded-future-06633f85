@@ -2,7 +2,7 @@ import { useRef, useCallback, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoCircle from "@/assets/logo-circle.png";
+import logo from "@/assets/logo.png";
 
 const GlobeCTA = () => {
   const sectionRef = useRef<HTMLElement>(null);
@@ -135,17 +135,16 @@ const GlobeCTA = () => {
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="relative inline-block">
-            {/* Outer glow ring */}
-            <div className="absolute -inset-4 rounded-full opacity-30 animate-pulse-glow"
+            <div className="absolute -inset-4 rounded-2xl opacity-30 animate-pulse-glow"
               style={{
                 background: `radial-gradient(circle, hsl(var(--glow-primary) / 0.15), transparent 70%)`,
               }}
             />
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full glass-card flex items-center justify-center p-1">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl glass-card flex items-center justify-center p-2.5">
               <img
-                src={logoCircle}
+                src={logo}
                 alt="Funding Pulze"
-                className="w-full h-full rounded-full object-cover"
+                className="w-full h-full rounded object-contain"
               />
             </div>
           </div>
