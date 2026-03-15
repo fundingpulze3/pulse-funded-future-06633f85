@@ -171,8 +171,8 @@ const DashboardKYC = () => {
         face_video_url: videoUrl,
         preferred_trading_strategy: strategy,
         trading_experience: experience,
-        occupation,
-        source_of_funds: sourceOfFunds,
+        occupation: tradingStyle,
+        source_of_funds: "",
       };
 
       if (kycData?.id && kycData.status === "pending") {
