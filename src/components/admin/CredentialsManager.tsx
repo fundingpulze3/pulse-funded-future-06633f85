@@ -364,17 +364,17 @@ const CredentialsManager = () => {
             <div>
               <Label className="text-xs text-[hsl(0,0%,45%)]">MT5 Login</Label>
               <Input value={form.mt5_login} onChange={e => setForm({ ...form, mt5_login: e.target.value })}
-                className="mt-1 bg-[hsl(0,0%,97%)] border-[hsl(0,0%,88%)] rounded-lg font-mono" placeholder="12345678" />
+                className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg font-mono text-[hsl(0,0%,10%)] placeholder:text-[hsl(0,0%,60%)]" placeholder="12345678" />
             </div>
             <div>
               <Label className="text-xs text-[hsl(0,0%,45%)]">MT5 Password</Label>
               <Input value={form.mt5_password} onChange={e => setForm({ ...form, mt5_password: e.target.value })}
-                className="mt-1 bg-[hsl(0,0%,97%)] border-[hsl(0,0%,88%)] rounded-lg font-mono" placeholder="password123" />
+                className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg font-mono text-[hsl(0,0%,10%)] placeholder:text-[hsl(0,0%,60%)]" placeholder="password123" />
             </div>
             <div>
               <Label className="text-xs text-[hsl(0,0%,45%)]">Server <span className="text-[hsl(0,0%,70%)]">(leave blank for default: {defaultServer})</span></Label>
               <Input value={form.mt5_server} onChange={e => setForm({ ...form, mt5_server: e.target.value })}
-                className="mt-1 bg-[hsl(0,0%,97%)] border-[hsl(0,0%,88%)] rounded-lg" placeholder={defaultServer} />
+                className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg text-[hsl(0,0%,10%)] placeholder:text-[hsl(0,0%,60%)]" placeholder={defaultServer} />
             </div>
           </div>
           <DialogFooter>
