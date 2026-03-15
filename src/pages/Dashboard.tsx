@@ -757,7 +757,7 @@ const Dashboard = () => {
 
                   {/* Growth & Drawdown */}
                   {(growthData.length > 0 || drawdownData.length > 0) && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                       {growthData.length > 0 && (
                         <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
                           <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
