@@ -23,7 +23,7 @@ interface Referral {
 const AffiliateDashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const [isDark, setIsDark] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);

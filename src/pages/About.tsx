@@ -147,7 +147,7 @@ const milestones = [
 
 /* ─── Main Component ─── */
 const About = () => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const heroRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const { get } = usePageContent("about");

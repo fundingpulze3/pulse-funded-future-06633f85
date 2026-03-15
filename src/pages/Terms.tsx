@@ -51,7 +51,7 @@ const sections = [
 const defaultSections = sections;
 
 const Terms = () => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const heroRef = useRef<HTMLDivElement>(null);
   const { hasCmsContent, orderedSections } = usePageContent("terms");
 
