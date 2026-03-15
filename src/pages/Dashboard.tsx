@@ -414,9 +414,13 @@ const Dashboard = () => {
           {/* User info */}
           <div className="p-4 border-b border-[hsl(220,15%,12%)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(207,90%,77%)] to-[hsl(207,85%,65%)] flex items-center justify-center text-white font-bold text-sm">
-                {(profile?.display_name || "T")[0].toUpperCase()}
-              </div>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.display_name || "Trader"} className="w-10 h-10 rounded-full object-cover" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(207,90%,77%)] to-[hsl(207,85%,65%)] flex items-center justify-center text-white font-bold text-sm">
+                  {(profile?.display_name || "T")[0].toUpperCase()}
+                </div>
+              )}
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate">{profile?.display_name || "Trader"}</p>
                 <p className="text-[11px] text-[hsl(220,15%,45%)] truncate">{profile?.email || ""}</p>
