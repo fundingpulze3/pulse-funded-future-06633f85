@@ -146,7 +146,7 @@ export default function TradingCalendar({
           return (
             <div
               key={dateStr}
-              className={`aspect-square rounded-lg p-1.5 flex flex-col justify-between transition-colors ${
+              className={`aspect-square rounded-md sm:rounded-lg p-0.5 sm:p-1.5 flex flex-col justify-between transition-colors ${
                 isToday ? "ring-1 ring-[hsl(207,90%,77%)] bg-[hsl(220,15%,10%)]" :
                 data ? (data.pnl >= 0 ? "bg-[hsl(142,60%,50%)]/5 border border-[hsl(142,60%,50%)]/15" : "bg-[hsl(0,70%,55%)]/5 border border-[hsl(0,70%,55%)]/15") :
                 "bg-[hsl(220,15%,8%)]"
