@@ -744,7 +744,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* Top Stats Row */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
                     {[
                       { label: "Balance", value: `$${Number(activeAccountStats.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, icon: DollarSign, trend: Number(activeAccountStats.profit) >= 0 ? "up" as const : "down" as const },
                       { label: "Equity", value: `$${Number(activeAccountStats.equity).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, icon: Activity },
