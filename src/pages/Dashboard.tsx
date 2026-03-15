@@ -924,9 +924,9 @@ const Dashboard = () => {
 
                   {/* Daily Profit by Day of Week */}
                   {dailyProfitData.length > 0 && (
-                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                      <h3 className="font-display font-bold text-sm mb-4">Profit by Day of Week</h3>
-                      <div className="h-[180px]">
+                    <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 sm:p-5">
+                      <h3 className="font-display font-bold text-sm mb-3 sm:mb-4">Profit by Day of Week</h3>
+                      <div className="h-[150px] sm:h-[180px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={dailyProfitData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,12%)" />
