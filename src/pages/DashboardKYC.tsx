@@ -27,6 +27,10 @@ const EXPERIENCE_OPTIONS = [
   "Less than 1 year", "1-3 years", "3-5 years", "5-10 years", "10+ years",
 ];
 
+const TRADING_STYLE_OPTIONS = [
+  "Aggressive", "Moderate", "Conservative", "Mixed",
+];
+
 const DashboardKYC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
