@@ -27,6 +27,10 @@ const EXPERIENCE_OPTIONS = [
   "Less than 1 year", "1-3 years", "3-5 years", "5-10 years", "10+ years",
 ];
 
+const TRADING_STYLE_OPTIONS = [
+  "Aggressive", "Moderate", "Conservative", "Mixed",
+];
+
 const DashboardKYC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -43,8 +47,7 @@ const DashboardKYC = () => {
   const [faceVideoFile, setFaceVideoFile] = useState<File | null>(null);
   const [strategy, setStrategy] = useState("");
   const [experience, setExperience] = useState("");
-  const [occupation, setOccupation] = useState("");
-  const [sourceOfFunds, setSourceOfFunds] = useState("");
+  const [tradingStyle, setTradingStyle] = useState("");
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -80,8 +83,7 @@ const DashboardKYC = () => {
       setDocumentType(kyc.document_type || "passport");
       setStrategy(kyc.preferred_trading_strategy || "");
       setExperience(kyc.trading_experience || "");
-      setOccupation(kyc.occupation || "");
-      setSourceOfFunds(kyc.source_of_funds || "");
+      setTradingStyle(kyc.occupation || "");
     }
     setChecking(false);
   };
@@ -138,7 +140,7 @@ const DashboardKYC = () => {
       toast.error("Please record a face verification video");
       return;
     }
-    if (!strategy || !experience || !occupation || !sourceOfFunds) {
+    if (!strategy || !experience || !tradingStyle) {
       toast.error("Please fill in all additional questions");
       return;
     }
@@ -169,8 +171,8 @@ const DashboardKYC = () => {
         face_video_url: videoUrl,
         preferred_trading_strategy: strategy,
         trading_experience: experience,
-        occupation,
-        source_of_funds: sourceOfFunds,
+        occupation: tradingStyle,
+        source_of_funds: "",
       };
 
       if (kycData?.id && kycData.status === "pending") {
@@ -323,10 +325,19 @@ const DashboardKYC = () => {
                 className="bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] rounded-2xl p-5 sm:p-6">
                 <h2 className="font-display font-bold text-base mb-4 flex items-center gap-2">
                   <FileText size={18} className="text-[hsl(207,90%,77%)]" />
-                  Additional Information
+                  Trading Strategy
                 </h2>
 
                 <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-[hsl(220,15%,60%)] mb-1.5 block">Trading Style *</label>
+                    <select value={tradingStyle} onChange={e => setTradingStyle(e.target.value)} disabled={!isEditable}
+                      className="w-full bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[hsl(207,90%,77%)]/40 disabled:opacity-50">
+                      <option value="">Select...</option>
+                      {TRADING_STYLE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+
                   <div>
                     <label className="text-xs font-medium text-[hsl(220,15%,60%)] mb-1.5 block">Preferred Trading Strategy *</label>
                     <select value={strategy} onChange={e => setStrategy(e.target.value)} disabled={!isEditable}
@@ -343,20 +354,6 @@ const DashboardKYC = () => {
                       <option value="">Select...</option>
                       {EXPERIENCE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-[hsl(220,15%,60%)] mb-1.5 block">Occupation *</label>
-                    <input value={occupation} onChange={e => setOccupation(e.target.value)} disabled={!isEditable}
-                      placeholder="e.g. Software Engineer, Student, Trader..."
-                      className="w-full bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[hsl(207,90%,77%)]/40 disabled:opacity-50 placeholder:text-[hsl(220,15%,25%)]" />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-[hsl(220,15%,60%)] mb-1.5 block">Source of Funds *</label>
-                    <input value={sourceOfFunds} onChange={e => setSourceOfFunds(e.target.value)} disabled={!isEditable}
-                      placeholder="e.g. Employment income, Savings, Business..."
-                      className="w-full bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[hsl(207,90%,77%)]/40 disabled:opacity-50 placeholder:text-[hsl(220,15%,25%)]" />
                   </div>
                 </div>
               </motion.div>
