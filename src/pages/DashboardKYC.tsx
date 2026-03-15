@@ -325,10 +325,19 @@ const DashboardKYC = () => {
                 className="bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] rounded-2xl p-5 sm:p-6">
                 <h2 className="font-display font-bold text-base mb-4 flex items-center gap-2">
                   <FileText size={18} className="text-[hsl(207,90%,77%)]" />
-                  Additional Information
+                  Trading Strategy
                 </h2>
 
                 <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-[hsl(220,15%,60%)] mb-1.5 block">Trading Style *</label>
+                    <select value={tradingStyle} onChange={e => setTradingStyle(e.target.value)} disabled={!isEditable}
+                      className="w-full bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[hsl(207,90%,77%)]/40 disabled:opacity-50">
+                      <option value="">Select...</option>
+                      {TRADING_STYLE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+
                   <div>
                     <label className="text-xs font-medium text-[hsl(220,15%,60%)] mb-1.5 block">Preferred Trading Strategy *</label>
                     <select value={strategy} onChange={e => setStrategy(e.target.value)} disabled={!isEditable}
@@ -345,20 +354,6 @@ const DashboardKYC = () => {
                       <option value="">Select...</option>
                       {EXPERIENCE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-[hsl(220,15%,60%)] mb-1.5 block">Occupation *</label>
-                    <input value={occupation} onChange={e => setOccupation(e.target.value)} disabled={!isEditable}
-                      placeholder="e.g. Software Engineer, Student, Trader..."
-                      className="w-full bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[hsl(207,90%,77%)]/40 disabled:opacity-50 placeholder:text-[hsl(220,15%,25%)]" />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-[hsl(220,15%,60%)] mb-1.5 block">Source of Funds *</label>
-                    <input value={sourceOfFunds} onChange={e => setSourceOfFunds(e.target.value)} disabled={!isEditable}
-                      placeholder="e.g. Employment income, Savings, Business..."
-                      className="w-full bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[hsl(207,90%,77%)]/40 disabled:opacity-50 placeholder:text-[hsl(220,15%,25%)]" />
                   </div>
                 </div>
               </motion.div>
