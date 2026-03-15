@@ -783,11 +783,11 @@ const Dashboard = () => {
                         </div>
                       )}
                       {drawdownData.length > 0 && (
-                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-5">
-                          <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                        <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 sm:p-5">
+                          <h3 className="font-display font-bold text-sm mb-3 sm:mb-4 flex items-center gap-2">
                             <TrendingDown size={14} className="text-[hsl(0,70%,55%)]" /> Drawdown %
                           </h3>
-                          <div className="h-[200px]">
+                          <div className="h-[160px] sm:h-[200px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={drawdownData}>
                                 <defs>
