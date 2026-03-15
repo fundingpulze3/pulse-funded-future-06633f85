@@ -840,9 +840,9 @@ const Dashboard = () => {
                       { label: "Worst Trade", value: `$${Number(activeAccountStats.worstTrade).toFixed(2)}`, color: "text-[hsl(0,70%,55%)]" },
                       { label: "Total Trades", value: String(activeAccountStats.totalTrades), color: "" },
                     ].map(stat => (
-                      <div key={stat.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3">
-                        <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">{stat.label}</p>
-                        <p className={`text-base font-bold font-display ${stat.color}`}>{stat.value}</p>
+                      <div key={stat.label} className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-2.5 sm:p-3">
+                        <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] mb-1">{stat.label}</p>
+                        <p className={`text-sm sm:text-base font-bold font-display ${stat.color}`}>{stat.value}</p>
                       </div>
                     ))}
                   </div>
