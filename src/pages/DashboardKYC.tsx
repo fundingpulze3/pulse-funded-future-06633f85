@@ -19,16 +19,18 @@ const DOC_TYPES = [
 ];
 
 const STRATEGY_OPTIONS = [
-  "Scalping", "Day Trading", "Swing Trading", "Position Trading",
-  "News Trading", "Algorithmic / EA Trading", "Other",
+  "CRT", "CRT + TBS", "ICT", "SMC", "RSI", "Quarterly Cycles",
+  "Candle Stick Pattern", "MACD or Moving Averages", "Support and Resistance",
+  "Institutional Order Flow", "Elliot Wave & Harmonics", "Supply & Demand",
+  "Trendline", "Other",
 ];
 
 const EXPERIENCE_OPTIONS = [
-  "Less than 1 year", "1-3 years", "3-5 years", "5-10 years", "10+ years",
+  "1 year", "2-3 years", "3-5 years", "5+ years above",
 ];
 
 const TRADING_STYLE_OPTIONS = [
-  "Aggressive", "Moderate", "Conservative", "Mixed",
+  "Scalper", "Day Trader", "Short Term Trader", "Swing Trader",
 ];
 
 const DashboardKYC = () => {
