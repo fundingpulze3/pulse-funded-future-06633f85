@@ -316,6 +316,7 @@ const Admin = () => {
         { id: "helpcenter" as Tab, label: "Help Center", icon: <BookOpen size={18} /> },
         { id: "support" as Tab, label: "Support", icon: <Headphones size={18} /> },
         { id: "blog" as Tab, label: "Blog", icon: <FileText size={18} /> },
+        { id: "seo_ai" as Tab, label: "SEO AI Writer", icon: <Sparkles size={18} /> },
         { id: "certificates" as Tab, label: "Certificates", icon: <Award size={18} /> },
         { id: "pages" as Tab, label: "Pages", icon: <Layers size={18} /> },
         { id: "knowledgebase" as Tab, label: "PULZEX KB", icon: <Brain size={18} /> },
