@@ -14,7 +14,7 @@ import {
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
-  Image as ImageIcon, ShieldCheck, Menu, X as XIcon,
+  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles,
 
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
