@@ -78,6 +78,50 @@ const BlogCMS = () => {
   const [previewMode, setPreviewMode] = useState(false);
   const [seoTab, setSeoTab] = useState<"basic" | "og" | "advanced">("basic");
   const [wordCount, setWordCount] = useState(0);
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const generateWithAI = async () => {
+    if (!form.title.trim()) { toast.error("Enter a title first"); return; }
+    setAiGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-seo-blog", {
+        body: {
+          topic: form.title.trim(),
+          primary_keyword: form.focus_keyword || form.title.trim(),
+          secondary_keywords: form.meta_keywords || "",
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.parse_error) {
+        toast.error("AI returned unparseable content");
+        return;
+      }
+
+      const faqMarkdown = data.faq_section?.length
+        ? "\n\n## Frequently Asked Questions\n\n" + data.faq_section.map((f: any) => `### ${f.question}\n\n${f.answer}`).join("\n\n")
+        : "";
+
+      setForm(prev => ({
+        ...prev,
+        content: data.blog_content + faqMarkdown,
+        excerpt: data.featured_snippet || prev.excerpt,
+        meta_title: data.seo_metadata?.seo_title || prev.meta_title,
+        meta_description: data.seo_metadata?.meta_description || prev.meta_description,
+        focus_keyword: data.keyword_strategy?.primary_keyword || prev.focus_keyword,
+        meta_keywords: [
+          ...(data.keyword_strategy?.secondary_keywords || []),
+          ...(data.keyword_strategy?.lsi_keywords?.slice(0, 5) || []),
+        ].join(", ") || prev.meta_keywords,
+        slug: autoSlug ? (data.seo_metadata?.url_slug || prev.slug) : prev.slug,
+      }));
+      toast.success("Content generated! Review and edit before publishing.");
+    } catch (err: any) {
+      toast.error(err.message || "AI generation failed");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const fetchPosts = useCallback(async () => {
     const { data } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false });
