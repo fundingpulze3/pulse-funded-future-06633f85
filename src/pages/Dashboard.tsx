@@ -708,8 +708,8 @@ const Dashboard = () => {
                   </div>
 
                   {/* Balance Chart */}
-                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-4">
-                    <div className="h-[220px]">
+                  <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 sm:p-4">
+                    <div className="h-[160px] sm:h-[200px] lg:h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                           <defs>
