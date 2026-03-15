@@ -103,9 +103,13 @@ const DashboardSidebar = ({ profile }: Props) => {
 
         <div className="flex-1" />
 
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(207,90%,77%)] to-[hsl(207,85%,65%)] flex items-center justify-center text-white font-bold text-xs cursor-pointer" title={profile?.display_name || "Profile"}>
-          {(profile?.display_name || "T")[0].toUpperCase()}
-        </div>
+        {profile?.avatar_url ? (
+          <img src={profile.avatar_url} alt={profile.display_name || "Profile"} className="w-10 h-10 rounded-full object-cover cursor-pointer" title={profile.display_name || "Profile"} />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(207,90%,77%)] to-[hsl(207,85%,65%)] flex items-center justify-center text-white font-bold text-xs cursor-pointer" title={profile?.display_name || "Profile"}>
+            {(profile?.display_name || "T")[0].toUpperCase()}
+          </div>
+        )}
       </nav>
 
       {/* Mobile nav drawer */}
