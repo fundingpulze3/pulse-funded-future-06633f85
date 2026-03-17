@@ -341,6 +341,7 @@ const Admin = () => {
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
     credentials: "Credentials", user_certificates: "User Certificates",
     cert_templates: "Certificate Templates", user_phases: "User Phases", kyc: "KYC Verification",
+    payouts: "Payouts",
   };
 
   // Helper to assign/change a user's role
