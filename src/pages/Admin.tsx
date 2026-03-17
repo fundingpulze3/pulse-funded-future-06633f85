@@ -33,6 +33,7 @@ import SEOManager from "@/components/admin/SEOManager";
 import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
 
 import KYCManager from "@/components/admin/KYCManager";
+import PayoutsCMS from "@/components/admin/PayoutsCMS";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
