@@ -41,7 +41,7 @@ const LAYOUT: Record<string, {
   },
 };
 
-const DEFAULT_LAYOUT = {
+const DEFAULT_LAYOUT: typeof LAYOUT[string] = {
   nameX: 0.58, nameY: 0.52, nameFontSize: 0.035,
   dateX: 0.155, dateY: 0.94, dateFontSize: 0.018,
 };
