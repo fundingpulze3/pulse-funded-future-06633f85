@@ -72,30 +72,35 @@ export async function generateCertificateImage(config: CertificateConfig): Promi
   const w = canvas.width;
   const h = canvas.height;
 
+  // Helper to draw text with outline for visibility
+  const drawText = (text: string, x: number, y: number, font: string, fill: string) => {
+    ctx.font = font;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    // Dark outline for contrast
+    ctx.strokeStyle = "rgba(0,0,0,0.6)";
+    ctx.lineWidth = Math.max(2, Math.round(h * 0.002));
+    ctx.lineJoin = "round";
+    ctx.strokeText(text, x, y);
+    // Fill
+    ctx.fillStyle = fill;
+    ctx.fillText(text, x, y);
+  };
+
   // Draw user name
   const nameSize = Math.round(layout.nameFontSize * h);
-  ctx.font = `bold ${nameSize}px 'Inter', 'Space Grotesk', Arial, sans-serif`;
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(userName, w * layout.nameX, h * layout.nameY);
+  drawText(userName, w * layout.nameX, h * layout.nameY, `bold ${nameSize}px Arial, sans-serif`, "#ffffff");
 
   // Draw date
   if (layout.dateX !== undefined && layout.dateY !== undefined) {
     const dateSize = Math.round((layout.dateFontSize || 0.018) * h);
-    ctx.font = `${dateSize}px 'Inter', Arial, sans-serif`;
-    ctx.fillStyle = "#a0b0c8";
-    ctx.textAlign = "center";
-    ctx.fillText(date, w * layout.dateX, h * layout.dateY);
+    drawText(date, w * layout.dateX, h * layout.dateY, `${dateSize}px Arial, sans-serif`, "#c8d8e8");
   }
 
   // Draw profit share (payout certificates)
   if (profitShare && layout.profitX !== undefined && layout.profitY !== undefined) {
     const profitSize = Math.round((layout.profitFontSize || 0.032) * h);
-    ctx.font = `bold ${profitSize}px 'Inter', 'Space Grotesk', Arial, sans-serif`;
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.fillText(profitShare, w * layout.profitX, h * layout.profitY);
+    drawText(profitShare, w * layout.profitX, h * layout.profitY, `bold ${profitSize}px Arial, sans-serif`, "#ffffff");
   }
 
   return new Promise((resolve, reject) => {
