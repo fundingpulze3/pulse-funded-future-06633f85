@@ -60,8 +60,9 @@ const DashboardCertificates = () => {
   const typeLabel: Record<string, string> = {
     phase1_passed: "Phase 1 Passed",
     phase2_passed: "Phase 2 Passed",
-    funded: "Funded",
+    funded: "Lifetime Payout",
     payout: "Payout",
+    max_allocation: "Max Allocation",
   };
 
   return (
