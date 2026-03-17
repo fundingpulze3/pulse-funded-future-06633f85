@@ -120,14 +120,13 @@ const FAQ = () => {
           <div className="mt-16 text-center glass-card p-8">
             <h3 className="font-display text-lg font-semibold mb-2">Still have questions?</h3>
             <p className="text-sm text-muted-foreground mb-4">Our support team is here to help 24/7.</p>
-            <a
-              href="https://help.fundingpulze.com"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => navigate("/help")}
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
             >
               Visit Help Center →
-            </a>
+            </button>
           </div>
         </div>
       </section>
