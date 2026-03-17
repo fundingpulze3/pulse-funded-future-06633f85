@@ -185,6 +185,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch user profile for certificate name
+    const { data: userProfile } = await adminClient
+      .from("profiles")
+      .select("display_name")
+      .eq("user_id", credential.assigned_to)
+      .maybeSingle();
+    const userName = userProfile?.display_name || "Trader";
+
     // Upload original file
     const fileName = `${parsed.accountNumber}_${certificateType}_${Date.now()}.html`;
     await adminClient.storage.from("mt5-statements").upload(fileName, file, { contentType: file.type, upsert: true });
@@ -198,7 +206,7 @@ Deno.serve(async (req) => {
         credential_id: credential.id,
         certificate_type: certificateType,
         account_number: parsed.accountNumber,
-        stats: { ...parsed, evaluation },
+        stats: { ...parsed, evaluation, userName },
         title,
         description,
       })
