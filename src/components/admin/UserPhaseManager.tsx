@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { generateAndUploadCertificate } from "@/lib/generateCertificateImage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -157,7 +158,29 @@ const UserPhaseManager = () => {
       const certType = newStatus === "phase2" ? "phase1_passed" : newStatus === "funded" ? "phase2_passed" : "funded";
       const certTitle = newStatus === "phase2" ? "Phase 1 Passed" : newStatus === "funded" ? "Phase 2 Passed" : "Funded Account";
 
+      // Get template background
+      const { data: template } = await supabase
+        .from("certificate_templates")
+        .select("background_image_url")
+        .eq("certificate_type", certType)
+        .maybeSingle();
+
+      const certId = crypto.randomUUID();
+      let certificateImageUrl: string | null = null;
+
+      if (template?.background_image_url) {
+        const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+        certificateImageUrl = await generateAndUploadCertificate(supabase, {
+          certId,
+          backgroundUrl: template.background_image_url,
+          userName: account.userName,
+          date: dateStr,
+          certificateType: certType,
+        });
+      }
+
       await supabase.from("user_certificates").insert({
+        id: certId,
         user_id: account.userId,
         certificate_type: certType,
         account_number: account.mt5Login,
@@ -165,6 +188,7 @@ const UserPhaseManager = () => {
         description: `${account.userName} - ${account.challengeName}`,
         credential_id: account.credentialId,
         purchase_id: account.purchaseId,
+        certificate_image_url: certificateImageUrl,
         stats: { accountSize: account.accountSize, userName: account.userName },
       });
       toast.success(`Certificate "${certTitle}" issued`);
