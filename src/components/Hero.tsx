@@ -69,14 +69,14 @@ const Hero = () => {
           <span>#1 TOP TRADING FIRM</span>
         </div>
 
-        <h1 className="hero-title font-display text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight mb-6">
+        <h1 className="hero-title font-display text-[2.25rem] sm:text-5xl lg:text-7xl font-bold leading-[1.1] mb-4 sm:mb-6">
           Get Funded.{" "}
           <span className="text-gradient">Trade Big.</span>
           <br />
           Keep the Profits.
         </h1>
 
-        <p className="hero-sub text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2">
+        <p className="hero-sub text-sm sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed px-2">
           Prove your trading skills and access accounts up to $100K. No risk on your capital — all the upside is yours.
         </p>
 
