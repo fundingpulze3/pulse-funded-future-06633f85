@@ -49,10 +49,12 @@ Deno.serve(async (req) => {
     const { data: { user } } = await supabaseAdmin.auth.getUser(token)
     
     const body = await req.json()
-    const { type, data, recipientUserId } = body
+    const { type, data, recipientUserId, recipientOverride } = body
 
-    // If recipientUserId is provided (admin/system call), look up their email
-    if (recipientUserId) {
+    // Direct override (for admin CC)
+    if (recipientOverride) {
+      recipientEmail = recipientOverride
+    } else if (recipientUserId) {
       const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('email')
