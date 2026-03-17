@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Users, Trophy, Link2, Shield, Plus, Pencil, Trash2,
+  Users, Trophy, Link2, Shield, Plus, Pencil, Trash2, Wallet,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
