@@ -523,21 +523,33 @@ const Checkout = () => {
             {/* Terms */}
             <div className="rounded-2xl border border-border bg-card p-5">
               <div className="flex items-start gap-3">
-                <Checkbox
-                  id="terms"
-                  checked={agreedTerms}
-                  onCheckedChange={(v) => setAgreedTerms(!!v)}
-                  className={`mt-0.5 border-muted-foreground/30 data-[state=checked]:bg-[hsl(${BLUE})] data-[state=checked]:border-[hsl(${BLUE})]`}
-                />
-                <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => setAgreedTerms(!agreedTerms)}
+                  className={`mt-0.5 shrink-0 h-4 w-4 rounded-sm border flex items-center justify-center transition-colors ${
+                    agreedTerms
+                      ? `bg-[hsl(${BLUE})] border-[hsl(${BLUE})]`
+                      : "border-muted-foreground/30"
+                  }`}
+                >
+                  {agreedTerms && <Check size={12} className="text-white" />}
+                </button>
+                <div
+                  className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).tagName !== "A") {
+                      setAgreedTerms(!agreedTerms);
+                    }
+                  }}
+                >
                   <span className="font-semibold text-foreground block mb-1.5">I agree with all the following terms:</span>
                   <ul className="space-y-1 list-disc list-inside">
-                    <li>I have read and agreed to the <a href="/terms" className={`text-[hsl(${BLUE})] hover:underline`}>Terms of Use</a>.</li>
+                    <li>I have read and agreed to the <a href="/terms" target="_blank" className={`text-[hsl(${BLUE})] hover:underline`}>Terms of Use</a>.</li>
                     <li>All information provided is correct and matches government-issued ID.</li>
-                    <li>I have read and agree with the <a href="/terms" className={`text-[hsl(${BLUE})] hover:underline`}>Terms & Conditions</a>.</li>
+                    <li>I have read and agree with the <a href="/terms" target="_blank" className={`text-[hsl(${BLUE})] hover:underline`}>Terms & Conditions</a>.</li>
                     <li>I confirm that I am not a U.S. citizen or resident.</li>
                   </ul>
-                </label>
+                </div>
               </div>
             </div>
 
