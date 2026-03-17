@@ -940,6 +940,7 @@ const Admin = () => {
           {tab === "helpcenter" && <HelpCenterCMS />}
           {tab === "support" && <SupportTicketsCMS />}
           {tab === "blog" && <BlogCMS />}
+          {tab === "blog_ai" && <BlogAIChat />}
           {tab === "certificates" && <CertificatesCMS />}
           {tab === "pages" && <PagesCMS />}
           {tab === "knowledgebase" && <KnowledgeBaseCMS />}
