@@ -340,6 +340,7 @@ const Admin = () => {
     dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager",
     users: "Users", challenges: "Challenges", orders: "Orders", referrals: "Referrals", coupons: "Coupons",
     utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
+    blog_ai: "Blog AI",
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
     credentials: "Credentials", user_certificates: "User Certificates",
     cert_templates: "Certificate Templates", user_phases: "User Phases", kyc: "KYC Verification",
