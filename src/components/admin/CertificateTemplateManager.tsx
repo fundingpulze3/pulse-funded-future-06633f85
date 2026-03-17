@@ -17,8 +17,9 @@ interface CertTemplate {
 const CERT_TYPES = [
   { value: "phase1_passed", label: "Phase 1 Passed" },
   { value: "phase2_passed", label: "Phase 2 Passed" },
-  { value: "funded", label: "Funded" },
+  { value: "funded", label: "Lifetime Payout" },
   { value: "payout", label: "Payout" },
+  { value: "max_allocation", label: "Max Allocation" },
 ];
 
 const CertificateTemplateManager = () => {
