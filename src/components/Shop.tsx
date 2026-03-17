@@ -152,31 +152,34 @@ const Shop = () => {
           {/* Column Headers */}
           <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-2">
             <div />
-            <p className="text-center font-display font-bold text-xs sm:text-lg text-foreground">Student</p>
-            <p className="text-center font-display font-bold text-xs sm:text-lg text-foreground">Practitioner</p>
-            <p className="text-center font-display font-bold text-xs sm:text-lg text-foreground">Master</p>
+            <p className="text-center font-display font-bold text-[10px] sm:text-lg text-foreground">Student</p>
+            <p className="text-center font-display font-bold text-[10px] sm:text-lg text-foreground">Practitioner</p>
+            <p className="text-center font-display font-bold text-[10px] sm:text-lg text-foreground">Master</p>
           </div>
 
           {/* Rules Table */}
           <div ref={tableRef} className="divide-y divide-border/50">
             {ruleLabels.map((label) => (
               <div key={label} className="rule-row grid grid-cols-4 gap-2 sm:gap-4 py-3 sm:py-4 items-center">
-                <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-                  <span className="truncate">{label}</span>
-                  <Tooltip>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="text-[10px] leading-tight sm:text-sm">{label}</span>
+                  <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
-                      <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0">
-                        <Info size={12} />
+                      <button
+                        type="button"
+                        className="text-muted-foreground/40 hover:text-highlight transition-colors shrink-0 p-0.5 rounded-full hover:bg-highlight/10"
+                      >
+                        <Info size={14} />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[240px] text-xs">
+                    <TooltipContent side="top" className="max-w-[260px] text-xs leading-relaxed">
                       {ruleTooltips[label]}
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <p className="text-center text-xs sm:text-sm font-medium text-foreground">{rules.student[label]}</p>
-                <p className="text-center text-xs sm:text-sm font-medium text-foreground">{rules.practitioner[label]}</p>
-                <p className="text-center text-xs sm:text-sm font-medium text-foreground">{rules.master[label]}</p>
+                <p className="text-center text-[10px] sm:text-sm font-medium text-foreground">{rules.student[label]}</p>
+                <p className="text-center text-[10px] sm:text-sm font-medium text-foreground">{rules.practitioner[label]}</p>
+                <p className="text-center text-[10px] sm:text-sm font-medium text-foreground">{rules.master[label]}</p>
               </div>
             ))}
           </div>
