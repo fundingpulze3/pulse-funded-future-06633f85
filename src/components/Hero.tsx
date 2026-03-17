@@ -6,8 +6,10 @@ import heroBg from "@/assets/hero-bg.png";
 
 const MagneticButton = ({ children, className }: { children: React.ReactNode; className?: string }) => {
   const btnRef = useRef<HTMLDivElement>(null);
+  const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
 
   const onMove = (e: React.MouseEvent) => {
+    if (isTouchDevice) return;
     const el = btnRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
