@@ -40,7 +40,7 @@ const DashboardCertificates = () => {
         supabase.from("user_certificates").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle(),
       ]).then(([certRes, profRes]) => {
-        const validTypes = ["phase1_passed", "phase2_passed", "funded", "payout"];
+        const validTypes = ["phase1_passed", "phase2_passed", "funded", "payout", "max_allocation"];
         const realCerts = ((certRes.data as any) || []).filter((c: any) => validTypes.includes(c.certificate_type));
         setCerts(realCerts);
         setProfile(profRes.data);
@@ -60,8 +60,9 @@ const DashboardCertificates = () => {
   const typeLabel: Record<string, string> = {
     phase1_passed: "Phase 1 Passed",
     phase2_passed: "Phase 2 Passed",
-    funded: "Funded",
+    funded: "Lifetime Payout",
     payout: "Payout",
+    max_allocation: "Max Allocation",
   };
 
   return (
