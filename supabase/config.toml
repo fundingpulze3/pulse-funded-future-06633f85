@@ -19,3 +19,5 @@ project_id = "rpshiyvndmnogbhbgmfm"
     verify_jwt = false
   [functions.dashboard-ai]
     verify_jwt = false
+  [functions.blog-ai-chat]
+    verify_jwt = false
