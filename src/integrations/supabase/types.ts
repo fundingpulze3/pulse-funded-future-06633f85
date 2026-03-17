@@ -299,9 +299,12 @@ export type Database = {
           challenge_id: string
           created_at: string
           id: string
+          last_payout_at: string | null
           payment_status: string
+          reward_cycle: string | null
           status: string
           swap_free: boolean
+          total_profit: number | null
           updated_at: string
           user_id: string
           utm_campaign: string | null
@@ -315,9 +318,12 @@ export type Database = {
           challenge_id: string
           created_at?: string
           id?: string
+          last_payout_at?: string | null
           payment_status?: string
+          reward_cycle?: string | null
           status?: string
           swap_free?: boolean
+          total_profit?: number | null
           updated_at?: string
           user_id: string
           utm_campaign?: string | null
@@ -331,9 +337,12 @@ export type Database = {
           challenge_id?: string
           created_at?: string
           id?: string
+          last_payout_at?: string | null
           payment_status?: string
+          reward_cycle?: string | null
           status?: string
           swap_free?: boolean
+          total_profit?: number | null
           updated_at?: string
           user_id?: string
           utm_campaign?: string | null
@@ -786,6 +795,68 @@ export type Database = {
           utm_term?: string | null
         }
         Relationships: []
+      }
+      payout_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          payment_details: Json | null
+          payment_method: string
+          payout_number: string
+          profit_split_percentage: number
+          purchase_id: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reward_cycle: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          payment_details?: Json | null
+          payment_method?: string
+          payout_number?: string
+          profit_split_percentage?: number
+          purchase_id: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reward_cycle?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_details?: Json | null
+          payment_method?: string
+          payout_number?: string
+          profit_split_percentage?: number
+          purchase_id?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reward_cycle?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_requests_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       processed_gmail_ids: {
         Row: {
