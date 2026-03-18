@@ -164,7 +164,7 @@ const CredentialsManager = () => {
     for (const p of pendingPurchases) {
       const { data: freeCred } = await supabase
         .from("trading_credentials")
-        .select("id")
+        .select("id, mt5_login, mt5_password, mt5_server")
         .eq("challenge_id", p.challenge_id)
         .eq("is_assigned", false)
         .limit(1)
@@ -180,7 +180,26 @@ const CredentialsManager = () => {
           })
           .eq("id", freeCred.id)
           .eq("is_assigned", false);
-        if (!error) assigned++;
+        if (!error) {
+          assigned++;
+          // Send credentials email
+          try {
+            const ch = (p as any).challenges;
+            await supabase.functions.invoke("send-transactional-email", {
+              body: {
+                type: "credentials",
+                recipientUserId: p.user_id,
+                data: {
+                  mt5Login: freeCred.mt5_login,
+                  mt5Password: freeCred.mt5_password,
+                  mt5Server: freeCred.mt5_server,
+                  challengeName: ch?.name || "Trading Challenge",
+                  accountSize: ch ? `$${(ch.account_size / 1000).toFixed(0)}K` : "",
+                },
+              },
+            });
+          } catch (e) { console.error("Credentials email failed:", e); }
+        }
         else failed++;
       } else {
         failed++;
