@@ -430,7 +430,7 @@ const CredentialsManager = () => {
             <p className="text-[10px] text-[hsl(0,0%,60%)] mt-2">This will be used when no server is specified during add or bulk import.</p>
           </div>
           <DialogFooter>
-            <Button className="rounded-lg bg-[hsl(0,0%,0%)] text-white hover:bg-[hsl(0,0%,15%)]" onClick={() => { setSettingsOpen(false); toast.success("Default server updated"); }}>
+            <Button className="rounded-lg bg-[hsl(0,0%,0%)] text-white hover:bg-[hsl(0,0%,15%)]" onClick={() => { localStorage.setItem("fp_default_server", defaultServer); setSettingsOpen(false); toast.success("Default server updated to: " + defaultServer); }}>
               Save
             </Button>
           </DialogFooter>
