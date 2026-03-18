@@ -1,0 +1,1 @@
+ALTER TABLE public.trading_credentials ALTER COLUMN mt5_server SET DEFAULT 'MEXAtlantic-Demo';

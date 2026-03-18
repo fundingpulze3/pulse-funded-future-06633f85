@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
         break
       }
       case 'credentials': {
-        const props = { ...baseProps, mt5Login: data.mt5Login, mt5Password: data.mt5Password, mt5Server: data.mt5Server || 'OctaFX-Demo', challengeName: data.challengeName || 'Trading Challenge', accountSize: data.accountSize || '' }
+        const props = { ...baseProps, mt5Login: data.mt5Login, mt5Password: data.mt5Password, const props = { ...baseProps, mt5Login: data.mt5Login, mt5Password: data.mt5Password, mt5Server: data.mt5Server || 'MEXAtlantic-Demo', challengeName: data.challengeName || 'Trading Challenge', accountSize: data.accountSize || '' }, challengeName: data.challengeName || 'Trading Challenge', accountSize: data.accountSize || '' }
         html = await renderAsync(React.createElement(CredentialsEmail, props))
         subject = '🚀 Your FP trading credentials are ready!'
         break
