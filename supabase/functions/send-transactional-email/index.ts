@@ -22,6 +22,7 @@ const corsHeaders = {
 const SITE_NAME = 'Funding Pulze'
 const SITE_URL = 'https://fundingpulze.com'
 const FROM_ADDRESS = 'support@fundingpulze.com'
+const ADMIN_CC = 'notchiragc@gmail.com'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
