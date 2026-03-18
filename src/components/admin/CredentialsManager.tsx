@@ -9,6 +9,11 @@ import {
 import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings, RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
+interface AssignedProfile {
+  display_name: string | null;
+  email: string | null;
+}
+
 interface Credential {
   id: string;
   challenge_id: string;
@@ -19,6 +24,7 @@ interface Credential {
   assigned_to: string | null;
   purchase_id: string | null;
   created_at: string;
+  assigned_profile?: AssignedProfile | null;
 }
 
 interface Challenge {
