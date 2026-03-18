@@ -9,6 +9,11 @@ import {
 import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings, RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
+interface AssignedProfile {
+  display_name: string | null;
+  email: string | null;
+}
+
 interface Credential {
   id: string;
   challenge_id: string;
@@ -19,6 +24,7 @@ interface Credential {
   assigned_to: string | null;
   purchase_id: string | null;
   created_at: string;
+  assigned_profile?: AssignedProfile | null;
 }
 
 interface Challenge {
@@ -61,7 +67,23 @@ const CredentialsManager = () => {
       supabase.from("trading_credentials").select("*").order("created_at", { ascending: false }),
       supabase.from("challenges").select("id, name, account_size, step_type").order("account_size"),
     ]);
-    if (credRes.data) setCredentials(credRes.data as any);
+    let creds = (credRes.data || []) as Credential[];
+    
+    // Fetch profiles for assigned credentials
+    const assignedUserIds = [...new Set(creds.filter(c => c.assigned_to).map(c => c.assigned_to!))];
+    if (assignedUserIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, email")
+        .in("user_id", assignedUserIds);
+      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+      creds = creds.map(c => ({
+        ...c,
+        assigned_profile: c.assigned_to ? (profileMap.get(c.assigned_to) || null) : null,
+      }));
+    }
+    
+    setCredentials(creds);
     if (chalRes.data) {
       setChallenges(chalRes.data);
       if (chalRes.data[0]) {
@@ -325,6 +347,7 @@ const CredentialsManager = () => {
                           <th className="px-4 py-2">Password</th>
                           <th className="px-4 py-2">Server</th>
                           <th className="px-4 py-2">Status</th>
+                          <th className="px-4 py-2">Assigned To</th>
                           <th className="px-4 py-2 w-10"></th>
                         </tr>
                       </thead>
@@ -343,6 +366,18 @@ const CredentialsManager = () => {
                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-600">
                                   <Key size={10} /> Free
                                 </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5">
+                              {c.is_assigned && c.assigned_profile ? (
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-medium text-[hsl(0,0%,15%)]">{c.assigned_profile.display_name || '—'}</span>
+                                  <span className="text-[10px] text-[hsl(0,0%,50%)]">{c.assigned_profile.email || '—'}</span>
+                                </div>
+                              ) : c.is_assigned ? (
+                                <span className="text-[10px] text-[hsl(0,0%,55%)] italic">Unknown user</span>
+                              ) : (
+                                <span className="text-[10px] text-[hsl(0,0%,70%)]">—</span>
                               )}
                             </td>
                             <td className="px-4 py-2.5">
