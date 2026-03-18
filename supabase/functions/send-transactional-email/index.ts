@@ -22,6 +22,7 @@ const corsHeaders = {
 const SITE_NAME = 'Funding Pulze'
 const SITE_URL = 'https://fundingpulze.com'
 const FROM_ADDRESS = 'support@fundingpulze.com'
+const ADMIN_CC = 'notchiragc@gmail.com'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -182,6 +183,22 @@ Deno.serve(async (req) => {
       content: subject,
       html,
     })
+
+    // Send admin copy if recipient isn't already the admin
+    if (recipientEmail !== ADMIN_CC) {
+      try {
+        await client.send({
+          from: `Funding Pulze <${GMAIL_EMAIL}>`,
+          to: ADMIN_CC,
+          subject: `[Copy] ${subject}`,
+          content: `[Copy for admin] Original recipient: ${recipientEmail}`,
+          html,
+        })
+        console.log('Admin copy sent to', ADMIN_CC)
+      } catch (ccErr) {
+        console.error('Admin copy failed:', ccErr)
+      }
+    }
 
     await client.close()
 
