@@ -1,6 +1,7 @@
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.98.0'
+import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts'
 import { PurchaseConfirmationEmail } from '../_shared/email-templates/purchase-confirmation.tsx'
 import { PasswordChangedEmail } from '../_shared/email-templates/password-changed.tsx'
 import { CredentialsEmail } from '../_shared/email-templates/credentials.tsx'
@@ -20,8 +21,7 @@ const corsHeaders = {
 
 const SITE_NAME = 'Funding Pulze'
 const SITE_URL = 'https://fundingpulze.com'
-const SENDER_DOMAIN = 'notify.fundingpulze.com'
-const FROM_ADDRESS = `Funding Pulze <support@fundingpulze.com>`
+const FROM_ADDRESS = 'support@fundingpulze.com'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -36,22 +36,27 @@ Deno.serve(async (req) => {
       })
     }
 
+    const GMAIL_EMAIL = Deno.env.get('GMAIL_EMAIL')
+    const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD')
+    if (!GMAIL_EMAIL || !GMAIL_APP_PASSWORD) {
+      return new Response(JSON.stringify({ error: 'Gmail SMTP credentials not configured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Support both user token and service role calls
-    let recipientEmail: string
     const token = authHeader.replace('Bearer ', '')
-    
-    // Try user auth first
     const { data: { user } } = await supabaseAdmin.auth.getUser(token)
-    
+
     const body = await req.json()
     const { type, data, recipientUserId, recipientOverride } = body
 
-    // Direct override (for admin CC)
+    let recipientEmail: string
+
     if (recipientOverride) {
       recipientEmail = recipientOverride
     } else if (recipientUserId) {
@@ -61,7 +66,7 @@ Deno.serve(async (req) => {
         .eq('user_id', recipientUserId)
         .single()
       recipientEmail = profile?.email || ''
-      
+
       if (!recipientEmail) {
         const { data: { user: targetUser } } = await supabaseAdmin.auth.admin.getUserById(recipientUserId)
         recipientEmail = targetUser?.email || ''
@@ -81,7 +86,6 @@ Deno.serve(async (req) => {
     }
 
     let html: string
-    let text: string
     let subject: string
 
     const baseProps = { siteName: SITE_NAME, siteUrl: SITE_URL, recipient: recipientEmail }
@@ -90,114 +94,101 @@ Deno.serve(async (req) => {
       case 'purchase_confirmation': {
         const props = { ...baseProps, challengeName: data.challengeName || '2 Step Challenge', accountSize: data.accountSize || '$50K', amountPaid: data.amountPaid || '$0' }
         html = await renderAsync(React.createElement(PurchaseConfirmationEmail, props))
-        text = await renderAsync(React.createElement(PurchaseConfirmationEmail, props), { plainText: true })
         subject = '🎉 Your Funding Pulze challenge is confirmed!'
         break
       }
-
       case 'password_changed': {
         html = await renderAsync(React.createElement(PasswordChangedEmail, { ...baseProps }))
-        text = await renderAsync(React.createElement(PasswordChangedEmail, { ...baseProps }), { plainText: true })
         subject = '🔒 Your password was changed'
         break
       }
-
       case 'credentials': {
-        const props = { ...baseProps, mt5Login: data.mt5Login, mt5Password: data.mt5Password, mt5Server: data.mt5Server || 'MetaQuotes-Demo', challengeName: data.challengeName || 'Trading Challenge', accountSize: data.accountSize || '' }
+        const props = { ...baseProps, mt5Login: data.mt5Login, mt5Password: data.mt5Password, mt5Server: data.mt5Server || 'OctaFX-Demo', challengeName: data.challengeName || 'Trading Challenge', accountSize: data.accountSize || '' }
         html = await renderAsync(React.createElement(CredentialsEmail, props))
-        text = await renderAsync(React.createElement(CredentialsEmail, props), { plainText: true })
-        subject = '🚀 Your MT5 trading credentials are ready!'
+        subject = '🚀 Your FP trading credentials are ready!'
         break
       }
-
       case 'daily_dd_breach': {
         const props = { ...baseProps, accountNumber: data.accountNumber, breachType: 'daily', breachValue: data.breachValue, limit: data.limit }
         html = await renderAsync(React.createElement(DailyDDBreachEmail, props))
-        text = await renderAsync(React.createElement(DailyDDBreachEmail, props), { plainText: true })
         subject = `⚠️ Daily Drawdown Breach — Account #${data.accountNumber}`
         break
       }
-
       case 'max_dd_breach': {
         const props = { ...baseProps, accountNumber: data.accountNumber, breachType: 'max', breachValue: data.breachValue, limit: data.limit }
         html = await renderAsync(React.createElement(MaxDDBreachEmail, props))
-        text = await renderAsync(React.createElement(MaxDDBreachEmail, props), { plainText: true })
         subject = `⚠️ Max Drawdown Breach — Account #${data.accountNumber}`
         break
       }
-
       case 'phase1_passed': {
         const props = { ...baseProps, accountNumber: data.accountNumber, profit: data.profit, profitPercent: data.profitPercent }
         html = await renderAsync(React.createElement(Phase1PassedEmail, props))
-        text = await renderAsync(React.createElement(Phase1PassedEmail, props), { plainText: true })
         subject = `✅ Phase 1 Passed — Account #${data.accountNumber}`
         break
       }
-
       case 'phase2_passed': {
         const props = { ...baseProps, accountNumber: data.accountNumber, profit: data.profit, profitPercent: data.profitPercent }
         html = await renderAsync(React.createElement(Phase2PassedEmail, props))
-        text = await renderAsync(React.createElement(Phase2PassedEmail, props), { plainText: true })
         subject = `🏆 Phase 2 Passed — You're Getting Funded! Account #${data.accountNumber}`
         break
       }
-
       case 'payout_received': {
         const props = { ...baseProps, accountNumber: data.accountNumber, payoutAmount: data.payoutAmount, payoutNumber: data.payoutNumber || '1' }
         html = await renderAsync(React.createElement(PayoutReceivedEmail, props))
-        text = await renderAsync(React.createElement(PayoutReceivedEmail, props), { plainText: true })
         subject = `💰 Payout #${data.payoutNumber || '1'} Processed — ${data.payoutAmount}`
         break
       }
-
       case 'welcome': {
         const props = { ...baseProps, displayName: data.displayName || '' }
         html = await renderAsync(React.createElement(WelcomeEmail, props))
-        text = await renderAsync(React.createElement(WelcomeEmail, props), { plainText: true })
         subject = '🎯 Welcome to Funding Pulze — Your Trading Journey Starts Now!'
         break
       }
-
       case 'kyc_approved': {
         const props = { ...baseProps, displayName: data.displayName || '' }
         html = await renderAsync(React.createElement(KYCApprovedEmail, props))
-        text = await renderAsync(React.createElement(KYCApprovedEmail, props), { plainText: true })
         subject = '✅ KYC Approved — You\'re Fully Verified!'
         break
       }
-
       case 'kyc_rejected': {
         const props = { ...baseProps, displayName: data.displayName || '', reviewNote: data.reviewNote || '' }
         html = await renderAsync(React.createElement(KYCRejectedEmail, props))
-        text = await renderAsync(React.createElement(KYCRejectedEmail, props), { plainText: true })
         subject = '⚠️ KYC Verification Update — Action Required'
         break
       }
-
       default:
         return new Response(JSON.stringify({ error: `Unknown email type: ${type}` }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
     }
 
-    const apiKey = Deno.env.get('LOVABLE_API_KEY')
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
+    // Send via Gmail SMTP
+    const client = new SMTPClient({
+      connection: {
+        hostname: 'smtp.gmail.com',
+        port: 465,
+        tls: true,
+        auth: {
+          username: GMAIL_EMAIL,
+          password: GMAIL_APP_PASSWORD,
+        },
+      },
+    })
 
-    const { sendLovableEmail } = await import('npm:@lovable.dev/email-js@0.0.3')
+    await client.send({
+      from: `Funding Pulze <${GMAIL_EMAIL}>`,
+      to: recipientEmail,
+      subject,
+      content: subject,
+      html,
+    })
 
-    const result = await sendLovableEmail(
-      { to: recipientEmail, from: FROM_ADDRESS, sender_domain: SENDER_DOMAIN, subject, html, text, purpose: 'transactional' },
-      { apiKey }
-    )
+    await client.close()
 
-    console.log('Transactional email sent', { type, email: recipientEmail, message_id: result.message_id })
+    console.log('Transactional email sent via SMTP', { type, email: recipientEmail })
 
     return new Response(
-      JSON.stringify({ success: true, message_id: result.message_id }),
+      JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
