@@ -39,7 +39,9 @@ const CredentialsManager = () => {
   const [bulkText, setBulkText] = useState("");
   const [bulkChallengeId, setBulkChallengeId] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  const [defaultServer, setDefaultServer] = useState("MetaQuotes-Demo");
+  const [defaultServer, setDefaultServer] = useState(() => {
+    return localStorage.getItem("fp_default_server") || "OctaFX-Demo";
+  });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pendingDialogOpen, setPendingDialogOpen] = useState(false);
   const [pendingPurchases, setPendingPurchases] = useState<any[]>([]);
@@ -428,7 +430,7 @@ const CredentialsManager = () => {
             <p className="text-[10px] text-[hsl(0,0%,60%)] mt-2">This will be used when no server is specified during add or bulk import.</p>
           </div>
           <DialogFooter>
-            <Button className="rounded-lg bg-[hsl(0,0%,0%)] text-white hover:bg-[hsl(0,0%,15%)]" onClick={() => { setSettingsOpen(false); toast.success("Default server updated"); }}>
+            <Button className="rounded-lg bg-[hsl(0,0%,0%)] text-white hover:bg-[hsl(0,0%,15%)]" onClick={() => { localStorage.setItem("fp_default_server", defaultServer); setSettingsOpen(false); toast.success("Default server updated to: " + defaultServer); }}>
               Save
             </Button>
           </DialogFooter>
