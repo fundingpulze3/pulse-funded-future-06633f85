@@ -51,7 +51,10 @@ Deno.serve(async (req) => {
 
     // ─── CREATE INVOICE ───
     if (action === "create_invoice") {
-      const { amount, currency, description, purchaseId, orderId } = body;
+      const { amount, currency, description, purchaseId, orderId, siteUrl } = body;
+
+      // Use the actual site URL passed from frontend, fallback to known domain
+      const baseUrl = siteUrl || "https://fundingpulze.com";
 
       const invoiceRes = await fetch(`${NOWPAYMENTS_API}/invoice`, {
         method: "POST",
@@ -65,8 +68,8 @@ Deno.serve(async (req) => {
           order_id: orderId || purchaseId,
           order_description: description || "Trading Challenge Purchase",
           ipn_callback_url: `${supabaseUrl}/functions/v1/nowpayments-webhook`,
-          success_url: `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/dashboard`,
-          cancel_url: `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/checkout`,
+          success_url: `${baseUrl}/dashboard`,
+          cancel_url: `${baseUrl}/checkout`,
         }),
       });
 
