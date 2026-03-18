@@ -151,10 +151,25 @@ const CredentialsManager = () => {
   };
 
   const deleteCredential = async (id: string) => {
-    if (!confirm("Delete this credential?")) return;
+    const cred = credentials.find(c => c.id === id);
+    const msg = cred?.is_assigned
+      ? "This credential is assigned to a user. Unassign and delete it permanently?"
+      : "Delete this credential?";
+    if (!confirm(msg)) return;
+    
+    // If assigned, first unassign it
+    if (cred?.is_assigned) {
+      await supabase.from("trading_credentials").update({
+        is_assigned: false,
+        assigned_to: null,
+        assigned_at: null,
+        purchase_id: null,
+      }).eq("id", id);
+    }
+    
     const { error } = await supabase.from("trading_credentials").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
-    toast.success("Deleted");
+    toast.success("Credential deleted");
     fetchData();
   };
 
