@@ -347,6 +347,7 @@ const CredentialsManager = () => {
                           <th className="px-4 py-2">Password</th>
                           <th className="px-4 py-2">Server</th>
                           <th className="px-4 py-2">Status</th>
+                          <th className="px-4 py-2">Assigned To</th>
                           <th className="px-4 py-2 w-10"></th>
                         </tr>
                       </thead>
@@ -365,6 +366,18 @@ const CredentialsManager = () => {
                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-600">
                                   <Key size={10} /> Free
                                 </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5">
+                              {c.is_assigned && c.assigned_profile ? (
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-medium text-[hsl(0,0%,15%)]">{c.assigned_profile.display_name || '—'}</span>
+                                  <span className="text-[10px] text-[hsl(0,0%,50%)]">{c.assigned_profile.email || '—'}</span>
+                                </div>
+                              ) : c.is_assigned ? (
+                                <span className="text-[10px] text-[hsl(0,0%,55%)] italic">Unknown user</span>
+                              ) : (
+                                <span className="text-[10px] text-[hsl(0,0%,70%)]">—</span>
                               )}
                             </td>
                             <td className="px-4 py-2.5">
