@@ -106,12 +106,14 @@ export default function OrdersCMS({
           }
         } else {
           toast.warning("No free credentials available for this challenge.");
+        }
 
         // Send confirmation email
         try {
           await supabase.functions.invoke("send-transactional-email", {
             body: {
               type: "purchase_confirmation",
+              recipientUserId: order.user_id,
               data: {
                 challengeName: getChallengeNameById(order.challenge_id),
                 accountSize: getChallengeNameById(order.challenge_id),
