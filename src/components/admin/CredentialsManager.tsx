@@ -40,7 +40,7 @@ const CredentialsManager = () => {
   const [bulkChallengeId, setBulkChallengeId] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [defaultServer, setDefaultServer] = useState(() => {
-    return localStorage.getItem("fp_default_server") || "OctaFX-Demo";
+    return localStorage.getItem("fp_default_server") || "MEXAtlantic-Demo";
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pendingDialogOpen, setPendingDialogOpen] = useState(false);
