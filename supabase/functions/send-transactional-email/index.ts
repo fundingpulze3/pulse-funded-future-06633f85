@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
     })
 
     await client.send({
-      from: `Funding Pulze <${GMAIL_EMAIL}>`,
+      from: `Funding Pulze <${FROM_ADDRESS}>`,
       to: recipientEmail,
       subject,
       content: subject,
