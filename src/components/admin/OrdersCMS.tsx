@@ -55,23 +55,21 @@ export default function OrdersCMS({
     if (status === "confirmed") {
       const order = purchases.find(p => p.id === id);
       if (order) {
+        // Fetch challenge details for email
+        const challenge = challenges.find(c => c.id === order.challenge_id);
+        const challengeName = challenge ? challenge.name || getChallengeNameById(order.challenge_id) : getChallengeNameById(order.challenge_id);
+        const accountSize = challenge ? `$${((challenge as any).account_size / 1000).toFixed(0)}K` : "";
+
         // Find a free credential for this challenge
         const { data: freeCred } = await supabase
           .from("trading_credentials")
-          .select("id")
+          .select("id, mt5_login, mt5_password, mt5_server")
           .eq("challenge_id", order.challenge_id)
           .eq("is_assigned", false)
           .limit(1)
           .single();
 
         if (freeCred) {
-          // Fetch the full credential to get login/password/server
-          const { data: credDetail } = await supabase
-            .from("trading_credentials")
-            .select("mt5_login, mt5_password, mt5_server")
-            .eq("id", freeCred.id)
-            .single();
-
           await supabase
             .from("trading_credentials")
             .update({
@@ -85,44 +83,48 @@ export default function OrdersCMS({
           toast.success("Credentials auto-assigned!");
 
           // Send credentials email
-          if (credDetail) {
-            try {
-              await supabase.functions.invoke("send-transactional-email", {
-                body: {
-                  type: "credentials",
-                  recipientUserId: order.user_id,
-                  data: {
-                    mt5Login: credDetail.mt5_login,
-                    mt5Password: credDetail.mt5_password,
-                    mt5Server: credDetail.mt5_server,
-                    challengeName: getChallengeNameById(order.challenge_id),
-                    accountSize: getChallengeNameById(order.challenge_id),
-                  },
+          try {
+            const { error: credEmailErr } = await supabase.functions.invoke("send-transactional-email", {
+              body: {
+                type: "credentials",
+                recipientUserId: order.user_id,
+                data: {
+                  mt5Login: freeCred.mt5_login,
+                  mt5Password: freeCred.mt5_password,
+                  mt5Server: freeCred.mt5_server,
+                  challengeName,
+                  accountSize,
                 },
-              });
-            } catch (e) {
-              console.error("Credentials email failed:", e);
-            }
+              },
+            });
+            if (credEmailErr) console.error("Credentials email error:", credEmailErr);
+            else toast.success("Credentials email sent!");
+          } catch (e) {
+            console.error("Credentials email failed:", e);
+            toast.error("Failed to send credentials email");
           }
         } else {
           toast.warning("No free credentials available for this challenge.");
         }
 
-        // Send confirmation email
+        // Send purchase confirmation email
         try {
-          await supabase.functions.invoke("send-transactional-email", {
+          const { error: confirmEmailErr } = await supabase.functions.invoke("send-transactional-email", {
             body: {
               type: "purchase_confirmation",
               recipientUserId: order.user_id,
               data: {
-                challengeName: getChallengeNameById(order.challenge_id),
-                accountSize: getChallengeNameById(order.challenge_id),
+                challengeName,
+                accountSize,
                 amountPaid: `$${order.amount_paid}`,
               },
             },
           });
+          if (confirmEmailErr) console.error("Confirmation email error:", confirmEmailErr);
+          else toast.success("Order confirmation email sent!");
         } catch (e) {
-          console.error("Email failed:", e);
+          console.error("Confirmation email failed:", e);
+          toast.error("Failed to send confirmation email");
         }
       }
     }
