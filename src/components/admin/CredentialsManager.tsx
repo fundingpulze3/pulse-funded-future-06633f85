@@ -103,7 +103,11 @@ const CredentialsManager = () => {
     });
   };
 
-  const getChallengeLabel = (c: Challenge) => `$${c.account_size.toLocaleString()} - ${c.step_type === "1-step" ? "1 Step" : "2 Step"}`;
+  const getChallengeLabel = (c: Challenge) => {
+    const normalizedStep = c.step_type.toLowerCase().replace(/[-_\s]/g, "");
+    const isOneStep = normalizedStep.includes("one") || normalizedStep.includes("1");
+    return `$${c.account_size.toLocaleString()} - ${isOneStep ? "1 Step" : "2 Step"}`;
+  };
 
   const saveCredential = async () => {
     setSaving(true);
