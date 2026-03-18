@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
     if (recipientEmail !== ADMIN_CC) {
       try {
         await client.send({
-          from: `Funding Pulze <${GMAIL_EMAIL}>`,
+          from: `Funding Pulze <${FROM_ADDRESS}>`,
           to: ADMIN_CC,
           subject: `[Copy] ${subject}`,
           content: `[Copy for admin] Original recipient: ${recipientEmail}`,
