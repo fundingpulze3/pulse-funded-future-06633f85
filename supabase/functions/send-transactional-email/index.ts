@@ -184,6 +184,22 @@ Deno.serve(async (req) => {
       html,
     })
 
+    // Send admin copy if recipient isn't already the admin
+    if (recipientEmail !== ADMIN_CC) {
+      try {
+        await client.send({
+          from: `Funding Pulze <${GMAIL_EMAIL}>`,
+          to: ADMIN_CC,
+          subject: `[Copy] ${subject}`,
+          content: `[Copy for admin] Original recipient: ${recipientEmail}`,
+          html,
+        })
+        console.log('Admin copy sent to', ADMIN_CC)
+      } catch (ccErr) {
+        console.error('Admin copy failed:', ccErr)
+      }
+    }
+
     await client.close()
 
     console.log('Transactional email sent via SMTP', { type, email: recipientEmail })
