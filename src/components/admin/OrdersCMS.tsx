@@ -65,6 +65,13 @@ export default function OrdersCMS({
           .single();
 
         if (freeCred) {
+          // Fetch the full credential to get login/password/server
+          const { data: credDetail } = await supabase
+            .from("trading_credentials")
+            .select("mt5_login, mt5_password, mt5_server")
+            .eq("id", freeCred.id)
+            .single();
+
           await supabase
             .from("trading_credentials")
             .update({
@@ -76,6 +83,27 @@ export default function OrdersCMS({
             .eq("id", freeCred.id)
             .eq("is_assigned", false);
           toast.success("Credentials auto-assigned!");
+
+          // Send credentials email
+          if (credDetail) {
+            try {
+              await supabase.functions.invoke("send-transactional-email", {
+                body: {
+                  type: "credentials",
+                  recipientUserId: order.user_id,
+                  data: {
+                    mt5Login: credDetail.mt5_login,
+                    mt5Password: credDetail.mt5_password,
+                    mt5Server: credDetail.mt5_server,
+                    challengeName: getChallengeNameById(order.challenge_id),
+                    accountSize: getChallengeNameById(order.challenge_id),
+                  },
+                },
+              });
+            } catch (e) {
+              console.error("Credentials email failed:", e);
+            }
+          }
         } else {
           toast.warning("No free credentials available for this challenge.");
         }
@@ -85,6 +113,7 @@ export default function OrdersCMS({
           await supabase.functions.invoke("send-transactional-email", {
             body: {
               type: "purchase_confirmation",
+              recipientUserId: order.user_id,
               data: {
                 challengeName: getChallengeNameById(order.challenge_id),
                 accountSize: getChallengeNameById(order.challenge_id),
