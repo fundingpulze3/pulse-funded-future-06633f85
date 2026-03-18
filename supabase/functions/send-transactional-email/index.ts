@@ -187,10 +187,10 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { sendLovableEmail } = await import('npm:@lovable.dev/email-js')
+    const { sendLovableEmail } = await import('npm:@lovable.dev/email-js@0.0.3')
 
     const result = await sendLovableEmail(
-      { to: recipientEmail, from: FROM_ADDRESS, sender_domain: SENDER_DOMAIN, subject, html, text, purpose: 'transactional', run_id: crypto.randomUUID() },
+      { to: recipientEmail, from: FROM_ADDRESS, sender_domain: SENDER_DOMAIN, subject, html, text, purpose: 'transactional' },
       { apiKey }
     )
 
