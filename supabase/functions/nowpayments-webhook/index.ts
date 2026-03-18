@@ -53,13 +53,13 @@ Deno.serve(async (req) => {
         .eq("id", order_id)
         .single();
 
-      if (!purchase || purchase.payment_status === "confirmed") {
+      if (!purchase || purchase.payment_status === "completed") {
         return new Response("OK", { status: 200 });
       }
 
       await adminClient
         .from("challenge_purchases")
-        .update({ payment_status: "confirmed", status: "active" })
+        .update({ payment_status: "completed", status: "active" })
         .eq("id", order_id);
 
       // Auto-assign credentials

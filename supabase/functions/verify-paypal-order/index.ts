@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
         // Confirm purchase
         await adminClient
           .from("challenge_purchases")
-          .update({ payment_status: "confirmed", status: "active" })
+          .update({ payment_status: "completed", status: "active" })
           .eq("id", purchaseId)
           .eq("user_id", user.id);
 
