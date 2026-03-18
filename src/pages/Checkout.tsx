@@ -320,6 +320,7 @@ const Checkout = () => {
           action: "create_invoice", amount: total, currency: "usd",
           description: `${stepLabel} Challenge — ${selectedSize}`,
           purchaseId: purchase.id, orderId: purchase.id,
+          siteUrl: window.location.origin,
         }),
       });
       const data = await res.json();
