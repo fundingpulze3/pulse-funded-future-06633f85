@@ -138,11 +138,12 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({
-          success: false,
+          success: true,
           evaluation,
           parsed,
           status: "in_progress",
-          message: `Account is still in progress. Current profit: ${evaluation.profitPercent?.toFixed(2)}% — Target: ${evaluation.details.profitTarget}. No drawdown breach detected. Keep trading!`,
+          statsSaved: true,
+          message: `Dashboard updated ✓ — Account in progress. Profit: ${evaluation.profitPercent?.toFixed(2)}% / Target: ${evaluation.details.profitTarget}. Balance: $${parsed.balance?.toLocaleString() || "N/A"}. No drawdown breach.`,
           violations: [],
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
