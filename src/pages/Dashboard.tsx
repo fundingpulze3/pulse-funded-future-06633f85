@@ -630,7 +630,7 @@ const Dashboard = () => {
         </aside>
 
         {/* Right Panel - Content */}
-        <main className="flex-1 min-w-0 overflow-x-hidden">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
           {/* Mobile Account Selector */}
           <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,20%,5%)]">
             {filteredPurchases.length > 0 ? (
