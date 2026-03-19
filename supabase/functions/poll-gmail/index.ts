@@ -497,7 +497,7 @@ Deno.serve(async (req) => {
             `
 
             await smtpTransport.sendMail({
-              from: FROM_ADDRESS,
+              from: `Funding Pulze Support <${smtpFrom}>`,
               to: email.from,
               subject: `Re: ${cleanSubject}`,
               html: autoReplyHtml,
