@@ -141,6 +141,7 @@ const UserCertificatesCMS = () => {
   };
 
   const typeLabels: Record<string, { label: string; color: string; emoji: string }> = {
+    latest_stats: { label: "Stats Updated", color: "bg-amber-50 text-amber-600", emoji: "📊" },
     phase1_passed: { label: "Phase 1 Passed", color: "bg-blue-50 text-blue-600", emoji: "✅" },
     phase2_passed: { label: "Phase 2 Passed", color: "bg-cyan-50 text-cyan-600", emoji: "✅" },
     funded: { label: "Lifetime Payout", color: "bg-green-50 text-green-600", emoji: "🏆" },
