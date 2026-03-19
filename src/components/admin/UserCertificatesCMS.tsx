@@ -80,20 +80,21 @@ const UserCertificatesCMS = () => {
 
         const result = await res.json();
 
-        if (result.success) {
+        if (result.success && result.status === "in_progress") {
+          results.push({
+            fileName: file.name,
+            accountNumber: result.parsed?.accountNumber,
+            status: "in_progress",
+            message: result.message || "Dashboard updated — account in progress",
+            certificateType: "latest_stats",
+          });
+        } else if (result.success) {
           results.push({
             fileName: file.name,
             accountNumber: result.parsed?.accountNumber,
             status: "success",
             message: result.message || "Certificate issued",
             certificateType: result.certificateType,
-          });
-        } else if (result.status === "in_progress") {
-          results.push({
-            fileName: file.name,
-            accountNumber: result.parsed?.accountNumber,
-            status: "in_progress",
-            message: result.message || "In progress",
           });
         } else if (result.violations?.length > 0) {
           results.push({
@@ -140,6 +141,7 @@ const UserCertificatesCMS = () => {
   };
 
   const typeLabels: Record<string, { label: string; color: string; emoji: string }> = {
+    latest_stats: { label: "Stats Updated", color: "bg-amber-50 text-amber-600", emoji: "📊" },
     phase1_passed: { label: "Phase 1 Passed", color: "bg-blue-50 text-blue-600", emoji: "✅" },
     phase2_passed: { label: "Phase 2 Passed", color: "bg-cyan-50 text-cyan-600", emoji: "✅" },
     funded: { label: "Lifetime Payout", color: "bg-green-50 text-green-600", emoji: "🏆" },
