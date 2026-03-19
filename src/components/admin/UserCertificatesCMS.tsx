@@ -80,20 +80,21 @@ const UserCertificatesCMS = () => {
 
         const result = await res.json();
 
-        if (result.success) {
+        if (result.success && result.status === "in_progress") {
+          results.push({
+            fileName: file.name,
+            accountNumber: result.parsed?.accountNumber,
+            status: "in_progress",
+            message: result.message || "Dashboard updated — account in progress",
+            certificateType: "latest_stats",
+          });
+        } else if (result.success) {
           results.push({
             fileName: file.name,
             accountNumber: result.parsed?.accountNumber,
             status: "success",
             message: result.message || "Certificate issued",
             certificateType: result.certificateType,
-          });
-        } else if (result.status === "in_progress") {
-          results.push({
-            fileName: file.name,
-            accountNumber: result.parsed?.accountNumber,
-            status: "in_progress",
-            message: result.message || "In progress",
           });
         } else if (result.violations?.length > 0) {
           results.push({
