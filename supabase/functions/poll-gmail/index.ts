@@ -350,7 +350,7 @@ Deno.serve(async (req) => {
           'alerts@', 'alert@', 'news@', 'newsletter@', 'marketing@', 'welcome@',
           'updates@', 'info@mongodb', 'team@mongodb']
         const fromLower = email.from.toLowerCase()
-        if (skipPatterns.some(p => fromLower.includes(p)) || email.from === gmailEmail) {
+        if (skipPatterns.some(p => fromLower.includes(p)) || email.from === smtpUsername) {
           await imap.markSeen(seq)
           await supabase.from('processed_gmail_ids').insert({ gmail_uid: uid })
           continue
