@@ -24,7 +24,7 @@ export default function SymbolsPieChart({ symbols }: SymbolsPieChartProps) {
     <div className="rounded-xl bg-[hsl(220,20%,7%)] border border-[hsl(220,15%,12%)] p-3 sm:p-5">
       <h3 className="font-display font-bold text-sm mb-3 sm:mb-4">Symbol Distribution</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="h-[180px] sm:h-[220px]">
+        <div className="h-[160px] sm:h-[200px] max-w-[200px] mx-auto">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
