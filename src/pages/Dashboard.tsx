@@ -398,17 +398,17 @@ const Dashboard = () => {
     : [];
 
   return (
-    <div className="min-h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col">
+    <div className="h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col overflow-hidden">
       <DashboardSidebar profile={profile} />
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-h-0">
         {/* Left Panel - Account List */}
         {/* Spacer for desktop sidebar */}
         <div className="hidden lg:block w-16 shrink-0" />
 
         <aside className={`
           hidden lg:flex w-[320px] bg-[hsl(220,20%,5%)] border-r border-[hsl(220,15%,12%)]
-          flex-col sticky top-14 self-start h-[calc(100vh-3.5rem)]
+          flex-col shrink-0 h-full overflow-hidden
         `}>
 
           {/* User info */}
@@ -630,7 +630,7 @@ const Dashboard = () => {
         </aside>
 
         {/* Right Panel - Content */}
-        <main className="flex-1 min-w-0 overflow-x-hidden">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
           {/* Mobile Account Selector */}
           <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,20%,5%)]">
             {filteredPurchases.length > 0 ? (
