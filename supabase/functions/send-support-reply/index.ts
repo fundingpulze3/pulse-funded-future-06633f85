@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const FROM_ADDRESS = 'Funding Pulze Support <support@fundingpulze.com>'
+// FROM_ADDRESS is now read from SMTP_FROM_ADDRESS env var
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
