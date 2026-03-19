@@ -429,13 +429,15 @@ function parseJsonReport(report: any): Record<string, any> {
   result.currency = acc.currency || "USD";
   result.broker = acc.broker || "";
   result.accountType = acc.type || "";
+  result.digits = acc.digits ?? 2;
 
   // Balance & equity
   const bal = report.balance || {};
   result.balance = bal.balance ?? 0;
   result.equity = bal.equity ?? 0;
+  result.balancePeriod = bal.period ?? 3600;
 
-  // Balance/equity chart data (time series for dashboard graph)
+  // Balance/equity chart data
   if (bal.chart && Array.isArray(bal.chart)) {
     result.balanceChart = bal.chart.map((p: any) => ({
       timestamp: p.x,
@@ -444,14 +446,23 @@ function parseJsonReport(report: any): Record<string, any> {
     }));
   }
 
+  // Monthly P&L table
+  if (bal.table) {
+    result.monthlyPL = bal.table;
+  }
+
   // Summary
   const summary = report.summary || {};
-  result.gain = summary.gain ?? 0; // as decimal e.g. 0.00405 = 0.405%
+  result.gain = summary.gain ?? 0;
   result.gainPercent = (summary.gain ?? 0) * 100;
+  result.activity = summary.activity ?? 0;
   result.deposit = Array.isArray(summary.deposit) ? summary.deposit[0] : summary.deposit ?? 0;
   result.depositCount = Array.isArray(summary.deposit) ? summary.deposit[1] : 1;
   result.withdrawal = Array.isArray(summary.withdrawal) ? summary.withdrawal[0] : 0;
   result.withdrawalCount = Array.isArray(summary.withdrawal) ? summary.withdrawal[1] : 0;
+  result.dividendAmount = summary.dividend ?? 0;
+  result.correctionAmount = summary.correction ?? 0;
+  result.creditAmount = summary.credit ?? 0;
 
   // Profit calculation
   result.profit = (result.balance || 0) - (result.deposit || 0);
@@ -470,32 +481,71 @@ function parseJsonReport(report: any): Record<string, any> {
   const growth = report.growth || {};
   result.growthPercent = (growth.growth ?? 0) * 100;
   result.maxDrawdownPercent = (growth.drawdown ?? 0) * 100;
+  result.growthPeriod = growth.period ?? 3600;
 
-  // Growth chart (for growth % line)
+  // Growth chart (growth % line)
   if (growth.chart && Array.isArray(growth.chart) && growth.chart[0]) {
     result.growthChart = growth.chart[0].map((p: any) => ({
       timestamp: p.x,
       growth: (p.y?.[0] ?? 0) * 100,
     }));
   }
-  // Drawdown chart
+  // Drawdown chart from growth
   if (growth.chart && Array.isArray(growth.chart) && growth.chart[1]) {
     result.drawdownChart = growth.chart[1].map((p: any) => ({
       timestamp: p.x,
       drawdown: (p.y?.[0] ?? 0) * 100,
     }));
   }
+  // Growth monthly table
+  if (growth.table) {
+    result.growthTable = growth.table;
+  }
+
+  // Dividend section
+  const dividend = report.dividend || {};
+  result.dividend = dividend.dividend ?? 0;
+  result.correction = dividend.correction ?? 0;
+  result.credit = dividend.credit ?? 0;
+  if (dividend.chart) result.dividendChart = dividend.chart;
+  if (dividend.table) result.dividendTable = dividend.table;
 
   // Profit totals
   const profitTotal = report.profitTotal || {};
   result.grossProfit = profitTotal.profit_gross ?? profitTotal.profit ?? 0;
   result.grossLoss = profitTotal.loss_gross ?? profitTotal.loss ?? 0;
+  result.profitDividend = profitTotal.profit_dividend ?? 0;
   result.swapTotal = profitTotal.profit_swap ?? 0;
   result.commissionTotal = profitTotal.loss_commission ?? 0;
+
+  // Profit money time series
+  if (report.profitMoney) {
+    result.profitMoney = {
+      period: report.profitMoney.period,
+      profit: report.profitMoney.profit,
+      loss: report.profitMoney.loss,
+      table: report.profitMoney.table,
+    };
+  }
+
+  // Profit deals time series
+  if (report.profitDeals) {
+    result.profitDeals = {
+      period: report.profitDeals.period,
+      profit: report.profitDeals.profit,
+      loss: report.profitDeals.loss,
+      table: report.profitDeals.table,
+    };
+  }
 
   // Profit by day chart
   if (report.profitDaily?.chart) {
     result.profitByDay = report.profitDaily.chart;
+  }
+
+  // Profit by type (robot/manual/signals)
+  if (report.profitType) {
+    result.profitType = report.profitType;
   }
 
   // Long/Short breakdown
@@ -503,6 +553,21 @@ function parseJsonReport(report: any): Record<string, any> {
   result.longTrades = ls.long ?? 0;
   result.shortTrades = ls.short ?? 0;
   result.totalTrades = (ls.long ?? 0) + (ls.short ?? 0);
+
+  // Long/Short time series
+  if (report.longShort) {
+    result.longShortTimeSeries = {
+      period: report.longShort.period,
+      long: report.longShort.long,
+      short: report.longShort.short,
+      all: report.longShort.all,
+    };
+  }
+
+  // Long/Short daily chart
+  if (report.longShortDaily?.chart) {
+    result.longShortDaily = report.longShortDaily.chart;
+  }
 
   // Long/Short detailed indicators
   const lsi = report.longShortIndicators || {};
@@ -513,6 +578,22 @@ function parseJsonReport(report: any): Record<string, any> {
   if (lsi.average_pl) {
     result.avgPLLong = lsi.average_pl[0] ?? 0;
     result.avgPLShort = lsi.average_pl[1] ?? 0;
+  }
+  if (lsi.average_pl_percent) {
+    result.avgPLPercentLong = (lsi.average_pl_percent[0] ?? 0) * 100;
+    result.avgPLPercentShort = (lsi.average_pl_percent[1] ?? 0) * 100;
+  }
+  if (lsi.commissions) {
+    result.commissionsLong = lsi.commissions[0] ?? 0;
+    result.commissionsShort = lsi.commissions[1] ?? 0;
+  }
+  if (lsi.average_profit) {
+    result.avgProfitLong = lsi.average_profit[0] ?? 0;
+    result.avgProfitShort = lsi.average_profit[1] ?? 0;
+  }
+  if (lsi.average_profit_percent) {
+    result.avgProfitPercentLong = (lsi.average_profit_percent[0] ?? 0) * 100;
+    result.avgProfitPercentShort = (lsi.average_profit_percent[1] ?? 0) * 100;
   }
   if (lsi.win_trades) {
     result.winTradesLong = lsi.win_trades[0] ?? 0;
@@ -534,18 +615,46 @@ function parseJsonReport(report: any): Record<string, any> {
   result.manualTrades = tt.manual ?? 0;
   result.signalTrades = tt.signals ?? 0;
 
-  // Symbols breakdown
-  if (report.symbolsTotal?.total) {
-    result.symbols = report.symbolsTotal.total.map((s: any) => ({
-      name: s.x,
-      profit: s.y?.[0] ?? 0,
-      trades: s.y?.[1] ?? 0,
-    }));
+  // Symbol money time series
+  if (report.symbolMoney) {
+    result.symbolMoney = report.symbolMoney;
   }
 
-  // Drawdown chart
+  // Symbol deals time series
+  if (report.symbolDeals) {
+    result.symbolDeals = report.symbolDeals;
+  }
+
+  // Symbol indicators (profit factor, netto profit, fees per symbol)
+  if (report.symbolIndicators) {
+    result.symbolIndicators = report.symbolIndicators;
+  }
+
+  // Symbols breakdown — format is [["SYMBOL", profit, trades], ...]
+  if (report.symbolsTotal?.total) {
+    result.symbols = report.symbolsTotal.total.map((s: any) => {
+      if (Array.isArray(s)) {
+        return { name: s[0], profit: s[1] ?? 0, trades: s[2] ?? 0 };
+      }
+      return { name: s.x, profit: s.y?.[0] ?? 0, trades: s.y?.[1] ?? 0 };
+    });
+  }
+
+  // Symbol types (Currency, CFD, etc.)
+  if (report.symbolTypes?.type) {
+    result.symbolTypes = report.symbolTypes.type.map((t: any) => {
+      if (Array.isArray(t)) return { type: t[0], count: t[1] ?? 0 };
+      return t;
+    });
+  }
+
+  // Drawdown detail chart
   if (report.drawdown?.chart) {
     result.drawdownDetailChart = report.drawdown.chart;
+  }
+  if (report.drawdown) {
+    result.drawdownMax = (report.drawdown.drawdown ?? 0) * 100;
+    result.drawdownDepositLoad = (report.drawdown.deposit_load ?? 0) * 100;
   }
 
   // Risk indicators
@@ -563,9 +672,26 @@ function parseJsonReport(report: any): Record<string, any> {
     result.maxConsecutiveLoss = ri.max_consecutive_profit[1] ?? 0;
   }
 
-  // Monthly P&L table
-  if (bal.table) {
-    result.monthlyPL = bal.table;
+  // MFE/MAE percent
+  if (report.risksMfeMaePercent) {
+    result.risksMfeMaePercent = {
+      maxAvgProfitRatio: report.risksMfeMaePercent.max_avg_profit_ratio ?? 0,
+      maxAvgMfeRatio: report.risksMfeMaePercent.max_avg_mfe_ratio ?? 0,
+      minAvgLossRatio: report.risksMfeMaePercent.min_avg_loss_ratio ?? 0,
+      minAvgMaeRatio: report.risksMfeMaePercent.min_avg_mae_ratio ?? 0,
+      chart: report.risksMfeMaePercent.chart,
+    };
+  }
+
+  // MFE/MAE money
+  if (report.risksMfeMaeMoney) {
+    result.risksMfeMaeMoney = {
+      maxAvgProfit: report.risksMfeMaeMoney.max_avg_profit ?? 0,
+      maxAvgMfe: report.risksMfeMaeMoney.max_avg_mfe ?? 0,
+      minAvgLoss: report.risksMfeMaeMoney.min_avg_loss ?? 0,
+      minAvgMae: report.risksMfeMaeMoney.min_avg_mae ?? 0,
+      chart: report.risksMfeMaeMoney.chart,
+    };
   }
 
   return result;
