@@ -514,7 +514,7 @@ Deno.serve(async (req) => {
             await supabase.from('support_ticket_messages').insert({
               ticket_id: newTicket.id,
               sender_type: 'system',
-              sender_email: gmailEmail,
+              sender_email: smtpFrom,
               sender_name: 'Funding Pulze Support',
               message: `Auto-reply sent: "We've received your message and will reply within 4 hours."`,
             })
