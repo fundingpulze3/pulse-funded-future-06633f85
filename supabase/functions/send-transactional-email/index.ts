@@ -32,10 +32,13 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization')
 
-    const GMAIL_EMAIL = Deno.env.get('GMAIL_EMAIL')
-    const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD')
-    if (!GMAIL_EMAIL || !GMAIL_APP_PASSWORD) {
-      return new Response(JSON.stringify({ error: 'Gmail SMTP credentials not configured' }), {
+    const SMTP_HOST = Deno.env.get('SMTP_HOST')
+    const SMTP_PORT = parseInt(Deno.env.get('SMTP_PORT') || '465')
+    const SMTP_USERNAME = Deno.env.get('SMTP_USERNAME')
+    const SMTP_PASSWORD = Deno.env.get('SMTP_PASSWORD')
+    const SMTP_FROM = Deno.env.get('SMTP_FROM_ADDRESS') || FROM_ADDRESS
+    if (!SMTP_HOST || !SMTP_USERNAME || !SMTP_PASSWORD) {
+      return new Response(JSON.stringify({ error: 'SMTP credentials not configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
