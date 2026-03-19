@@ -81,12 +81,12 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Create SMTP transporter
+    // Create SMTP transporter using company mail
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: { user: gmailEmail, pass: gmailAppPassword },
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUsername, pass: smtpPassword },
     })
 
     const replyHtml = `
