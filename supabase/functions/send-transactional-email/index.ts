@@ -32,10 +32,13 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization')
 
-    const GMAIL_EMAIL = Deno.env.get('GMAIL_EMAIL')
-    const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD')
-    if (!GMAIL_EMAIL || !GMAIL_APP_PASSWORD) {
-      return new Response(JSON.stringify({ error: 'Gmail SMTP credentials not configured' }), {
+    const SMTP_HOST = Deno.env.get('SMTP_HOST')
+    const SMTP_PORT = parseInt(Deno.env.get('SMTP_PORT') || '465')
+    const SMTP_USERNAME = Deno.env.get('SMTP_USERNAME')
+    const SMTP_PASSWORD = Deno.env.get('SMTP_PASSWORD')
+    const SMTP_FROM = Deno.env.get('SMTP_FROM_ADDRESS') || FROM_ADDRESS
+    if (!SMTP_HOST || !SMTP_USERNAME || !SMTP_PASSWORD) {
+      return new Response(JSON.stringify({ error: 'SMTP credentials not configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -162,21 +165,21 @@ Deno.serve(async (req) => {
         })
     }
 
-    // Send via Gmail SMTP
+    // Send via Company SMTP
     const client = new SMTPClient({
       connection: {
-        hostname: 'smtp.gmail.com',
-        port: 465,
+        hostname: SMTP_HOST,
+        port: SMTP_PORT,
         tls: true,
         auth: {
-          username: GMAIL_EMAIL,
-          password: GMAIL_APP_PASSWORD,
+          username: SMTP_USERNAME,
+          password: SMTP_PASSWORD,
         },
       },
     })
 
     await client.send({
-      from: `Funding Pulze <${FROM_ADDRESS}>`,
+      from: `Funding Pulze <${SMTP_FROM}>`,
       to: recipientEmail,
       subject,
       content: subject,
@@ -187,7 +190,7 @@ Deno.serve(async (req) => {
     if (recipientEmail !== ADMIN_CC) {
       try {
         await client.send({
-          from: `Funding Pulze <${FROM_ADDRESS}>`,
+          from: `Funding Pulze <${SMTP_FROM}>`,
           to: ADMIN_CC,
           subject: `[Copy] ${subject}`,
           content: `[Copy for admin] Original recipient: ${recipientEmail}`,
