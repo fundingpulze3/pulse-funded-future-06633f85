@@ -165,21 +165,21 @@ Deno.serve(async (req) => {
         })
     }
 
-    // Send via Gmail SMTP
+    // Send via Company SMTP
     const client = new SMTPClient({
       connection: {
-        hostname: 'smtp.gmail.com',
-        port: 465,
+        hostname: SMTP_HOST,
+        port: SMTP_PORT,
         tls: true,
         auth: {
-          username: GMAIL_EMAIL,
-          password: GMAIL_APP_PASSWORD,
+          username: SMTP_USERNAME,
+          password: SMTP_PASSWORD,
         },
       },
     })
 
     await client.send({
-      from: `Funding Pulze <${FROM_ADDRESS}>`,
+      from: `Funding Pulze <${SMTP_FROM}>`,
       to: recipientEmail,
       subject,
       content: subject,
@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
     if (recipientEmail !== ADMIN_CC) {
       try {
         await client.send({
-          from: `Funding Pulze <${FROM_ADDRESS}>`,
+          from: `Funding Pulze <${SMTP_FROM}>`,
           to: ADMIN_CC,
           subject: `[Copy] ${subject}`,
           content: `[Copy for admin] Original recipient: ${recipientEmail}`,
