@@ -378,19 +378,42 @@ function evaluateAccount(
  * and plain HTML table-based statements
  */
 function parseMT5Statement(html: string): Record<string, any> {
-  // Try JSON-embedded report first (modern MT5 reports)
+  // Only accept JSON-embedded MT5 reports (window.__report) to avoid partial/corrupt parses.
   const jsonMatch = html.match(/window\.__report\s*=\s*\n?([\s\S]*?);\s*<\/script>/);
-  if (jsonMatch) {
-    try {
-      const report = JSON.parse(jsonMatch[1]);
-      return parseJsonReport(report);
-    } catch (e) {
-      console.error("Failed to parse JSON report, falling back to regex:", e);
-    }
+
+  if (!jsonMatch) {
+    console.warn("[parse-mt5] Unsupported statement format: missing window.__report");
+    return {};
   }
 
-  // Fallback: regex-based parsing for plain HTML statements
-  return parseHtmlRegex(html);
+  try {
+    const report = JSON.parse(jsonMatch[1]);
+    const parsed = parseJsonReport(report);
+
+    // Minimal sanity checks so we only store genuine, dashboard-ready stats.
+    const ok =
+      !!parsed.accountNumber &&
+      typeof parsed.balance === "number" &&
+      typeof parsed.deposit === "number" &&
+      Array.isArray((parsed as any).balanceChart) &&
+      (parsed as any).balanceChart.length > 0;
+
+    if (!ok) {
+      console.error("[parse-mt5] Parsed report failed sanity checks", {
+        accountNumber: parsed.accountNumber,
+        balance: parsed.balance,
+        deposit: parsed.deposit,
+        hasBalanceChart: Array.isArray((parsed as any).balanceChart),
+        balanceChartLen: Array.isArray((parsed as any).balanceChart) ? (parsed as any).balanceChart.length : 0,
+      });
+      return {};
+    }
+
+    return parsed;
+  } catch (e) {
+    console.error("[parse-mt5] Failed to parse JSON report", e);
+    return {};
+  }
 }
 
 /**
