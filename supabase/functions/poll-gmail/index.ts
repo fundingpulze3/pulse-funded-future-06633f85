@@ -276,23 +276,26 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  const gmailEmail = Deno.env.get('GMAIL_EMAIL')
-  const gmailAppPassword = Deno.env.get('GMAIL_APP_PASSWORD')
+  const smtpHost = Deno.env.get('SMTP_HOST')
+  const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465')
+  const smtpUsername = Deno.env.get('SMTP_USERNAME')
+  const smtpPassword = Deno.env.get('SMTP_PASSWORD')
+  const smtpFrom = Deno.env.get('SMTP_FROM_ADDRESS') || 'support@fundingpulze.com'
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-  if (!gmailEmail || !gmailAppPassword) {
-    return new Response(JSON.stringify({ error: 'Gmail credentials not configured' }), {
+  if (!smtpHost || !smtpUsername || !smtpPassword) {
+    return new Response(JSON.stringify({ error: 'SMTP credentials not configured' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
-  // SMTP transporter for sending replies
+  // SMTP transporter for sending auto-replies via company mail
   const smtpTransport = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { user: gmailEmail, pass: gmailAppPassword },
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: { user: smtpUsername, pass: smtpPassword },
   })
 
   const supabase = createClient(supabaseUrl, serviceRoleKey)
@@ -301,9 +304,9 @@ Deno.serve(async (req) => {
   let errors: string[] = []
 
   try {
-    console.log('Connecting to Gmail IMAP...')
-    await imap.connect('imap.gmail.com', 993)
-    await imap.login(gmailEmail, gmailAppPassword)
+    console.log('Connecting to company mail IMAP...')
+    await imap.connect(smtpHost, 993)
+    await imap.login(smtpUsername, smtpPassword)
     await imap.selectInbox()
 
     const unseenSeqs = await imap.searchUnseen()
