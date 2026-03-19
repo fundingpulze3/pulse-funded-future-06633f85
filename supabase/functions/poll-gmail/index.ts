@@ -276,23 +276,26 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  const gmailEmail = Deno.env.get('GMAIL_EMAIL')
-  const gmailAppPassword = Deno.env.get('GMAIL_APP_PASSWORD')
+  const smtpHost = Deno.env.get('SMTP_HOST')
+  const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465')
+  const smtpUsername = Deno.env.get('SMTP_USERNAME')
+  const smtpPassword = Deno.env.get('SMTP_PASSWORD')
+  const smtpFrom = Deno.env.get('SMTP_FROM_ADDRESS') || 'support@fundingpulze.com'
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-  if (!gmailEmail || !gmailAppPassword) {
-    return new Response(JSON.stringify({ error: 'Gmail credentials not configured' }), {
+  if (!smtpHost || !smtpUsername || !smtpPassword) {
+    return new Response(JSON.stringify({ error: 'SMTP credentials not configured' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
-  // SMTP transporter for sending replies
+  // SMTP transporter for sending auto-replies via company mail
   const smtpTransport = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { user: gmailEmail, pass: gmailAppPassword },
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: { user: smtpUsername, pass: smtpPassword },
   })
 
   const supabase = createClient(supabaseUrl, serviceRoleKey)
@@ -301,9 +304,9 @@ Deno.serve(async (req) => {
   let errors: string[] = []
 
   try {
-    console.log('Connecting to Gmail IMAP...')
-    await imap.connect('imap.gmail.com', 993)
-    await imap.login(gmailEmail, gmailAppPassword)
+    console.log('Connecting to company mail IMAP...')
+    await imap.connect(smtpHost, 993)
+    await imap.login(smtpUsername, smtpPassword)
     await imap.selectInbox()
 
     const unseenSeqs = await imap.searchUnseen()
@@ -347,7 +350,7 @@ Deno.serve(async (req) => {
           'alerts@', 'alert@', 'news@', 'newsletter@', 'marketing@', 'welcome@',
           'updates@', 'info@mongodb', 'team@mongodb']
         const fromLower = email.from.toLowerCase()
-        if (skipPatterns.some(p => fromLower.includes(p)) || email.from === gmailEmail) {
+        if (skipPatterns.some(p => fromLower.includes(p)) || email.from === smtpUsername) {
           await imap.markSeen(seq)
           await supabase.from('processed_gmail_ids').insert({ gmail_uid: uid })
           continue
@@ -494,7 +497,7 @@ Deno.serve(async (req) => {
             `
 
             await smtpTransport.sendMail({
-              from: FROM_ADDRESS,
+              from: `Funding Pulze Support <${smtpFrom}>`,
               to: email.from,
               subject: `Re: ${cleanSubject}`,
               html: autoReplyHtml,
@@ -511,7 +514,7 @@ Deno.serve(async (req) => {
             await supabase.from('support_ticket_messages').insert({
               ticket_id: newTicket.id,
               sender_type: 'system',
-              sender_email: gmailEmail,
+              sender_email: smtpFrom,
               sender_name: 'Funding Pulze Support',
               message: `Auto-reply sent: "We've received your message and will reply within 4 hours."`,
             })
