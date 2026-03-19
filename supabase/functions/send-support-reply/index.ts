@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const FROM_ADDRESS = 'Funding Pulze Support <support@fundingpulze.com>'
+// FROM_ADDRESS is now read from SMTP_FROM_ADDRESS env var
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -23,11 +23,14 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const gmailEmail = Deno.env.get('GMAIL_EMAIL')
-    const gmailAppPassword = Deno.env.get('GMAIL_APP_PASSWORD')
+    const smtpHost = Deno.env.get('SMTP_HOST')
+    const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465')
+    const smtpUsername = Deno.env.get('SMTP_USERNAME')
+    const smtpPassword = Deno.env.get('SMTP_PASSWORD')
+    const smtpFrom = Deno.env.get('SMTP_FROM_ADDRESS') || 'support@fundingpulze.com'
 
-    if (!gmailEmail || !gmailAppPassword) {
-      return new Response(JSON.stringify({ error: 'Gmail credentials not configured' }), {
+    if (!smtpHost || !smtpUsername || !smtpPassword) {
+      return new Response(JSON.stringify({ error: 'SMTP credentials not configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -78,12 +81,12 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Create SMTP transporter
+    // Create SMTP transporter using company mail
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: { user: gmailEmail, pass: gmailAppPassword },
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUsername, pass: smtpPassword },
     })
 
     const replyHtml = `
@@ -109,7 +112,7 @@ Deno.serve(async (req) => {
 
     // Build threading headers
     const mailOptions: Record<string, unknown> = {
-      from: FROM_ADDRESS,
+      from: `Funding Pulze Support <${smtpFrom}>`,
       to: ticket.email,
       subject: `Re: ${ticket.subject}`,
       html: replyHtml,
