@@ -55,9 +55,17 @@ Deno.serve(async (req) => {
     }
 
     const fileText = await file.text();
+    console.log(`[parse-mt5] File received: ${file.name}, size: ${fileText.length} chars`);
+    
+    // Check if JSON report exists
+    const hasJsonReport = fileText.includes("window.__report");
+    console.log(`[parse-mt5] Has window.__report: ${hasJsonReport}`);
+    
     const parsed = parseMT5Statement(fileText);
+    console.log(`[parse-mt5] Parsed account: ${parsed.accountNumber}, balance: ${parsed.balance}, deposit: ${parsed.deposit}, profit: ${parsed.profit}`);
 
     if (!parsed.accountNumber) {
+      console.error(`[parse-mt5] FAILED: Could not extract account number. Keys found: ${Object.keys(parsed).join(", ")}`);
       return new Response(
         JSON.stringify({ error: "Could not extract account number from statement", parsed }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
