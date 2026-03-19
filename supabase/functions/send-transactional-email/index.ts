@@ -31,11 +31,6 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
 
     const GMAIL_EMAIL = Deno.env.get('GMAIL_EMAIL')
     const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD')
