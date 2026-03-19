@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
 
     // Build threading headers
     const mailOptions: Record<string, unknown> = {
-      from: FROM_ADDRESS,
+      from: `Funding Pulze Support <${smtpFrom}>`,
       to: ticket.email,
       subject: `Re: ${ticket.subject}`,
       html: replyHtml,
