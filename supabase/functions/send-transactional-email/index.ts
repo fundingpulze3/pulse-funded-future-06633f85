@@ -45,8 +45,12 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+    let user = null
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user: authUser } } = await supabaseAdmin.auth.getUser(token)
+      user = authUser
+    }
 
     const body = await req.json()
     const { type, data, recipientUserId, recipientOverride } = body
