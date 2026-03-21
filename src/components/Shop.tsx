@@ -1,26 +1,44 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Check, Crown, Info } from "lucide-react";
+import { Check, Crown, Info, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
 
 type StepType = "one" | "two";
 type AccountSize = "$5K" | "$10K" | "$25K" | "$50K" | "$100K";
 
-const accountPrices: Record<StepType, Record<AccountSize, string>> = {
-  one: { "$5K": "$49", "$10K": "$89", "$25K": "$179", "$50K": "$249", "$100K": "$449" },
-  two: { "$5K": "$39", "$10K": "$79", "$25K": "$159", "$50K": "$289", "$100K": "$499" },
+interface ChallengeRow {
+  id: string;
+  account_size: number;
+  price: number;
+  step_type: string;
+  profit_target: string;
+  max_drawdown: string;
+  daily_drawdown: string;
+  min_trading_days: string;
+  leverage: string;
+}
+
+const sizeToLabel = (size: number): AccountSize => {
+  const map: Record<number, AccountSize> = { 5000: "$5K", 10000: "$10K", 25000: "$25K", 50000: "$50K", 100000: "$100K" };
+  return map[size] || "$50K";
 };
 
-const rulesData: Record<StepType, { student: Record<string, string>; practitioner: Record<string, string>; master: Record<string, string> }> = {
+const defaultPrices: Record<StepType, Record<AccountSize, string>> = {
+  one: { "$5K": "$49", "$10K": "$89", "$25K": "$189", "$50K": "$309", "$100K": "$549" },
+  two: { "$5K": "$29", "$10K": "$62", "$25K": "$149", "$50K": "$279", "$100K": "$519" },
+};
+
+const defaultRules: Record<StepType, { student: Record<string, string>; practitioner: Record<string, string>; master: Record<string, string> }> = {
   one: {
-    student: { "Profit Target": "$4,000 (8%)", "Maximum Loss": "10%", "Maximum Daily Loss": "5%", "Minimum Trading Days": "3 days", "Leverage": "1:100" },
+    student: { "Profit Target": "8%", "Maximum Loss": "10%", "Maximum Daily Loss": "5%", "Minimum Trading Days": "3 days", "Leverage": "1:100" },
     practitioner: { "Profit Target": "-", "Maximum Loss": "10%", "Maximum Daily Loss": "5%", "Minimum Trading Days": "-", "Leverage": "1:100" },
     master: { "Profit Target": "-", "Maximum Loss": "10%", "Maximum Daily Loss": "5%", "Minimum Trading Days": "-", "Leverage": "1:100" },
   },
   two: {
-    student: { "Profit Target": "$4,000 (8%)", "Maximum Loss": "10%", "Maximum Daily Loss": "5%", "Minimum Trading Days": "3 days", "Leverage": "1:100" },
-    practitioner: { "Profit Target": "$2,500 (5%)", "Maximum Loss": "10%", "Maximum Daily Loss": "5%", "Minimum Trading Days": "3 days", "Leverage": "1:100" },
+    student: { "Profit Target": "8%", "Maximum Loss": "10%", "Maximum Daily Loss": "5%", "Minimum Trading Days": "3 days", "Leverage": "1:100" },
+    practitioner: { "Profit Target": "5%", "Maximum Loss": "10%", "Maximum Daily Loss": "5%", "Minimum Trading Days": "3 days", "Leverage": "1:100" },
     master: { "Profit Target": "-", "Maximum Loss": "10%", "Maximum Daily Loss": "5%", "Minimum Trading Days": "-", "Leverage": "1:100" },
   },
 };
@@ -40,9 +58,64 @@ const ruleLabels = ["Profit Target", "Maximum Loss", "Maximum Daily Loss", "Mini
 const Shop = () => {
   const [step, setStep] = useState<StepType>("one");
   const [account, setAccount] = useState<AccountSize>("$50K");
+  const [prices, setPrices] = useState(defaultPrices);
+  const [rules, setRules] = useState(defaultRules);
+  const [dbLoaded, setDbLoaded] = useState(false);
   const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
+
+  // Fetch challenges from DB
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      const { data } = await supabase
+        .from("challenges")
+        .select("id, account_size, price, step_type, profit_target, max_drawdown, daily_drawdown, min_trading_days, leverage")
+        .eq("is_active", true)
+        .order("account_size", { ascending: true });
+
+      if (!data || data.length === 0) return;
+
+      const newPrices: Record<StepType, Record<AccountSize, string>> = { one: {} as any, two: {} as any };
+      const newRules: Record<StepType, { student: Record<string, string>; practitioner: Record<string, string>; master: Record<string, string> }> = {
+        one: { student: {}, practitioner: {}, master: {} },
+        two: { student: {}, practitioner: {}, master: {} },
+      };
+
+      data.forEach((c: ChallengeRow) => {
+        const stepKey: StepType = c.step_type === "one_step" ? "one" : "two";
+        const sizeLabel = sizeToLabel(c.account_size);
+
+        newPrices[stepKey][sizeLabel] = `$${c.price}`;
+
+        // Student phase uses DB values
+        newRules[stepKey].student[sizeLabel] = "loaded";
+        const studentRules: Record<string, string> = {
+          "Profit Target": c.profit_target,
+          "Maximum Loss": c.max_drawdown,
+          "Maximum Daily Loss": c.daily_drawdown,
+          "Minimum Trading Days": c.min_trading_days,
+          "Leverage": c.leverage,
+        };
+
+        // For 1-step: only student has target, practitioner & master are funded
+        if (stepKey === "one") {
+          newRules.one.student = studentRules;
+          newRules.one.practitioner = { "Profit Target": "-", "Maximum Loss": c.max_drawdown, "Maximum Daily Loss": c.daily_drawdown, "Minimum Trading Days": "-", "Leverage": c.leverage };
+          newRules.one.master = { "Profit Target": "-", "Maximum Loss": c.max_drawdown, "Maximum Daily Loss": c.daily_drawdown, "Minimum Trading Days": "-", "Leverage": c.leverage };
+        } else {
+          newRules.two.student = studentRules;
+          newRules.two.practitioner = { "Profit Target": "5%", "Maximum Loss": c.max_drawdown, "Maximum Daily Loss": c.daily_drawdown, "Minimum Trading Days": c.min_trading_days, "Leverage": c.leverage };
+          newRules.two.master = { "Profit Target": "-", "Maximum Loss": c.max_drawdown, "Maximum Daily Loss": c.daily_drawdown, "Minimum Trading Days": "-", "Leverage": c.leverage };
+        }
+      });
+
+      setPrices(newPrices);
+      setRules(newRules);
+      setDbLoaded(true);
+    };
+    fetchChallenges();
+  }, []);
 
   useEffect(() => {
     const loadGsap = async () => {
@@ -65,8 +138,8 @@ const Shop = () => {
     animateTable();
   }, [step, account]);
 
-  const rules = rulesData[step];
-  const price = accountPrices[step][account];
+  const currentRules = rules[step];
+  const price = prices[step][account] || "$0";
   const sizeNum = account.replace("$", "").replace("K", "k");
 
   return (
@@ -177,9 +250,9 @@ const Shop = () => {
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <p className="text-center text-[10px] sm:text-sm font-medium text-foreground">{rules.student[label]}</p>
-                <p className="text-center text-[10px] sm:text-sm font-medium text-foreground">{rules.practitioner[label]}</p>
-                <p className="text-center text-[10px] sm:text-sm font-medium text-foreground">{rules.master[label]}</p>
+                <p className="text-center text-[10px] sm:text-sm font-medium text-foreground">{currentRules.student[label]}</p>
+                <p className="text-center text-[10px] sm:text-sm font-medium text-foreground">{currentRules.practitioner[label]}</p>
+                <p className="text-center text-[10px] sm:text-sm font-medium text-foreground">{currentRules.master[label]}</p>
               </div>
             ))}
           </div>
