@@ -56,11 +56,30 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** Preload Copperplate Gothic font via FontFace API */
+let fontLoaded = false;
+async function ensureCopperplateFont(): Promise<void> {
+  if (fontLoaded) return;
+  try {
+    const font = new FontFace(
+      "Copperplate Gothic",
+      "url(https://fonts.cdnfonts.com/s/13082/CopperplateGothicBold.woff) format('woff')"
+    );
+    await font.load();
+    document.fonts.add(font);
+    fontLoaded = true;
+  } catch {
+    // Fallback silently — canvas will use fallback font
+    console.warn("Copperplate Gothic font failed to load, using fallback");
+  }
+}
+
 export async function generateCertificateImage(config: CertificateConfig): Promise<Blob> {
   const { backgroundUrl, userName, date, profitShare, certificateType } = config;
   const layout = LAYOUT[certificateType] || DEFAULT_LAYOUT;
 
   const bg = await loadImage(backgroundUrl);
+  await ensureCopperplateFont();
   const canvas = document.createElement("canvas");
   canvas.width = bg.naturalWidth;
   canvas.height = bg.naturalHeight;
@@ -89,18 +108,18 @@ export async function generateCertificateImage(config: CertificateConfig): Promi
 
   // Draw user name
   const nameSize = Math.round(layout.nameFontSize * h);
-  drawText(userName, w * layout.nameX, h * layout.nameY, `bold ${nameSize}px Arial, sans-serif`, "#ffffff");
+  drawText(userName, w * layout.nameX, h * layout.nameY, `bold ${nameSize}px "Copperplate Gothic", "Copperplate", "Small Caps", serif`, "#ffffff");
 
   // Draw date
   if (layout.dateX !== undefined && layout.dateY !== undefined) {
     const dateSize = Math.round((layout.dateFontSize || 0.018) * h);
-    drawText(date, w * layout.dateX, h * layout.dateY, `${dateSize}px Arial, sans-serif`, "#c8d8e8");
+    drawText(date, w * layout.dateX, h * layout.dateY, `${dateSize}px "Copperplate Gothic", "Copperplate", serif`, "#c8d8e8");
   }
 
   // Draw profit share (payout certificates)
   if (profitShare && layout.profitX !== undefined && layout.profitY !== undefined) {
     const profitSize = Math.round((layout.profitFontSize || 0.032) * h);
-    drawText(profitShare, w * layout.profitX, h * layout.profitY, `bold ${profitSize}px Arial, sans-serif`, "#ffffff");
+    drawText(profitShare, w * layout.profitX, h * layout.profitY, `bold ${profitSize}px "Copperplate Gothic", "Copperplate", serif`, "#ffffff");
   }
 
   return new Promise((resolve, reject) => {
