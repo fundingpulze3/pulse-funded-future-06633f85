@@ -56,6 +56,24 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** Preload Copperplate Gothic font via FontFace API */
+let fontLoaded = false;
+async function ensureCopperplateFont(): Promise<void> {
+  if (fontLoaded) return;
+  try {
+    const font = new FontFace(
+      "Copperplate Gothic",
+      "url(https://fonts.cdnfonts.com/s/13082/CopperplateGothicBold.woff) format('woff')"
+    );
+    await font.load();
+    document.fonts.add(font);
+    fontLoaded = true;
+  } catch {
+    // Fallback silently — canvas will use fallback font
+    console.warn("Copperplate Gothic font failed to load, using fallback");
+  }
+}
+
 export async function generateCertificateImage(config: CertificateConfig): Promise<Blob> {
   const { backgroundUrl, userName, date, profitShare, certificateType } = config;
   const layout = LAYOUT[certificateType] || DEFAULT_LAYOUT;
