@@ -79,6 +79,7 @@ export async function generateCertificateImage(config: CertificateConfig): Promi
   const layout = LAYOUT[certificateType] || DEFAULT_LAYOUT;
 
   const bg = await loadImage(backgroundUrl);
+  await ensureCopperplateFont();
   const canvas = document.createElement("canvas");
   canvas.width = bg.naturalWidth;
   canvas.height = bg.naturalHeight;
