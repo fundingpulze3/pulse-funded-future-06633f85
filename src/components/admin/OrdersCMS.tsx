@@ -214,6 +214,8 @@ export default function OrdersCMS({
               <th className="px-5 py-3 font-medium">User</th>
               <th className="px-5 py-3 font-medium">Challenge</th>
               <th className="px-5 py-3 font-medium">Amount</th>
+              <th className="px-5 py-3 font-medium">Method</th>
+              <th className="px-5 py-3 font-medium">UTR</th>
               <th className="px-5 py-3 font-medium">Billing</th>
               <th className="px-5 py-3 font-medium">Status</th>
               <th className="px-5 py-3 font-medium">Date</th>
