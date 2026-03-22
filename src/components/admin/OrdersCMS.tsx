@@ -237,6 +237,14 @@ export default function OrdersCMS({
                 <td className="px-5 py-3 text-sm text-[hsl(0,0%,30%)]">{getChallengeNameById(order.challenge_id)}</td>
                 <td className="px-5 py-3 text-sm font-semibold text-[hsl(0,0%,10%)]">${order.amount_paid}</td>
                 <td className="px-5 py-3">
+                  <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                    order.payment_method === "upi" ? "bg-violet-100 text-violet-700" : order.payment_method === "crypto" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"
+                  }`}>
+                    {(order.payment_method || "paypal").toUpperCase()}
+                  </span>
+                </td>
+                <td className="px-5 py-3 text-xs font-mono text-[hsl(0,0%,30%)]">{order.utr_number || "—"}</td>
+                <td className="px-5 py-3">
                   {profile?.first_name ? (
                     <div className="text-[11px] text-[hsl(0,0%,30%)] space-y-0.5">
                       <p className="font-medium">{profile.first_name} {profile.last_name}</p>
