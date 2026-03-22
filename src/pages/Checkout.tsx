@@ -130,6 +130,9 @@ const Checkout = () => {
   const [upiConfig, setUpiConfig] = useState<{ upi_id: string; scanner_url: string }>({ upi_id: "", scanner_url: "" });
   const [utrNumber, setUtrNumber] = useState("");
   const [upiSubmitting, setUpiSubmitting] = useState(false);
+  const [upiDialogOpen, setUpiDialogOpen] = useState(false);
+  const [upiStep, setUpiStep] = useState<"scanner" | "utr">("scanner");
+  const USD_TO_INR = 85;
 
   // Load UPI config
   useEffect(() => {
