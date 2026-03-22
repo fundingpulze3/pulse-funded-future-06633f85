@@ -224,7 +224,7 @@ export default function OrdersCMS({
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-5 py-12 text-center text-xs text-[hsl(0,0%,55%)]">No orders found</td></tr>
+              <tr><td colSpan={9} className="px-5 py-12 text-center text-xs text-[hsl(0,0%,55%)]">No orders found</td></tr>
             )}
             {filtered.map(order => {
               const profile = getProfileByUserId(order.user_id);
