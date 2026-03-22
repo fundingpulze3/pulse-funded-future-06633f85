@@ -35,6 +35,7 @@ import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
 import KYCManager from "@/components/admin/KYCManager";
 import PayoutsCMS from "@/components/admin/PayoutsCMS";
 import BlogAIChat from "@/components/admin/BlogAIChat";
+import UPISettings from "@/components/admin/UPISettings";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
