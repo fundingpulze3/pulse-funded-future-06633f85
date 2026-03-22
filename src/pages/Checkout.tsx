@@ -13,6 +13,7 @@ import {
   Loader2,
   CreditCard,
   Bitcoin,
+  Smartphone,
   ExternalLink,
   ArrowLeft,
   ChevronDown,
@@ -116,7 +117,24 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState<{ code: string; type: string; value: number } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [payMethod, setPayMethod] = useState<"paypal" | "crypto">("paypal");
+  const [payMethod, setPayMethod] = useState<"paypal" | "crypto" | "upi">("paypal");
+  const [upiConfig, setUpiConfig] = useState<{ upi_id: string; scanner_url: string }>({ upi_id: "", scanner_url: "" });
+  const [utrNumber, setUtrNumber] = useState("");
+  const [upiSubmitting, setUpiSubmitting] = useState(false);
+
+  // Load UPI config
+  useEffect(() => {
+    supabase.from("page_content").select("section_key, content")
+      .eq("page_slug", "settings")
+      .in("section_key", ["upi_id", "upi_scanner_url"])
+      .then(({ data }) => {
+        if (data) {
+          const upiId = data.find(d => d.section_key === "upi_id")?.content || "";
+          const scannerUrl = data.find(d => d.section_key === "upi_scanner_url")?.content || "";
+          setUpiConfig({ upi_id: upiId, scanner_url: scannerUrl });
+        }
+      });
+  }, []);
 
   let discount = 0;
   if (couponApplied) {
@@ -328,6 +346,24 @@ const Checkout = () => {
       else toast.error(data.error || "Failed to create crypto invoice.");
     } catch (err) { toast.error("Error: " + String(err)); }
     setProcessing(false);
+  };
+
+  const handleUpi = async () => {
+    if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
+    if (!agreedTerms) { toast.error("Please agree to the terms."); return; }
+    if (!billingFilled) { toast.error("Please fill billing details."); return; }
+    if (!utrNumber.trim() || utrNumber.trim().length < 6) { toast.error("Please enter a valid UTR number."); return; }
+    setUpiSubmitting(true);
+    try {
+      const purchase = await createPurchaseRecord();
+      await supabase.from("challenge_purchases").update({
+        payment_method: "upi",
+        utr_number: utrNumber.trim(),
+      }).eq("id", purchase.id);
+      toast.success("Payment submitted! We'll verify your UTR and activate your account shortly.");
+      navigate("/dashboard");
+    } catch (err) { toast.error("Error: " + String(err)); }
+    setUpiSubmitting(false);
   };
 
   return (
@@ -557,7 +593,7 @@ const Checkout = () => {
             {/* Payment */}
             <div className="space-y-3">
               <div className="flex gap-1 p-1 rounded-xl bg-background border border-border">
-                {([["paypal", "PayPal & Cards", CreditCard], ["crypto", "Crypto", Bitcoin]] as const).map(([key, label, Icon]) => (
+                {([["paypal", "PayPal & Cards", CreditCard], ["crypto", "Crypto", Bitcoin], ["upi", "UPI", Smartphone]] as const).map(([key, label, Icon]) => (
                   <button key={key} onClick={() => setPayMethod(key as any)}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                       payMethod === key
@@ -629,6 +665,56 @@ const Checkout = () => {
                       : <><Bitcoin size={14} /> Pay ${total.toFixed(2)} with Crypto <ExternalLink size={12} /></>}
                   </Button>
                   <p className="text-[10px] text-muted-foreground/60 text-center">BTC • ETH • USDT • SOL • 200+ coins</p>
+                </div>
+              )}
+
+              {payMethod === "upi" && (
+                <div className="space-y-4">
+                  {!user ? (
+                    <Button onClick={() => navigate("/auth")} className={`w-full rounded-xl h-12 text-sm bg-[hsl(${BLUE})] hover:bg-[hsl(${BLUE_DARK})] text-[hsl(0,0%,3%)] font-semibold`}>
+                      Sign in to Continue
+                    </Button>
+                  ) : (
+                    <>
+                      {/* QR Scanner */}
+                      {upiConfig.scanner_url ? (
+                        <div className="flex flex-col items-center gap-3">
+                          <p className="text-sm font-semibold text-center">Scan & Pay ₹{(total * 85).toFixed(0)}</p>
+                          <div className="bg-white rounded-xl p-3 border border-border">
+                            <img src={upiConfig.scanner_url} alt="UPI QR Code" className="w-48 h-48 object-contain" />
+                          </div>
+                          {upiConfig.upi_id && (
+                            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+                              <span className="text-xs text-muted-foreground">UPI ID:</span>
+                              <span className="text-xs font-mono font-semibold">{upiConfig.upi_id}</span>
+                              <button onClick={() => { navigator.clipboard.writeText(upiConfig.upi_id); toast.success("UPI ID copied!"); }}
+                                className="text-[10px] text-[hsl(207,90%,77%)] hover:underline">Copy</button>
+                            </div>
+                          )}
+                          <div className="w-full rounded-xl border border-border bg-card p-3 space-y-2">
+                            <p className="text-xs font-semibold">Pay exactly <span className="text-[hsl(142,60%,50%)]">${total.toFixed(2)}</span> and enter UTR below</p>
+                            <Input
+                              value={utrNumber}
+                              onChange={e => setUtrNumber(e.target.value)}
+                              placeholder="Enter 12-digit UTR number"
+                              className="h-10 rounded-xl bg-background border-border text-foreground font-mono text-sm placeholder:text-muted-foreground/40"
+                            />
+                            <Button
+                              onClick={handleUpi}
+                              disabled={upiSubmitting || !agreedTerms || !billingFilled || !utrNumber.trim()}
+                              className={`w-full rounded-xl h-12 text-sm bg-[hsl(${BLUE})] hover:bg-[hsl(${BLUE_DARK})] text-[hsl(0,0%,3%)] font-semibold`}
+                            >
+                              {upiSubmitting ? <><Loader2 size={14} className="animate-spin" /> Submitting...</> : <><Smartphone size={14} /> Submit Payment — ${total.toFixed(2)}</>}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-sm text-muted-foreground">
+                          UPI payment is currently unavailable. Please use PayPal or Crypto.
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 
