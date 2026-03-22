@@ -952,7 +952,8 @@ const Admin = () => {
           {tab === "cert_templates" && <CertificateTemplateManager />}
            {tab === "user_phases" && <UserPhaseManager />}
            {tab === "kyc" && <KYCManager />}
-           {tab === "payouts" && <PayoutsCMS />}
+            {tab === "payouts" && <PayoutsCMS />}
+            {tab === "upi_settings" && <UPISettings />}
         </div>
       </div>
 
