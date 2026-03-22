@@ -13,6 +13,7 @@ import {
   Loader2,
   CreditCard,
   Bitcoin,
+  Smartphone,
   ExternalLink,
   ArrowLeft,
   ChevronDown,
