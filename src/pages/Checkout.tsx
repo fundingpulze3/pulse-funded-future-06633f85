@@ -348,6 +348,24 @@ const Checkout = () => {
     setProcessing(false);
   };
 
+  const handleUpi = async () => {
+    if (!user) { toast.error("Please sign in first."); navigate("/auth"); return; }
+    if (!agreedTerms) { toast.error("Please agree to the terms."); return; }
+    if (!billingFilled) { toast.error("Please fill billing details."); return; }
+    if (!utrNumber.trim() || utrNumber.trim().length < 6) { toast.error("Please enter a valid UTR number."); return; }
+    setUpiSubmitting(true);
+    try {
+      const purchase = await createPurchaseRecord();
+      await supabase.from("challenge_purchases").update({
+        payment_method: "upi",
+        utr_number: utrNumber.trim(),
+      }).eq("id", purchase.id);
+      toast.success("Payment submitted! We'll verify your UTR and activate your account shortly.");
+      navigate("/dashboard");
+    } catch (err) { toast.error("Error: " + String(err)); }
+    setUpiSubmitting(false);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground dark">
       <div className="max-w-6xl mx-auto px-4 py-8 lg:py-12">
