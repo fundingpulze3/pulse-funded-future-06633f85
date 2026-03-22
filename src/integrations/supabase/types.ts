@@ -359,6 +359,7 @@ export type Database = {
           created_at: string
           id: string
           last_payout_at: string | null
+          payment_method: string | null
           payment_status: string
           reward_cycle: string | null
           status: string
@@ -371,6 +372,7 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           utm_term: string | null
+          utr_number: string | null
         }
         Insert: {
           amount_paid: number
@@ -378,6 +380,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_payout_at?: string | null
+          payment_method?: string | null
           payment_status?: string
           reward_cycle?: string | null
           status?: string
@@ -390,6 +393,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          utr_number?: string | null
         }
         Update: {
           amount_paid?: number
@@ -397,6 +401,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_payout_at?: string | null
+          payment_method?: string | null
           payment_status?: string
           reward_cycle?: string | null
           status?: string
@@ -409,6 +414,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          utr_number?: string | null
         }
         Relationships: [
           {
