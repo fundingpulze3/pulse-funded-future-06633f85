@@ -116,7 +116,24 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState<{ code: string; type: string; value: number } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [payMethod, setPayMethod] = useState<"paypal" | "crypto">("paypal");
+  const [payMethod, setPayMethod] = useState<"paypal" | "crypto" | "upi">("paypal");
+  const [upiConfig, setUpiConfig] = useState<{ upi_id: string; scanner_url: string }>({ upi_id: "", scanner_url: "" });
+  const [utrNumber, setUtrNumber] = useState("");
+  const [upiSubmitting, setUpiSubmitting] = useState(false);
+
+  // Load UPI config
+  useEffect(() => {
+    supabase.from("page_content").select("section_key, content")
+      .eq("page_slug", "settings")
+      .in("section_key", ["upi_id", "upi_scanner_url"])
+      .then(({ data }) => {
+        if (data) {
+          const upiId = data.find(d => d.section_key === "upi_id")?.content || "";
+          const scannerUrl = data.find(d => d.section_key === "upi_scanner_url")?.content || "";
+          setUpiConfig({ upi_id: upiId, scanner_url: scannerUrl });
+        }
+      });
+  }, []);
 
   let discount = 0;
   if (couponApplied) {
