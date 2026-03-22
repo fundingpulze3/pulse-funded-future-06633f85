@@ -6,6 +6,12 @@ import defaultUpiScanner from "@/assets/upi-scanner.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Shield,
@@ -19,6 +25,8 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  IndianRupee,
+  Copy,
 } from "lucide-react";
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 
