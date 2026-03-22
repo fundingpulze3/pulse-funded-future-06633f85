@@ -676,45 +676,64 @@ const Checkout = () => {
                       Sign in to Continue
                     </Button>
                   ) : (
-                    <>
-                      {/* QR Scanner */}
-                      {upiConfig.scanner_url ? (
-                        <div className="flex flex-col items-center gap-3">
-                          <p className="text-sm font-semibold text-center">Scan & Pay ₹{(total * 85).toFixed(0)}</p>
-                          <div className="bg-white rounded-xl p-3 border border-border">
-                            <img src={upiConfig.scanner_url} alt="UPI QR Code" className="w-48 h-48 object-contain" />
-                          </div>
-                          {upiConfig.upi_id && (
-                            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-                              <span className="text-xs text-muted-foreground">UPI ID:</span>
-                              <span className="text-xs font-mono font-semibold">{upiConfig.upi_id}</span>
-                              <button onClick={() => { navigator.clipboard.writeText(upiConfig.upi_id); toast.success("UPI ID copied!"); }}
-                                className="text-[10px] text-[hsl(207,90%,77%)] hover:underline">Copy</button>
-                            </div>
-                          )}
-                          <div className="w-full rounded-xl border border-border bg-card p-3 space-y-2">
-                            <p className="text-xs font-semibold">Pay exactly <span className="text-[hsl(142,60%,50%)]">${total.toFixed(2)}</span> and enter UTR below</p>
-                            <Input
-                              value={utrNumber}
-                              onChange={e => setUtrNumber(e.target.value)}
-                              placeholder="Enter 12-digit UTR number"
-                              className="h-10 rounded-xl bg-background border-border text-foreground font-mono text-sm placeholder:text-muted-foreground/40"
-                            />
-                            <Button
-                              onClick={handleUpi}
-                              disabled={upiSubmitting || !agreedTerms || !billingFilled || !utrNumber.trim()}
-                              className={`w-full rounded-xl h-12 text-sm bg-[hsl(${BLUE})] hover:bg-[hsl(${BLUE_DARK})] text-[hsl(0,0%,3%)] font-semibold`}
-                            >
-                              {upiSubmitting ? <><Loader2 size={14} className="animate-spin" /> Submitting...</> : <><Smartphone size={14} /> Submit Payment — ${total.toFixed(2)}</>}
-                            </Button>
-                          </div>
+                    <div className="flex flex-col items-center gap-4">
+                      {/* Amount badge */}
+                      <div className="bg-[hsl(142,40%,15%)] border border-[hsl(142,50%,25%)] rounded-xl px-5 py-2.5 text-center">
+                        <p className="text-[10px] uppercase tracking-widest text-[hsl(142,50%,60%)] font-medium mb-0.5">Pay Exactly</p>
+                        <p className="text-xl font-display font-bold text-[hsl(142,60%,55%)]">${total.toFixed(2)}</p>
+                      </div>
+
+                      {/* QR Code Card */}
+                      <div className="relative bg-white rounded-2xl p-5 shadow-lg shadow-black/20 border border-white/10">
+                        <img 
+                          src={upiConfig.scanner_url || defaultUpiScanner} 
+                          alt="UPI QR Code" 
+                          className="w-52 h-52 object-contain rounded-lg" 
+                        />
+                      </div>
+
+                      {/* UPI ID */}
+                      <div className="flex items-center gap-2.5 bg-card border border-border rounded-xl px-4 py-2.5">
+                        <Smartphone size={14} className="text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">UPI ID:</span>
+                        <span className="text-xs font-mono font-bold text-foreground">{upiConfig.upi_id || "sjbenish413-2@okaxis"}</span>
+                        <button onClick={() => { navigator.clipboard.writeText(upiConfig.upi_id || "sjbenish413-2@okaxis"); toast.success("UPI ID copied!"); }}
+                          className="text-[10px] font-semibold text-[hsl(207,90%,70%)] hover:text-[hsl(207,90%,80%)] transition-colors ml-1">Copy</button>
+                      </div>
+
+                      {/* Steps */}
+                      <div className="w-full bg-card/50 border border-border rounded-xl p-3 space-y-1.5">
+                        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                          <span className="w-4 h-4 rounded-full bg-[hsl(207,80%,20%)] text-[hsl(207,90%,70%)] flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">1</span>
+                          Scan the QR code above or pay to the UPI ID
                         </div>
-                      ) : (
-                        <div className="text-center py-6 text-sm text-muted-foreground">
-                          UPI payment is currently unavailable. Please use PayPal or Crypto.
+                        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                          <span className="w-4 h-4 rounded-full bg-[hsl(207,80%,20%)] text-[hsl(207,90%,70%)] flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">2</span>
+                          Copy the UTR/Transaction Reference from your payment app
                         </div>
-                      )}
-                    </>
+                        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                          <span className="w-4 h-4 rounded-full bg-[hsl(207,80%,20%)] text-[hsl(207,90%,70%)] flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">3</span>
+                          Paste UTR below and submit — we'll verify & activate your account
+                        </div>
+                      </div>
+
+                      {/* UTR Input & Submit */}
+                      <div className="w-full space-y-2.5">
+                        <Input
+                          value={utrNumber}
+                          onChange={e => setUtrNumber(e.target.value)}
+                          placeholder="Enter 12-digit UTR / Transaction Reference"
+                          className="h-11 rounded-xl bg-background border-border text-foreground font-mono text-sm placeholder:text-muted-foreground/40"
+                        />
+                        <Button
+                          onClick={handleUpi}
+                          disabled={upiSubmitting || !agreedTerms || !billingFilled || !utrNumber.trim()}
+                          className={`w-full rounded-xl h-12 text-sm bg-[hsl(${BLUE})] hover:bg-[hsl(${BLUE_DARK})] text-[hsl(0,0%,3%)] font-semibold gap-2`}
+                        >
+                          {upiSubmitting ? <><Loader2 size={14} className="animate-spin" /> Verifying...</> : <><Check size={14} /> Submit Payment — ${total.toFixed(2)}</>}
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
