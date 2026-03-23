@@ -119,6 +119,22 @@ const Footer = () => {
         </motion.div>
 
         {/* Large branding + disclaimer */}
+
+        {/* Payment Methods */}
+        <motion.div
+          className="flex items-center justify-center gap-6 sm:gap-8 flex-wrap mb-10 py-4 px-6 rounded-xl bg-primary/[0.04]"
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.5, delay: 0.45 }}
+        >
+          {["VISA", "Mastercard", "PayPal", "Apple Pay", "G Pay", "UPI", "₿ Crypto", "Bank"].map((pm) => (
+            <span key={pm} className="text-xs sm:text-sm font-semibold text-muted-foreground/60 tracking-wide select-none">
+              {pm}
+            </span>
+          ))}
+        </motion.div>
+
+        {/* Large branding + disclaimer — original */}
         <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 10 }}

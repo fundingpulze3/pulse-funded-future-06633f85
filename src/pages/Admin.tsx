@@ -37,10 +37,11 @@ import PayoutsCMS from "@/components/admin/PayoutsCMS";
 import BlogAIChat from "@/components/admin/BlogAIChat";
 import UPISettings from "@/components/admin/UPISettings";
 import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
+import RolesManager from "@/components/admin/RolesManager";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders" | "roles";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
@@ -128,22 +129,40 @@ const Admin = () => {
     }
   }, [user, authLoading, isAdmin, adminLoading, userRole]);
 
+  // Paginated fetch helper to get ALL rows beyond 1000 limit
+  const fetchAllRows = async (table: string, orderCol: string, ascending: boolean = false) => {
+    const allData: any[] = [];
+    let from = 0;
+    const batchSize = 1000;
+    while (true) {
+      const { data, error } = await supabase.from(table as any).select("*").order(orderCol, { ascending }).range(from, from + batchSize - 1);
+      if (error || !data || data.length === 0) break;
+      allData.push(...data);
+      if (data.length < batchSize) break;
+      from += batchSize;
+    }
+    return allData;
+  };
+
   const fetchAll = async () => {
-    const [p, c, r, cp, pu, pv, ur] = await Promise.all([
-      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+    const [profilesData, c, r, cp, pu, ur] = await Promise.all([
+      fetchAllRows("profiles", "created_at", false),
       supabase.from("challenges").select("*").order("account_size", { ascending: true }),
       supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
       supabase.from("coupons").select("*").order("created_at", { ascending: false }),
       supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
-      supabase.from("page_visits").select("*").order("created_at", { ascending: false }).limit(10000),
       supabase.from("user_roles").select("*"),
     ]);
-    if (p.data) setProfiles(p.data);
+
+    // Fetch page_visits with pagination
+    const pageVisitsData = await fetchAllRows("page_visits", "created_at", false);
+
+    setProfiles(profilesData);
     if (c.data) setChallenges(c.data);
     if (r.data) setReferrals(r.data);
     if (cp.data) setCoupons(cp.data);
     if (pu.data) setPurchases(pu.data);
-    if (pv.data) setPageVisits(pv.data);
+    setPageVisits(pageVisitsData);
     if (ur.data) {
       const roleMap: Record<string, string> = {};
       ur.data.forEach((r: any) => { roleMap[r.user_id] = r.role; });
@@ -313,6 +332,7 @@ const Admin = () => {
         { id: "upi_orders" as Tab, label: "UPI Payments", icon: <IndianRupee size={18} /> },
         { id: "upi_settings" as Tab, label: "UPI Settings", icon: <Smartphone size={18} /> },
         { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
+        { id: "roles" as Tab, label: "Roles", icon: <ShieldCheck size={18} /> },
       ],
       roles: ["administrator", "admin"],
     },
@@ -351,6 +371,7 @@ const Admin = () => {
     payouts: "Payouts",
     upi_settings: "UPI Settings",
     upi_orders: "UPI Payments",
+    roles: "Role Management",
   };
 
   // Helper to assign/change a user's role
@@ -581,21 +602,9 @@ const Admin = () => {
                         <td className="px-5 py-3 text-sm font-medium text-[hsl(0,0%,10%)]">{p.display_name || "—"}</td>
                         <td className="px-5 py-3 text-sm text-[hsl(0,0%,45%)]">{p.email || "—"}</td>
                         <td className="px-5 py-3">
-                          {(userRole === "administrator" || userRole === "admin") ? (
-                            <select
-                              value={userRoles[p.user_id] || "none"}
-                              onChange={(e) => changeUserRole(p.user_id, e.target.value)}
-                              className="text-xs rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,88%)] px-2 py-1"
-                            >
-                              <option value="none">No Role</option>
-                              <option value="admin">Admin</option>
-                              <option value="employee">Employee</option>
-                              <option value="moderator">Moderator</option>
-                              <option value="user">User</option>
-                            </select>
-                          ) : (
-                            <span className="text-xs text-[hsl(0,0%,50%)]">{userRoles[p.user_id] || "—"}</span>
-                          )}
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${userRoles[p.user_id] ? "bg-[hsl(0,0%,92%)] text-[hsl(0,0%,20%)]" : "text-[hsl(0,0%,55%)]"}`}>
+                            {userRoles[p.user_id] || "—"}
+                          </span>
                         </td>
                         <td className="px-5 py-3"><code className="text-xs bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,88%)] px-2 py-0.5 rounded font-mono text-[hsl(0,0%,30%)]">{p.referral_code || "—"}</code></td>
                         <td className="px-5 py-3 text-sm text-[hsl(0,0%,50%)]">{new Date(p.created_at).toLocaleDateString()}</td>
@@ -958,6 +967,15 @@ const Admin = () => {
             {tab === "payouts" && <PayoutsCMS />}
             {tab === "upi_settings" && <UPISettings />}
             {tab === "upi_orders" && <UPIOrdersCMS purchases={purchases} profiles={profiles} challenges={challenges} getProfileName={getProfileName} getProfileByUserId={(userId: string) => profiles.find((p: any) => p.user_id === userId)} getChallengeNameById={getChallengeNameById} onRefresh={fetchAll} />}
+
+          {/* ===== Roles Tab ===== */}
+          {tab === "roles" && (
+            <RolesManager
+              profiles={profiles}
+              userRoles={userRoles}
+              onRoleChange={changeUserRole}
+            />
+          )}
         </div>
       </div>
 
