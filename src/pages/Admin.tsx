@@ -310,6 +310,7 @@ const Admin = () => {
         { id: "coupons" as Tab, label: "Coupons", icon: <Ticket size={18} /> },
         { id: "kyc" as Tab, label: "KYC", icon: <ShieldCheck size={18} /> },
         { id: "payouts" as Tab, label: "Payouts", icon: <Wallet size={18} /> },
+        { id: "upi_orders" as Tab, label: "UPI Payments", icon: <IndianRupee size={18} /> },
         { id: "upi_settings" as Tab, label: "UPI Settings", icon: <Smartphone size={18} /> },
         { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
       ],
