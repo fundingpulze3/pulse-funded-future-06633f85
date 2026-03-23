@@ -37,6 +37,7 @@ import PayoutsCMS from "@/components/admin/PayoutsCMS";
 import BlogAIChat from "@/components/admin/BlogAIChat";
 import UPISettings from "@/components/admin/UPISettings";
 import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
+import RolesManager from "@/components/admin/RolesManager";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
