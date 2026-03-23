@@ -62,9 +62,9 @@ async function ensureCopperplateFont(): Promise<void> {
   if (fontLoaded) return;
 
   const sources = [
+    "url(/fonts/CopperplateGothicBold.ttf) format('truetype')",
     "url(https://cdn.jsdelivr.net/gh/AmazingStuff-dot-dev/fonts@main/CopperplateGothicBold.woff2) format('woff2')",
-    "url(https://rawcdn.githack.com/nicholasgasior/gfonts/master/CopperplateGothicBT/CopperplateGothicBT-Bold.woff2) format('woff2')",
-    "url(https://fonts.cdnfonts.com/s/13082/CopperplateGothicBold.woff) format('woff')",
+    "url(https://fonts.gstatic.com/s/cinzel/v26/8vIU7ww63mVu7gtR-kwKxNvkNOjw-jHgTYo.ttf) format('truetype')",
   ];
 
   for (const src of sources) {
