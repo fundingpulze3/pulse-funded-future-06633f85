@@ -18,7 +18,9 @@ interface RevenueAnalyticsProps {
 
 const BAR_COLORS = ["hsl(0,0%,10%)", "hsl(0,0%,25%)", "hsl(0,0%,40%)", "hsl(0,0%,55%)", "hsl(0,0%,70%)"];
 
-export default function RevenueAnalytics({ purchases, challenges, coupons, profiles, getProfileName, getChallengeNameById }: RevenueAnalyticsProps) {
+export default function RevenueAnalytics({ purchases: allPurchases, challenges, coupons, profiles, getProfileName, getChallengeNameById }: RevenueAnalyticsProps) {
+  // Only count confirmed/completed orders for revenue
+  const purchases = useMemo(() => allPurchases.filter(p => p.payment_status === "completed"), [allPurchases]);
   const now = new Date();
   const thisMonth = now.getMonth();
   const thisYear = now.getFullYear();

@@ -28,6 +28,8 @@ export default function AnalyticsDashboard({ pageVisits, profiles }: AnalyticsDa
   const filtered = useMemo(() =>
     pageVisits.filter(v =>
       !v.page_url?.includes("lovable") &&
+      !v.page_url?.includes("__lovable_token") &&
+      !v.page_url?.includes("forceHideBadge") &&
       !v.referrer?.includes("lovable") &&
       new Date(v.created_at).getTime() >= cutoff
     ), [pageVisits, cutoff]);

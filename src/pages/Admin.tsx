@@ -135,7 +135,7 @@ const Admin = () => {
       supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
       supabase.from("coupons").select("*").order("created_at", { ascending: false }),
       supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
-      supabase.from("page_visits").select("*").order("created_at", { ascending: false }),
+      supabase.from("page_visits").select("*").order("created_at", { ascending: false }).limit(10000),
       supabase.from("user_roles").select("*"),
     ]);
     if (p.data) setProfiles(p.data);
