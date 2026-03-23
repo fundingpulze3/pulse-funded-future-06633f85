@@ -20,24 +20,25 @@ const LAYOUT: Record<string, {
   profitX?: number; profitY?: number; profitFontSize?: number;
 }> = {
   phase1_passed: {
-    nameX: 0.58, nameY: 0.52, nameFontSize: 0.035,
-    dateX: 0.155, dateY: 0.94, dateFontSize: 0.018,
+    nameX: 0.62, nameY: 0.54, nameFontSize: 0.038,
+    dateX: 0.145, dateY: 0.905, dateFontSize: 0.016,
   },
   phase2_passed: {
-    nameX: 0.58, nameY: 0.52, nameFontSize: 0.035,
-    dateX: 0.155, dateY: 0.94, dateFontSize: 0.018,
+    nameX: 0.62, nameY: 0.54, nameFontSize: 0.038,
+    dateX: 0.145, dateY: 0.905, dateFontSize: 0.016,
   },
   payout: {
     profitX: 0.62, profitY: 0.44, profitFontSize: 0.032,
-    nameX: 0.62, nameY: 0.65, nameFontSize: 0.032,
-    dateX: 0.155, dateY: 0.94, dateFontSize: 0.018,
+    nameX: 0.62, nameY: 0.54, nameFontSize: 0.038,
+    dateX: 0.145, dateY: 0.905, dateFontSize: 0.016,
   },
   funded: {
-    nameX: 0.62, nameY: 0.52, nameFontSize: 0.035,
-    dateX: 0.155, dateY: 0.94, dateFontSize: 0.018,
+    nameX: 0.62, nameY: 0.54, nameFontSize: 0.038,
+    dateX: 0.145, dateY: 0.905, dateFontSize: 0.016,
   },
   max_allocation: {
-    nameX: 0.58, nameY: 0.52, nameFontSize: 0.035,
+    nameX: 0.62, nameY: 0.54, nameFontSize: 0.038,
+    dateX: 0.145, dateY: 0.905, dateFontSize: 0.016,
   },
 };
 
