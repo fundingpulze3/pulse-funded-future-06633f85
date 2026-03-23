@@ -350,6 +350,7 @@ const Admin = () => {
     cert_templates: "Certificate Templates", user_phases: "User Phases", kyc: "KYC Verification",
     payouts: "Payouts",
     upi_settings: "UPI Settings",
+    upi_orders: "UPI Payments",
   };
 
   // Helper to assign/change a user's role
