@@ -957,7 +957,7 @@ const Admin = () => {
            {tab === "kyc" && <KYCManager />}
             {tab === "payouts" && <PayoutsCMS />}
             {tab === "upi_settings" && <UPISettings />}
-            {tab === "upi_orders" && <UPIOrdersCMS purchases={purchases} profiles={profiles} challenges={challenges} getProfileName={getProfileName} getProfileByUserId={getProfileByUserId} getChallengeNameById={getChallengeNameById} onRefresh={fetchData} />}
+            {tab === "upi_orders" && <UPIOrdersCMS purchases={purchases} profiles={profiles} challenges={challenges} getProfileName={getProfileName} getProfileByUserId={(userId: string) => profiles.find((p: any) => p.user_id === userId)} getChallengeNameById={getChallengeNameById} onRefresh={fetchAll} />}
         </div>
       </div>
 
