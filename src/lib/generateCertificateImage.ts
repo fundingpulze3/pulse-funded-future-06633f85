@@ -79,18 +79,7 @@ async function ensureCopperplateFont(): Promise<void> {
     }
   }
 
-  // Final fallback: try loading Cinzel Bold from Google Fonts (visually similar)
-  try {
-    const font = new FontFace(
-      "Copperplate Gothic",
-      "url(https://fonts.gstatic.com/s/cinzel/v26/8vIU7ww63mVu7gtR-kwKxNvkNOjw-jHgTYo.ttf) format('truetype')"
-    );
-    await font.load();
-    document.fonts.add(font);
-    fontLoaded = true;
-  } catch {
-    console.warn("All Copperplate Gothic font sources failed, using system fallback");
-  }
+  console.warn("All Copperplate Gothic font sources failed, using system fallback");
 }
 
 export async function generateCertificateImage(config: CertificateConfig): Promise<Blob> {
