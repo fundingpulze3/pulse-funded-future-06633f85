@@ -56,22 +56,30 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Preload Copperplate Gothic font via FontFace API */
+/** Preload Copperplate Gothic font via FontFace API — try multiple sources */
 let fontLoaded = false;
 async function ensureCopperplateFont(): Promise<void> {
   if (fontLoaded) return;
-  try {
-    const font = new FontFace(
-      "Copperplate Gothic",
-      "url(https://fonts.cdnfonts.com/s/13082/CopperplateGothicBold.woff) format('woff')"
-    );
-    await font.load();
-    document.fonts.add(font);
-    fontLoaded = true;
-  } catch {
-    // Fallback silently — canvas will use fallback font
-    console.warn("Copperplate Gothic font failed to load, using fallback");
+
+  const sources = [
+    "url(/fonts/CopperplateGothicBold.ttf) format('truetype')",
+    "url(https://cdn.jsdelivr.net/gh/AmazingStuff-dot-dev/fonts@main/CopperplateGothicBold.woff2) format('woff2')",
+    "url(https://fonts.gstatic.com/s/cinzel/v26/8vIU7ww63mVu7gtR-kwKxNvkNOjw-jHgTYo.ttf) format('truetype')",
+  ];
+
+  for (const src of sources) {
+    try {
+      const font = new FontFace("Copperplate Gothic", src);
+      await font.load();
+      document.fonts.add(font);
+      fontLoaded = true;
+      return;
+    } catch {
+      // Try next source
+    }
   }
+
+  console.warn("All Copperplate Gothic font sources failed, using system fallback");
 }
 
 export async function generateCertificateImage(config: CertificateConfig): Promise<Blob> {
