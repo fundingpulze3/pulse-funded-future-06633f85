@@ -14,7 +14,7 @@ import {
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
-  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles, Smartphone,
+  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles, Smartphone, IndianRupee,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
@@ -36,10 +36,11 @@ import KYCManager from "@/components/admin/KYCManager";
 import PayoutsCMS from "@/components/admin/PayoutsCMS";
 import BlogAIChat from "@/components/admin/BlogAIChat";
 import UPISettings from "@/components/admin/UPISettings";
+import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
@@ -309,6 +310,7 @@ const Admin = () => {
         { id: "coupons" as Tab, label: "Coupons", icon: <Ticket size={18} /> },
         { id: "kyc" as Tab, label: "KYC", icon: <ShieldCheck size={18} /> },
         { id: "payouts" as Tab, label: "Payouts", icon: <Wallet size={18} /> },
+        { id: "upi_orders" as Tab, label: "UPI Payments", icon: <IndianRupee size={18} /> },
         { id: "upi_settings" as Tab, label: "UPI Settings", icon: <Smartphone size={18} /> },
         { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
       ],
@@ -348,6 +350,7 @@ const Admin = () => {
     cert_templates: "Certificate Templates", user_phases: "User Phases", kyc: "KYC Verification",
     payouts: "Payouts",
     upi_settings: "UPI Settings",
+    upi_orders: "UPI Payments",
   };
 
   // Helper to assign/change a user's role
@@ -954,6 +957,7 @@ const Admin = () => {
            {tab === "kyc" && <KYCManager />}
             {tab === "payouts" && <PayoutsCMS />}
             {tab === "upi_settings" && <UPISettings />}
+            {tab === "upi_orders" && <UPIOrdersCMS purchases={purchases} profiles={profiles} challenges={challenges} getProfileName={getProfileName} getProfileByUserId={(userId: string) => profiles.find((p: any) => p.user_id === userId)} getChallengeNameById={getChallengeNameById} onRefresh={fetchAll} />}
         </div>
       </div>
 
