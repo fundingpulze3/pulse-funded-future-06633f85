@@ -367,11 +367,26 @@ const Checkout = () => {
     if (!utrNumber.trim() || utrNumber.trim().length < 6) { toast.error("Please enter a valid UTR number."); return; }
     setUpiSubmitting(true);
     try {
-      const purchase = await createPurchaseRecord();
-      await supabase.from("challenge_purchases").update({
-        payment_method: "upi",
-        utr_number: utrNumber.trim(),
-      }).eq("id", purchase.id);
+      if (!firstName || !lastName || !country) throw new Error("Please fill in billing details");
+      await saveBillingDetails();
+      const dbStepType = stepType === "1-step" ? "one_step" : "two_step";
+      const { data: challenge } = await supabase
+        .from("challenges").select("id")
+        .eq("step_type", dbStepType).eq("account_size", sizeNum).eq("is_active", true).maybeSingle();
+      if (!challenge) throw new Error("Challenge not found");
+      const utm = getStoredUtm();
+      const { data: purchase, error } = await supabase
+        .from("challenge_purchases")
+        .insert({
+          user_id: user.id, challenge_id: challenge.id, amount_paid: totalRef.current,
+          payment_status: "pending", status: "pending", swap_free: false,
+          payment_method: "upi",
+          utr_number: utrNumber.trim(),
+          utm_source: utm.utm_source || null, utm_medium: utm.utm_medium || null,
+          utm_campaign: utm.utm_campaign || null, utm_term: utm.utm_term || null,
+          utm_content: utm.utm_content || null,
+        }).select().single();
+      if (error || !purchase) throw new Error("Failed to create order");
       toast.success("Payment submitted! We'll verify your UTR and activate your account shortly.");
       navigate("/dashboard");
     } catch (err) { toast.error("Error: " + String(err)); }
