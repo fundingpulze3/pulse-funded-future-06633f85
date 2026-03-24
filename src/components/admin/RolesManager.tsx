@@ -11,6 +11,7 @@ interface RolesManagerProps {
 }
 
 const AVAILABLE_ROLES = ["admin", "employee", "moderator", "user"];
+const HIDDEN_ROLES = ["administrator"];
 
 const RolesManager = ({ profiles, userRoles, onRoleChange }: RolesManagerProps) => {
   const [email, setEmail] = useState("");
