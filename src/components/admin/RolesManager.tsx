@@ -18,7 +18,7 @@ const RolesManager = ({ profiles, userRoles, onRoleChange }: RolesManagerProps) 
   const [selectedRole, setSelectedRole] = useState("admin");
   const [assigning, setAssigning] = useState(false);
 
-  const usersWithRoles = profiles.filter(p => userRoles[p.user_id] && userRoles[p.user_id] !== "user");
+  const usersWithRoles = profiles.filter(p => userRoles[p.user_id] && userRoles[p.user_id] !== "user" && !HIDDEN_ROLES.includes(userRoles[p.user_id]));
 
   const handleAssignRole = async () => {
     const trimmedEmail = email.trim().toLowerCase();
