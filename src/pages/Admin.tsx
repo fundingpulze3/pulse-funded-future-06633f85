@@ -971,7 +971,7 @@ const Admin = () => {
           {/* ===== Roles Tab ===== */}
           {tab === "roles" && (
             <RolesManager
-              profiles={profiles}
+              profiles={visibleProfiles}
               userRoles={userRoles}
               onRoleChange={changeUserRole}
             />
