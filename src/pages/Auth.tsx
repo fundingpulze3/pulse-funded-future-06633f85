@@ -28,18 +28,25 @@ const Auth = () => {
     if (user) navigate("/");
   }, [user, navigate]);
 
+  const withTimeout = <T,>(promise: Promise<T>, ms = 12000): Promise<T> =>
+    Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out. Please try again.")), ms)
+      ),
+    ]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
-
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        clearTimeout(timeout);
+        const { error } = await withTimeout(
+          supabase.auth.signInWithPassword({ email, password })
+        );
+
         if (error) {
           toast.error(error.message);
         } else {
@@ -48,48 +55,42 @@ const Auth = () => {
         }
       } else {
         const utm = getStoredUtm();
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: {
-              ...(username ? { display_name: username } : {}),
-              ...(refCode ? { referred_by_code: refCode } : {}),
-              ...(utm.utm_source ? { utm_source: utm.utm_source } : {}),
-              ...(utm.utm_medium ? { utm_medium: utm.utm_medium } : {}),
-              ...(utm.utm_campaign ? { utm_campaign: utm.utm_campaign } : {}),
-              ...(utm.utm_term ? { utm_term: utm.utm_term } : {}),
-              ...(utm.utm_content ? { utm_content: utm.utm_content } : {}),
+        const { data, error } = await withTimeout(
+          supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: window.location.origin,
+              data: {
+                ...(username ? { display_name: username } : {}),
+                ...(refCode ? { referred_by_code: refCode } : {}),
+                ...(utm.utm_source ? { utm_source: utm.utm_source } : {}),
+                ...(utm.utm_medium ? { utm_medium: utm.utm_medium } : {}),
+                ...(utm.utm_campaign ? { utm_campaign: utm.utm_campaign } : {}),
+                ...(utm.utm_term ? { utm_term: utm.utm_term } : {}),
+                ...(utm.utm_content ? { utm_content: utm.utm_content } : {}),
+              },
             },
-          },
-        });
-        clearTimeout(timeout);
+          })
+        );
 
         if (error) {
           toast.error(error.message);
         } else if (data.user && !data.session) {
-          // Email confirmation required
           setEmailSent(true);
           toast.success("Check your email to verify your account!");
-          try {
-            await supabase.functions.invoke("send-transactional-email", {
+          supabase.functions
+            .invoke("send-transactional-email", {
               body: { type: "welcome", data: { displayName: username || "" } },
-            });
-          } catch {}
+            })
+            .catch(() => {});
         } else if (data.session) {
           toast.success("Account created!");
           navigate("/");
         }
       }
     } catch (err: any) {
-      clearTimeout(timeout);
-      if (err?.name === "AbortError") {
-        toast.error("Request timed out. Please try again.");
-      } else {
-        toast.error(err?.message || "Something went wrong");
-      }
-      // Clear any corrupted auth data
+      toast.error(err?.message || "Something went wrong");
       try {
         localStorage.removeItem("sb-rpshiyvndmnogbhbgmfm-auth-token");
       } catch {}
