@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,57 +18,87 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+const STORAGE_KEY = "sb-rpshiyvndmnogbhbgmfm-auth-token";
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // If token refresh fails (stale/expired token), clear the broken session
-      if (event === 'TOKEN_REFRESHED' && !session) {
-        console.warn('Token refresh failed, clearing stale session');
-        localStorage.removeItem(`sb-rpshiyvndmnogbhbgmfm-auth-token`);
-        setSession(null);
-        setUser(null);
+    let mounted = true;
+
+    // Set up auth listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        if (!mounted) return;
+
+        // Failed token refresh — nuke the stale token immediately
+        if (event === "TOKEN_REFRESHED" && !currentSession) {
+          console.warn("Token refresh failed — clearing stale session");
+          try { localStorage.removeItem(STORAGE_KEY); } catch {}
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        // On sign out, clean up
+        if (event === "SIGNED_OUT") {
+          try { localStorage.removeItem(STORAGE_KEY); } catch {}
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         setLoading(false);
-        return;
-      }
 
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-
-      // Send password-changed security alert when user updates their password
-      if (event === 'USER_UPDATED' && session?.user) {
-        try {
-          await supabase.functions.invoke('send-transactional-email', {
-            body: { type: 'password_changed', data: {} },
-          });
-        } catch (err) {
-          console.error('Failed to send password changed email:', err);
+        // Send password-changed alert
+        if (event === "USER_UPDATED" && currentSession?.user) {
+          supabase.functions
+            .invoke("send-transactional-email", {
+              body: { type: "password_changed", data: {} },
+            })
+            .catch(() => {});
         }
       }
-    });
+    );
 
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.warn('Failed to get session, clearing stale data:', error.message);
-        localStorage.removeItem(`sb-rpshiyvndmnogbhbgmfm-auth-token`);
+    // Then get initial session
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: s }, error }) => {
+        if (!mounted) return;
+        if (error) {
+          console.warn("getSession failed:", error.message);
+          try { localStorage.removeItem(STORAGE_KEY); } catch {}
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(s);
+          setUser(s?.user ?? null);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        try { localStorage.removeItem(STORAGE_KEY); } catch {}
         setSession(null);
         setUser(null);
         setLoading(false);
-        return;
-      }
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
     await supabase.auth.signOut();
   };
 
