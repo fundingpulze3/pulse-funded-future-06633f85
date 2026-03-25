@@ -174,20 +174,7 @@ const Auth = () => {
               {loading ? <Spinner /> : isLogin ? "Login" : "Create Account"}
             </Button>
 
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground">or</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              className="w-full h-12 rounded-xl border border-border bg-secondary flex items-center justify-center gap-3 text-sm font-medium text-foreground hover:bg-accent transition-colors"
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
+            {/* Google sign-in hidden for now */}
 
             <p className="text-sm text-muted-foreground text-center pt-2">
               {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
