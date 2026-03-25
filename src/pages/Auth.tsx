@@ -1,27 +1,23 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 
-const Spinner = ({ dark = false }: { dark?: boolean }) => (
-  <div className={`w-5 h-5 border-2 rounded-full animate-spin ${dark ? 'border-foreground/30 border-t-foreground' : 'border-background/30 border-t-background'}`} />
-);
-
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -32,24 +28,29 @@ const Auth = () => {
     if (user) navigate("/");
   }, [user, navigate]);
 
-  const withTimeout = <T,>(promise: Promise<T>, ms = 15000): Promise<T> =>
-    Promise.race([
-      promise,
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Request timed out. Please try again.")), ms)),
-    ]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
     try {
-      if (isLogin) {
-        const { error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }));
-        if (error) toast.error(error.message);
-        else { toast.success("Welcome back!"); navigate("/"); }
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        clearTimeout(timeout);
+        if (error) {
+          toast.error(error.message);
+        } else {
+          toast.success("Welcome back!");
+          navigate("/");
+        }
       } else {
         const utm = getStoredUtm();
-        const { error } = await withTimeout(supabase.auth.signUp({
-          email, password,
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
           options: {
             emailRedirectTo: window.location.origin,
             data: {
@@ -62,53 +63,104 @@ const Auth = () => {
               ...(utm.utm_content ? { utm_content: utm.utm_content } : {}),
             },
           },
-        }));
-        if (error) toast.error(error.message);
-        else {
-          toast.success("Account created!");
+        });
+        clearTimeout(timeout);
+
+        if (error) {
+          toast.error(error.message);
+        } else if (data.user && !data.session) {
+          // Email confirmation required
+          setEmailSent(true);
+          toast.success("Check your email to verify your account!");
           try {
-            await supabase.functions.invoke('send-transactional-email', {
-              body: { type: 'welcome', data: { displayName: username || '' } },
+            await supabase.functions.invoke("send-transactional-email", {
+              body: { type: "welcome", data: { displayName: username || "" } },
             });
           } catch {}
+        } else if (data.session) {
+          toast.success("Account created!");
           navigate("/");
         }
       }
     } catch (err: any) {
-      const msg = err?.message || "An unexpected error occurred";
-      toast.error(msg);
-      // Clear any corrupted session data that might cause CORS loops
-      localStorage.removeItem(`sb-rpshiyvndmnogbhbgmfm-auth-token`);
+      clearTimeout(timeout);
+      if (err?.name === "AbortError") {
+        toast.error("Request timed out. Please try again.");
+      } else {
+        toast.error(err?.message || "Something went wrong");
+      }
+      // Clear any corrupted auth data
+      try {
+        localStorage.removeItem("sb-rpshiyvndmnogbhbgmfm-auth-token");
+      } catch {}
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (error) toast.error(error.message || "Google sign-in failed");
-    } catch { toast.error("Google sign-in failed"); }
-  };
-
   const switchMode = () => {
-    setIsLogin(p => !p);
-    setEmail(""); setPassword(""); setUsername("");
+    setMode((m) => (m === "login" ? "signup" : "login"));
+    setEmail("");
+    setPassword("");
+    setUsername("");
+    setEmailSent(false);
   };
 
-  const GoogleIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/><path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332Z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.166 6.656 3.58 9 3.58Z" fill="#EA4335"/></svg>
-  );
+  // Email verification sent screen
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <motion.div
+          className="w-full max-w-md text-center"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.25 }}
+        >
+          <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+              <CheckCircle className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="font-display text-2xl font-bold text-foreground mb-3">
+              Verify Your Email
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              We've sent a verification link to{" "}
+              <span className="font-medium text-foreground">{email}</span>.
+              <br />
+              Click the link in your email to activate your account.
+            </p>
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                className="w-full h-11 rounded-xl"
+                onClick={() => {
+                  setEmailSent(false);
+                  setMode("login");
+                }}
+              >
+                Go to Login
+              </Button>
+              <button
+                onClick={() => navigate("/")}
+                className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+              >
+                <ArrowLeft size={14} />
+                Back to home
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <motion.div
         className="w-full max-w-md"
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.25 }}
       >
         {/* Logo */}
         <div className="flex justify-center mb-8">
@@ -118,31 +170,35 @@ const Auth = () => {
         {/* Toggle */}
         <div className="flex bg-secondary rounded-full p-1 mb-8">
           <button
-            onClick={() => { if (!isLogin) switchMode(); }}
+            onClick={() => mode !== "login" && switchMode()}
             className={`flex-1 py-2.5 text-sm font-medium rounded-full transition-all duration-200 ${
-              isLogin ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"
+              mode === "login"
+                ? "bg-foreground text-background shadow-sm"
+                : "text-muted-foreground"
             }`}
           >
             Login
           </button>
           <button
-            onClick={() => { if (isLogin) switchMode(); }}
+            onClick={() => mode !== "signup" && switchMode()}
             className={`flex-1 py-2.5 text-sm font-medium rounded-full transition-all duration-200 ${
-              !isLogin ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"
+              mode === "signup"
+                ? "bg-foreground text-background shadow-sm"
+                : "text-muted-foreground"
             }`}
           >
             Sign Up
           </button>
         </div>
 
-        {/* Form Card */}
+        {/* Form */}
         <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-lg">
           <h2 className="font-display text-2xl font-bold text-foreground mb-6 text-center">
-            {isLogin ? "Welcome Back" : "Create Account"}
+            {mode === "login" ? "Welcome Back" : "Create Account"}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+            {mode === "signup" && (
               <div className="relative">
                 <Input
                   type="text"
@@ -151,7 +207,10 @@ const Auth = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="h-12 pl-4 pr-10 rounded-xl bg-secondary border-border"
                 />
-                <User size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <User
+                  size={16}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                />
               </div>
             )}
 
@@ -164,7 +223,10 @@ const Auth = () => {
                 required
                 className="h-12 pl-4 pr-10 rounded-xl bg-secondary border-border"
               />
-              <Mail size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Mail
+                size={16}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+              />
             </div>
 
             <div className="relative">
@@ -177,21 +239,39 @@ const Auth = () => {
                 minLength={6}
                 className="h-12 pl-4 pr-10 rounded-xl bg-secondary border-border"
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
 
-            <Button type="submit" className="w-full h-12 rounded-xl font-medium" disabled={loading}>
-              {loading ? <Spinner /> : isLogin ? "Login" : "Create Account"}
+            <Button
+              type="submit"
+              className="w-full h-12 rounded-xl font-medium"
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+              ) : mode === "login" ? (
+                "Login"
+              ) : (
+                "Create Account"
+              )}
             </Button>
 
-            {/* Google sign-in hidden for now */}
-
             <p className="text-sm text-muted-foreground text-center pt-2">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-              <button type="button" onClick={switchMode} className="text-foreground hover:underline font-medium">
-                {isLogin ? "Sign Up" : "Login"}
+              {mode === "login"
+                ? "Don't have an account?"
+                : "Already have an account?"}{" "}
+              <button
+                type="button"
+                onClick={switchMode}
+                className="text-foreground hover:underline font-medium"
+              >
+                {mode === "login" ? "Sign Up" : "Login"}
               </button>
             </p>
           </form>
