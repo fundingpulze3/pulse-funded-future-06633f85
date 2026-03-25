@@ -32,17 +32,23 @@ const Auth = () => {
     if (user) navigate("/");
   }, [user, navigate]);
 
+  const withTimeout = <T,>(promise: Promise<T>, ms = 15000): Promise<T> =>
+    Promise.race([
+      promise,
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Request timed out. Please try again.")), ms)),
+    ]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }));
         if (error) toast.error(error.message);
         else { toast.success("Welcome back!"); navigate("/"); }
       } else {
         const utm = getStoredUtm();
-        const { error } = await supabase.auth.signUp({
+        const { error } = await withTimeout(supabase.auth.signUp({
           email, password,
           options: {
             emailRedirectTo: window.location.origin,
@@ -56,7 +62,7 @@ const Auth = () => {
               ...(utm.utm_content ? { utm_content: utm.utm_content } : {}),
             },
           },
-        });
+        }));
         if (error) toast.error(error.message);
         else {
           toast.success("Account created!");
@@ -68,8 +74,14 @@ const Auth = () => {
           navigate("/");
         }
       }
-    } catch { toast.error("An unexpected error occurred"); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      const msg = err?.message || "An unexpected error occurred";
+      toast.error(msg);
+      // Clear any corrupted session data that might cause CORS loops
+      localStorage.removeItem(`sb-rpshiyvndmnogbhbgmfm-auth-token`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignIn = async () => {
