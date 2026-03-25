@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,6 +25,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // If token refresh fails (stale/expired token), clear the broken session
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.warn('Token refresh failed, clearing stale session');
+        localStorage.removeItem(`sb-rpshiyvndmnogbhbgmfm-auth-token`);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -41,7 +51,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.warn('Failed to get session, clearing stale data:', error.message);
+        localStorage.removeItem(`sb-rpshiyvndmnogbhbgmfm-auth-token`);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
