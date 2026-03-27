@@ -60,6 +60,7 @@ const AppRoutes = () => {
       <Route path="/blog" element={<Blog />} />
       <Route path="/blog/:slug" element={<BlogPost />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/dashboard/certificates" element={<DashboardCertificates />} />
