@@ -263,6 +263,18 @@ const Auth = () => {
               )}
             </Button>
 
+            {mode === "login" && (
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => setForgotMode(true)}
+                  className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
             <p className="text-sm text-muted-foreground text-center pt-2">
               {mode === "login"
                 ? "Don't have an account?"
