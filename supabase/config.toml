@@ -25,3 +25,5 @@ project_id = "rpshiyvndmnogbhbgmfm"
     verify_jwt = false
   [functions.send-transactional-email]
     verify_jwt = false
+  [functions.sync-to-external-supabase]
+    verify_jwt = false
