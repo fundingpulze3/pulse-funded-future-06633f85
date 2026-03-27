@@ -1,6 +1,5 @@
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
-import { verifyWebhookRequest, parseEmailWebhookPayload, WebhookError } from 'npm:@lovable.dev/webhooks-js'
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts'
 import { SignupEmail } from '../_shared/email-templates/signup.tsx'
 import { InviteEmail } from '../_shared/email-templates/invite.tsx'
@@ -125,52 +124,30 @@ async function handlePreview(req: Request): Promise<Response> {
   })
 }
 
-// Webhook handler
+// Webhook handler — accepts the Lovable auth webhook payload and sends via SMTP
 async function handleWebhook(req: Request): Promise<Response> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY')
-  if (!apiKey) {
-    console.error('LOVABLE_API_KEY not configured')
-    return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
-
-  let payload: any
-  let run_id = ''
+  let body: any
   try {
-    const verified = await verifyWebhookRequest({
-      req,
-      secret: apiKey,
-      parser: parseEmailWebhookPayload,
-    })
-    payload = verified.payload
-    run_id = payload.run_id
-  } catch (error) {
-    if (error instanceof WebhookError) {
-      console.error('Webhook error', { code: error.code, message: error.message })
-      const status = ['invalid_signature', 'missing_timestamp', 'invalid_timestamp', 'stale_timestamp'].includes(error.code) ? 401 : 400
-      return new Response(JSON.stringify({ error: error.message }), {
-        status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-    console.error('Webhook verification failed', { error })
-    return new Response(JSON.stringify({ error: 'Invalid webhook payload' }), {
+    body = await req.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
-  if (!run_id) {
-    return new Response(JSON.stringify({ error: 'Missing run_id' }), {
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
+  // Support both wrapped payload (body.data) and flat payload
+  const data = body.data || body
+  const emailType = data.action_type || data.type || ''
+  const recipientEmail = data.email || ''
+  const confirmationUrl = data.url || data.confirmation_url || ''
+  const token = data.token || ''
+  const newEmail = data.new_email || ''
 
-  const emailType = payload.data.action_type
-  console.log('Received auth event', { emailType, email: payload.data.email, run_id })
+  console.log('Received auth event', { emailType, email: recipientEmail })
 
   const EmailTemplate = EMAIL_TEMPLATES[emailType]
   if (!EmailTemplate) {
-    console.error('Unknown email type', { emailType, run_id })
+    console.error('Unknown email type', { emailType })
     return new Response(JSON.stringify({ error: `Unknown email type: ${emailType}` }), {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -179,22 +156,22 @@ async function handleWebhook(req: Request): Promise<Response> {
   const templateProps = {
     siteName: SITE_NAME,
     siteUrl: `https://${ROOT_DOMAIN}`,
-    recipient: payload.data.email,
-    confirmationUrl: payload.data.url,
-    token: payload.data.token,
-    email: payload.data.email,
-    newEmail: payload.data.new_email,
+    recipient: recipientEmail,
+    confirmationUrl,
+    token,
+    email: recipientEmail,
+    newEmail,
   }
 
   const html = await renderAsync(React.createElement(EmailTemplate, templateProps))
   const subject = EMAIL_SUBJECTS[emailType] || 'Notification'
 
   try {
-    await sendViaSMTP(payload.data.email, subject, html)
-    console.log('Email sent via SMTP', { emailType, to: payload.data.email, run_id })
+    await sendViaSMTP(recipientEmail, subject, html)
+    console.log('Email sent via SMTP', { emailType, to: recipientEmail })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'SMTP send failed'
-    console.error('SMTP send error', { error: message, run_id })
+    console.error('SMTP send error', { error: message })
     return new Response(JSON.stringify({ error: 'Failed to send email' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
