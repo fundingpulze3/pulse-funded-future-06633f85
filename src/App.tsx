@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import AdminAuth from "./pages/AdminAuth";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
 import Dashboard from "./pages/Dashboard";
