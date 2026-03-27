@@ -8,6 +8,71 @@ import { motion } from "framer-motion";
 import { Lock, Eye, EyeOff, CheckCircle, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.png";
 
+type RecoveryParams = {
+  accessToken: string | null;
+  code: string | null;
+  refreshToken: string | null;
+  tokenHash: string | null;
+  type: string | null;
+};
+
+const getRecoveryParams = (): RecoveryParams => {
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const searchParams = url.searchParams;
+
+  const readParam = (key: string) => hashParams.get(key) || searchParams.get(key);
+
+  return {
+    accessToken: readParam("access_token"),
+    code: readParam("code"),
+    refreshToken: readParam("refresh_token"),
+    tokenHash: readParam("token_hash"),
+    type: readParam("type"),
+  };
+};
+
+const hasRecoveryMarker = (params: RecoveryParams) =>
+  params.type === "recovery" ||
+  !!params.code ||
+  !!params.accessToken ||
+  !!params.refreshToken ||
+  !!params.tokenHash;
+
+const cleanRecoveryUrl = () => {
+  const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+  window.history.replaceState({}, document.title, cleanUrl);
+};
+
+const ensureRecoverySession = async (params: RecoveryParams): Promise<boolean> => {
+  if (params.code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(params.code);
+    if (!error) return true;
+  }
+
+  if (params.type === "recovery" && params.tokenHash) {
+    const { error } = await supabase.auth.verifyOtp({
+      type: "recovery",
+      token_hash: params.tokenHash,
+    });
+    if (!error) return true;
+  }
+
+  if (params.accessToken && params.refreshToken) {
+    const { error } = await supabase.auth.setSession({
+      access_token: params.accessToken,
+      refresh_token: params.refreshToken,
+    });
+    if (!error) return true;
+  }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  return !!session;
+};
+
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -15,56 +80,48 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
+  const [checkingLink, setCheckingLink] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const searchParams = url.searchParams;
-
-    const hasRecoveryMarker =
-      hashParams.get("type") === "recovery" ||
-      searchParams.get("type") === "recovery" ||
-      !!hashParams.get("access_token") ||
-      !!searchParams.get("access_token") ||
-      !!hashParams.get("token_hash") ||
-      !!searchParams.get("token_hash") ||
-      !!searchParams.get("code");
+    let mounted = true;
+    const params = getRecoveryParams();
+    const hasRecoveryIntent = hasRecoveryMarker(params);
 
     const bootstrapRecoverySession = async () => {
-      const code = searchParams.get("code");
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) {
-          setIsRecovery(true);
-          return;
-        }
-      }
+      const recovered = await ensureRecoverySession(params);
+      if (!mounted) return;
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      setIsRecovery(recovered || hasRecoveryIntent);
+      setCheckingLink(false);
 
-      if (session || hasRecoveryMarker) {
-        setIsRecovery(true);
+      if (recovered && hasRecoveryIntent) {
+        cleanRecoveryUrl();
       }
     };
 
     bootstrapRecoverySession().catch(() => {
-      if (hasRecoveryMarker) {
-        setIsRecovery(true);
-      }
+      if (!mounted) return;
+      setIsRecovery(hasRecoveryIntent);
+      setCheckingLink(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && !!session && hasRecoveryMarker)) {
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && !!session && hasRecoveryIntent)) {
         setIsRecovery(true);
+        setCheckingLink(false);
+        if (hasRecoveryIntent) {
+          cleanRecoveryUrl();
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,12 +137,20 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
+      const recovered = await ensureRecoverySession(getRecoveryParams());
+      if (!recovered) {
+        setIsRecovery(false);
+        toast.error("Reset link is invalid or expired. Please request a new one.");
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
         toast.error(error.message);
       } else {
         setSuccess(true);
         toast.success("Password updated successfully!");
+        cleanRecoveryUrl();
       }
     } catch {
       toast.error("Something went wrong");
@@ -93,6 +158,14 @@ const ResetPassword = () => {
       setLoading(false);
     }
   };
+
+  if (checkingLink && !success) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="w-8 h-8 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!isRecovery && !success) {
     return (
