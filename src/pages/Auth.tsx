@@ -73,7 +73,7 @@ const Auth = () => {
             email,
             password,
             options: {
-              emailRedirectTo: window.location.origin,
+              emailRedirectTo: getAuthRedirectBaseUrl(),
               data: {
                 ...(username ? { display_name: username } : {}),
                 ...(refCode ? { referred_by_code: refCode } : {}),
