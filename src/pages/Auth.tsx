@@ -26,6 +26,15 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useUtmTracking();
+
+  const getAuthRedirectBaseUrl = () => {
+    const host = window.location.hostname;
+    if (host.includes("lovableproject.com") || host.includes("lovable.app")) {
+      return "https://fundingpulze.com";
+    }
+    return window.location.origin;
+  };
+
   const refCode = new URLSearchParams(window.location.search).get("ref");
 
   useEffect(() => {
@@ -64,7 +73,7 @@ const Auth = () => {
             email,
             password,
             options: {
-              emailRedirectTo: window.location.origin,
+              emailRedirectTo: getAuthRedirectBaseUrl(),
               data: {
                 ...(username ? { display_name: username } : {}),
                 ...(refCode ? { referred_by_code: refCode } : {}),
@@ -117,7 +126,7 @@ const Auth = () => {
     setForgotLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${getAuthRedirectBaseUrl()}/reset-password`,
       });
       if (error) {
         toast.error(error.message);

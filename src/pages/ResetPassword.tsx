@@ -18,15 +18,48 @@ const ResetPassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for recovery token in URL hash
-    const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
-      setIsRecovery(true);
-    }
+    const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const searchParams = url.searchParams;
 
-    // Listen for PASSWORD_RECOVERY event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
+    const hasRecoveryMarker =
+      hashParams.get("type") === "recovery" ||
+      searchParams.get("type") === "recovery" ||
+      !!hashParams.get("access_token") ||
+      !!searchParams.get("access_token") ||
+      !!hashParams.get("token_hash") ||
+      !!searchParams.get("token_hash") ||
+      !!searchParams.get("code");
+
+    const bootstrapRecoverySession = async () => {
+      const code = searchParams.get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error) {
+          setIsRecovery(true);
+          return;
+        }
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session || hasRecoveryMarker) {
+        setIsRecovery(true);
+      }
+    };
+
+    bootstrapRecoverySession().catch(() => {
+      if (hasRecoveryMarker) {
+        setIsRecovery(true);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && !!session && hasRecoveryMarker)) {
         setIsRecovery(true);
       }
     });
