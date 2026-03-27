@@ -26,6 +26,15 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useUtmTracking();
+
+  const getAuthRedirectBaseUrl = () => {
+    const host = window.location.hostname;
+    if (host.includes("lovableproject.com") || host.includes("lovable.app")) {
+      return "https://fundingpulze.com";
+    }
+    return window.location.origin;
+  };
+
   const refCode = new URLSearchParams(window.location.search).get("ref");
 
   useEffect(() => {
