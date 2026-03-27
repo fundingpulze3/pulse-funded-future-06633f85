@@ -5,38 +5,48 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Order matters: parent tables first, then children (FK dependencies)
 const TABLES = [
+  // Independent tables (no FK dependencies)
   { name: "profiles", pk: "id" },
   { name: "challenges", pk: "id" },
-  { name: "challenge_purchases", pk: "id" },
-  { name: "trading_credentials", pk: "id" },
-  { name: "user_certificates", pk: "id" },
-  { name: "certificate_templates", pk: "id" },
   { name: "certificates", pk: "id" },
-  { name: "payout_requests", pk: "id" },
+  { name: "certificate_templates", pk: "id" },
   { name: "kyc_submissions", pk: "id" },
-  { name: "affiliate_referrals", pk: "id" },
   { name: "user_roles", pk: "id" },
   { name: "blog_posts", pk: "id" },
-  { name: "help_articles", pk: "id" },
   { name: "help_collections", pk: "id" },
-  { name: "help_support_tickets", pk: "id" },
-  { name: "support_ticket_messages", pk: "id" },
-  { name: "help_article_feedback", pk: "id" },
   { name: "knowledge_base", pk: "id" },
   { name: "page_content", pk: "id" },
   { name: "page_visits", pk: "id" },
   { name: "coupons", pk: "id" },
-  { name: "ai_conversations", pk: "id" },
-  { name: "ai_messages", pk: "id" },
-  { name: "blog_ai_conversations", pk: "id" },
-  { name: "blog_ai_messages", pk: "id" },
-  { name: "account_status_history", pk: "id" },
   { name: "email_send_log", pk: "id" },
   { name: "email_send_state", pk: "id" },
   { name: "email_unsubscribe_tokens", pk: "id" },
   { name: "suppressed_emails", pk: "id" },
   { name: "processed_gmail_ids", pk: "id" },
+  { name: "ai_conversations", pk: "id" },
+  { name: "blog_ai_conversations", pk: "id" },
+  // Depends on challenges
+  { name: "challenge_purchases", pk: "id" },
+  // Depends on challenges + challenge_purchases
+  { name: "trading_credentials", pk: "id" },
+  // Depends on challenge_purchases
+  { name: "payout_requests", pk: "id" },
+  { name: "account_status_history", pk: "id" },
+  { name: "affiliate_referrals", pk: "id" },
+  // Depends on trading_credentials + challenge_purchases
+  { name: "user_certificates", pk: "id" },
+  // Depends on help_collections
+  { name: "help_articles", pk: "id" },
+  // Depends on help_articles
+  { name: "help_article_feedback", pk: "id" },
+  { name: "help_support_tickets", pk: "id" },
+  // Depends on help_support_tickets
+  { name: "support_ticket_messages", pk: "id" },
+  // Depends on ai_conversations / blog_ai_conversations
+  { name: "ai_messages", pk: "id" },
+  { name: "blog_ai_messages", pk: "id" },
 ];
 
 Deno.serve(async (req) => {
