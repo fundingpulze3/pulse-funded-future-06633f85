@@ -18,6 +18,10 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -107,7 +111,74 @@ const Auth = () => {
     setEmailSent(false);
   };
 
-  // Email verification sent screen
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (forgotLoading) return;
+    setForgotLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        setForgotSent(true);
+        toast.success("Password reset link sent to your email!");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  // Forgot password flow
+  if (forgotMode) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <motion.div className="w-full max-w-md" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+          <div className="flex justify-center mb-8">
+            <img src={logo} alt="Funding Pulze" className="h-12 w-12 rounded-xl" />
+          </div>
+          <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-lg">
+            {forgotSent ? (
+              <>
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                  <CheckCircle className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="font-display text-2xl font-bold text-foreground mb-3 text-center">Check Your Email</h2>
+                <p className="text-muted-foreground text-center mb-6">
+                  We've sent a password reset link to <span className="font-medium text-foreground">{forgotEmail}</span>. Click the link in your email to reset your password.
+                </p>
+                <Button variant="outline" className="w-full h-11 rounded-xl" onClick={() => { setForgotMode(false); setForgotSent(false); setForgotEmail(""); }}>
+                  Back to Login
+                </Button>
+              </>
+            ) : (
+              <>
+                <h2 className="font-display text-2xl font-bold text-foreground mb-2 text-center">Forgot Password?</h2>
+                <p className="text-muted-foreground text-sm text-center mb-6">Enter your email and we'll send you a reset link</p>
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="relative">
+                    <Input type="email" placeholder="Email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required className="h-12 pl-4 pr-10 rounded-xl bg-secondary border-border" />
+                    <Mail size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  </div>
+                  <Button type="submit" className="w-full h-12 rounded-xl font-medium" disabled={forgotLoading}>
+                    {forgotLoading ? <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" /> : "Send Reset Link"}
+                  </Button>
+                </form>
+                <button type="button" onClick={() => setForgotMode(false)} className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full mt-4">
+                  <ArrowLeft size={14} /> Back to Login
+                </button>
+              </>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+
   if (emailSent) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -262,6 +333,18 @@ const Auth = () => {
                 "Create Account"
               )}
             </Button>
+
+            {mode === "login" && (
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => setForgotMode(true)}
+                  className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
 
             <p className="text-sm text-muted-foreground text-center pt-2">
               {mode === "login"
