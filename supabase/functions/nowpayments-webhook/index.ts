@@ -13,25 +13,30 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const NOWPAYMENTS_KEY = Deno.env.get("NOWPAYMENTS_API_KEY");
-    if (!NOWPAYMENTS_KEY) {
+    const IPN_SECRET = Deno.env.get("NOWPAYMENTS_IPN_SECRET");
+    if (!IPN_SECRET) {
+      console.error("NOWPAYMENTS_IPN_SECRET not configured");
       return new Response("Not configured", { status: 500 });
     }
 
-    const body = await req.json();
+    const rawBody = await req.text();
+    const body = JSON.parse(rawBody);
     
-    // Verify IPN signature
+    // Verify IPN signature using IPN Secret (NOT API key)
     const receivedSig = req.headers.get("x-nowpayments-sig");
     if (receivedSig) {
       const sortedBody = JSON.stringify(sortObject(body));
-      const hmac = createHmac("sha512", NOWPAYMENTS_KEY);
+      const hmac = createHmac("sha512", IPN_SECRET);
       hmac.update(sortedBody);
       const expectedSig = hmac.digest("hex");
       
       if (receivedSig !== expectedSig) {
-        console.error("Invalid IPN signature");
+        console.error("Invalid IPN signature. Received:", receivedSig, "Expected:", expectedSig);
         return new Response("Invalid signature", { status: 403 });
       }
+      console.log("IPN signature verified successfully");
+    } else {
+      console.warn("No IPN signature header received - processing anyway");
     }
 
     const { payment_status, order_id } = body;
