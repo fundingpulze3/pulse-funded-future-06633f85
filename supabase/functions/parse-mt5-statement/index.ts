@@ -131,10 +131,11 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Always store latest stats for dashboard display regardless of pass/fail status
+    await storeLatestStats(adminClient, credential, parsed);
+
     // If profit target not yet reached → IN PROGRESS, not failed
     if (!evaluation.targetReached) {
-      // Still store the parsed stats for dashboard display even if in progress
-      await storeLatestStats(adminClient, credential, parsed);
 
       return new Response(
         JSON.stringify({

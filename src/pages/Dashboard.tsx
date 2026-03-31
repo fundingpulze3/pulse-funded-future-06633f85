@@ -229,7 +229,12 @@ const Dashboard = () => {
     if (!activePurchase) return null;
     const purchaseCred = credentials.find(c => c.purchase_id === activePurchase.id);
     const accountLogin = purchaseCred?.mt5_login || null;
+    // Prefer latest_stats cert (always has freshest data), then fall back to any cert with stats
     const matchedCert = userCertificates.find(c =>
+      c.purchase_id === activePurchase.id && c.certificate_type === "latest_stats" && c.stats && Object.keys(c.stats).length > 0
+    ) || (accountLogin ? userCertificates.find(c =>
+      c.account_number === accountLogin && c.certificate_type === "latest_stats" && c.stats && Object.keys(c.stats).length > 0
+    ) : null) || userCertificates.find(c =>
       c.purchase_id === activePurchase.id && c.stats && Object.keys(c.stats).length > 0
     ) || (accountLogin ? userCertificates.find(c =>
       c.account_number === accountLogin && c.stats && Object.keys(c.stats).length > 0
