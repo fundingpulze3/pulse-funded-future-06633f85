@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import LiveChat from "@/components/LiveChat";
 import { useAdminSubdomain } from "@/hooks/useAdminSubdomain";
+import { useKillSwitch } from "@/hooks/useKillSwitch";
+import KillSwitchPage from "@/components/KillSwitchPage";
 import Index from "./pages/Index";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
@@ -33,6 +35,7 @@ const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const { isAdminDomain, isHelpDomain } = useAdminSubdomain();
+  const { isKilled, loading: killLoading } = useKillSwitch();
 
   // Help subdomain: only show help center
   if (isHelpDomain) {
@@ -43,13 +46,25 @@ const AppRoutes = () => {
     );
   }
 
-  // Admin subdomain: only show admin + admin auth routes
+  // Admin subdomain: always allow admin access (even when killed)
   if (isAdminDomain) {
     return (
       <Routes>
         <Route path="/admin" element={<Admin />} />
         <Route path="/auth" element={<AdminAuth />} />
         <Route path="*" element={<Admin />} />
+      </Routes>
+    );
+  }
+
+  // Kill switch active: show Hello World (but keep admin route accessible)
+  if (!killLoading && isKilled) {
+    return (
+      <Routes>
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<KillSwitchPage />} />
       </Routes>
     );
   }
