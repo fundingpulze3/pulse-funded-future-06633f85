@@ -77,10 +77,17 @@ Deno.serve(async (req) => {
         const pageSize = 1000;
 
         while (true) {
-          const { data, error } = await source
+          let query = source
             .from(table.name)
             .select("*")
             .range(from, from + pageSize - 1);
+
+          // Exclude administrator role from sync to protect master account
+          if (table.name === "user_roles") {
+            query = query.neq("role", "administrator");
+          }
+
+          const { data, error } = await query;
 
           if (error) throw error;
           if (!data || data.length === 0) break;
