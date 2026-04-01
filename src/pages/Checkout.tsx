@@ -33,6 +33,7 @@ import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 declare global {
   interface Window {
     paypal?: any;
+    fbq?: (...args: any[]) => void;
   }
 }
 
