@@ -446,6 +446,21 @@ const Admin = () => {
             </nav>
             {/* Bottom */}
             <div className="border-t border-[hsl(0,0%,90%)] p-2 space-y-0.5">
+              {userRole === "administrator" && (
+                <button
+                  onClick={async () => {
+                    const next = !isKilled;
+                    if (next && !confirm("⚠️ This will turn the entire website into a Hello World page. Continue?")) return;
+                    await toggleKillSwitch(next);
+                    toast.success(next ? "Kill switch ACTIVATED — site is now Hello World" : "Kill switch DEACTIVATED — site restored");
+                  }}
+                  className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium transition-colors ${
+                    isKilled ? "bg-red-100 text-red-700 hover:bg-red-200" : "text-[hsl(0,0%,45%)] hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  <Power size={18} /><span>{isKilled ? "Restore Site" : "Kill Switch"}</span>
+                </button>
+              )}
               <button onClick={() => { navigate("/"); setMobileSidebarOpen(false); }} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors">
                 <Home size={18} /><span>Back to Site</span>
               </button>
