@@ -14,7 +14,7 @@ import {
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
-  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles, Smartphone, IndianRupee,
+  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles, Smartphone, IndianRupee, Power,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
@@ -38,6 +38,7 @@ import BlogAIChat from "@/components/admin/BlogAIChat";
 import UPISettings from "@/components/admin/UPISettings";
 import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
 import RolesManager from "@/components/admin/RolesManager";
+import { useKillSwitch } from "@/hooks/useKillSwitch";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -69,6 +70,7 @@ const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const { isAdmin, userRole, loading: adminLoading } = useAdminCheck();
   const [userRoles, setUserRoles] = useState<Record<string, string>>({});
+  const { isKilled, toggle: toggleKillSwitch } = useKillSwitch();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -444,6 +446,21 @@ const Admin = () => {
             </nav>
             {/* Bottom */}
             <div className="border-t border-[hsl(0,0%,90%)] p-2 space-y-0.5">
+              {userRole === "administrator" && (
+                <button
+                  onClick={async () => {
+                    const next = !isKilled;
+                    if (next && !confirm("⚠️ This will turn the entire website into a Hello World page. Continue?")) return;
+                    await toggleKillSwitch(next);
+                    toast.success(next ? "Kill switch ACTIVATED — site is now Hello World" : "Kill switch DEACTIVATED — site restored");
+                  }}
+                  className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium transition-colors ${
+                    isKilled ? "bg-red-100 text-red-700 hover:bg-red-200" : "text-[hsl(0,0%,45%)] hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  <Power size={18} /><span>{isKilled ? "Restore Site" : "Kill Switch"}</span>
+                </button>
+              )}
               <button onClick={() => { navigate("/"); setMobileSidebarOpen(false); }} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors">
                 <Home size={18} /><span>Back to Site</span>
               </button>
@@ -498,6 +515,22 @@ const Admin = () => {
 
         {/* Bottom */}
         <div className="border-t border-[hsl(0,0%,90%)] p-2 space-y-0.5">
+          {userRole === "administrator" && (
+            <button
+              onClick={async () => {
+                const next = !isKilled;
+                if (next && !confirm("⚠️ This will turn the entire website into a Hello World page. Continue?")) return;
+                await toggleKillSwitch(next);
+                toast.success(next ? "Kill switch ACTIVATED — site is now Hello World" : "Kill switch DEACTIVATED — site restored");
+              }}
+              title={sidebarCollapsed ? (isKilled ? "Restore Site" : "Kill Switch") : undefined}
+              className={`w-full flex items-center gap-2 ${sidebarCollapsed ? "justify-center px-0" : "px-2.5"} py-2 rounded-lg text-[12px] font-medium transition-colors ${
+                isKilled ? "bg-red-100 text-red-700 hover:bg-red-200" : "text-[hsl(0,0%,45%)] hover:text-red-600 hover:bg-red-50"
+              }`}
+            >
+              <Power size={18} />{!sidebarCollapsed && <span>{isKilled ? "Restore Site" : "Kill Switch"}</span>}
+            </button>
+          )}
           <button onClick={() => navigate("/")} className={`w-full flex items-center gap-2 ${sidebarCollapsed ? "justify-center px-0" : "px-2.5"} py-2 rounded-lg text-[12px] text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,15%)] hover:bg-[hsl(0,0%,93%)] transition-colors`}>
             <Home size={18} />{!sidebarCollapsed && <span>Back to Site</span>}
           </button>
