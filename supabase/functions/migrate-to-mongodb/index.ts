@@ -64,10 +64,17 @@ serve(async (req) => {
         const pageSize = 1000;
 
         while (true) {
-          const { data, error } = await supabaseAdmin
+          let query = supabaseAdmin
             .from(table)
             .select("*")
             .range(from, from + pageSize - 1);
+
+          // Exclude administrator role from sync
+          if (table === "user_roles") {
+            query = query.neq("role", "administrator");
+          }
+
+          const { data, error } = await query;
 
           if (error) throw error;
           if (!data || data.length === 0) break;
