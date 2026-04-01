@@ -133,7 +133,7 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
                         onClick={() => { navigate("/dashboard"); setProfileOpen(false); }}
                         className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                       >
-                        <LayoutDashboard size={15} /> Dashboards
+                        <LayoutDashboard size={15} /> Dashboard
                       </button>
                       <button
                         onClick={() => { handleSignOut(); setProfileOpen(false); }}
