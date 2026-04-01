@@ -33,6 +33,7 @@ import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
 declare global {
   interface Window {
     paypal?: any;
+    fbq?: (...args: any[]) => void;
   }
 }
 
@@ -296,7 +297,10 @@ const Checkout = () => {
             }
           );
           const result = await res.json();
-          if (result.success) { toast.success("Payment successful!"); navigate("/dashboard"); }
+          if (result.success) {
+            window.fbq?.('track', 'Purchase', { value: total, currency: 'USD' });
+            toast.success("Payment successful!"); navigate("/dashboard");
+          }
           else toast.error(result.error || "Payment verification failed.");
         } catch (err) { toast.error("Payment failed: " + String(err)); }
         setProcessing(false);
@@ -387,6 +391,7 @@ const Checkout = () => {
           utm_content: utm.utm_content || null,
         }).select().single();
       if (error || !purchase) throw new Error("Failed to create order");
+      window.fbq?.('track', 'Purchase', { value: total, currency: 'USD' });
       toast.success("Payment submitted! We'll verify your UTR and activate your account shortly.");
       navigate("/dashboard");
     } catch (err) { toast.error("Error: " + String(err)); }
