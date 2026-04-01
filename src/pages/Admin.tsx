@@ -38,6 +38,7 @@ import BlogAIChat from "@/components/admin/BlogAIChat";
 import UPISettings from "@/components/admin/UPISettings";
 import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
 import RolesManager from "@/components/admin/RolesManager";
+import { useKillSwitch } from "@/hooks/useKillSwitch";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
