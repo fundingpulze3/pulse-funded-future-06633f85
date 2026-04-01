@@ -297,7 +297,10 @@ const Checkout = () => {
             }
           );
           const result = await res.json();
-          if (result.success) { toast.success("Payment successful!"); navigate("/dashboard"); }
+          if (result.success) {
+            window.fbq?.('track', 'Purchase', { value: total, currency: 'USD' });
+            toast.success("Payment successful!"); navigate("/dashboard");
+          }
           else toast.error(result.error || "Payment verification failed.");
         } catch (err) { toast.error("Payment failed: " + String(err)); }
         setProcessing(false);
