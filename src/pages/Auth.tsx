@@ -91,6 +91,7 @@ const Auth = () => {
           toast.error(error.message);
         } else if (data.user && !data.session) {
           setEmailSent(true);
+          (window as any).fbq?.('track', 'CompleteRegistration');
           toast.success("Check your email to verify your account!");
           supabase.functions
             .invoke("send-transactional-email", {
@@ -98,6 +99,7 @@ const Auth = () => {
             })
             .catch(() => {});
         } else if (data.session) {
+          (window as any).fbq?.('track', 'CompleteRegistration');
           toast.success("Account created!");
           navigate("/");
         }

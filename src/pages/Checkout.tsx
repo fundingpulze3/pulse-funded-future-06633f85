@@ -391,6 +391,7 @@ const Checkout = () => {
           utm_content: utm.utm_content || null,
         }).select().single();
       if (error || !purchase) throw new Error("Failed to create order");
+      window.fbq?.('track', 'Purchase', { value: total, currency: 'USD' });
       toast.success("Payment submitted! We'll verify your UTR and activate your account shortly.");
       navigate("/dashboard");
     } catch (err) { toast.error("Error: " + String(err)); }
