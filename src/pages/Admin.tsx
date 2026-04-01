@@ -70,6 +70,7 @@ const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const { isAdmin, userRole, loading: adminLoading } = useAdminCheck();
   const [userRoles, setUserRoles] = useState<Record<string, string>>({});
+  const { isKilled, toggle: toggleKillSwitch } = useKillSwitch();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [profiles, setProfiles] = useState<any[]>([]);
