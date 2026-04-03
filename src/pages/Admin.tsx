@@ -296,7 +296,7 @@ const Admin = () => {
   // Role-based sidebar: employee only sees support
   const allSidebarGroups = [
     {
-      label: "ADMINISTRATOR",
+      label: "MASTER",
       items: [
         { id: "user_certificates" as Tab, label: "PDF / Certs", icon: <FileText size={18} /> },
       ],
