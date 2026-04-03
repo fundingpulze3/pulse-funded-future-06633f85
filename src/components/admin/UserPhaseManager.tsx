@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import {
   AlertCircle, CheckCircle2, RefreshCw, Loader2, Search, X,
   TrendingUp, TrendingDown, Activity, DollarSign, BarChart3,
-  ArrowLeft, User, CreditCard, Calendar, Target, Shield,
+  ArrowLeft, User, CreditCard, Calendar, Target, Shield, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
