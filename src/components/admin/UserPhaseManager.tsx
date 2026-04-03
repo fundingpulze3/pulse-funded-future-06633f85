@@ -46,6 +46,8 @@ const UserPhaseManager = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedAccount, setSelectedAccount] = useState<UserAccount | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<any>(null);
 
   useEffect(() => { fetchAccounts(); }, []);
 
