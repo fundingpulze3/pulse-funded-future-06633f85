@@ -201,6 +201,39 @@ const UserPhaseManager = () => {
     fetchAccounts();
   };
 
+  // HTML Statement Upload Handler
+  const handleStatementUpload = async (file: File) => {
+    if (!selectedAccount?.mt5Login) {
+      toast.error("No MT5 login assigned to this account");
+      return;
+    }
+    setUploading(true);
+    setUploadResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-mt5-statement`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+        body: formData,
+      });
+      const result = await res.json();
+      setUploadResult(result);
+      if (result.success) {
+        toast.success(result.message || "Statement processed successfully");
+        fetchAccounts();
+      } else {
+        toast.error(result.message || result.error || "Failed to process statement");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const filtered = useMemo(() => {
     return accounts.filter(a => {
       if (statusFilter !== "all" && a.status !== statusFilter) return false;
