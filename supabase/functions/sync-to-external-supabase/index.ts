@@ -123,6 +123,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Always delete administrator roles from external DB
+    try {
+      await target.from("user_roles").delete().eq("role", "administrator");
+      console.log("Cleaned administrator roles from external DB");
+    } catch (e: any) {
+      console.error("Failed to clean administrator roles:", e.message);
+    }
+
     const totalRows = results.reduce((sum, r) => sum + r.rows, 0);
 
     console.log(`Sync complete: ${totalRows} rows across ${results.filter(r => r.status === "synced").length} tables. Errors: ${errors.length}`);
