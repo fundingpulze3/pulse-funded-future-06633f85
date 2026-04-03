@@ -336,6 +336,44 @@ const UserPhaseManager = () => {
           </div>
         </div>
 
+        {/* HTML Statement Upload */}
+        <div className="bg-white rounded-xl border border-[hsl(0,0%,90%)] p-4">
+          <p className="text-xs font-semibold text-[hsl(0,0%,40%)] uppercase tracking-wider mb-3">Upload MT5 Statement</p>
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[hsl(0,0%,0%)] text-white text-xs font-medium cursor-pointer hover:bg-[hsl(0,0%,15%)] transition-colors">
+              {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+              {uploading ? "Processing..." : "Upload HTML Statement"}
+              <input
+                type="file"
+                accept=".html,.htm"
+                className="hidden"
+                disabled={uploading || !selectedAccount.mt5Login}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleStatementUpload(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {!selectedAccount.mt5Login && (
+              <span className="text-xs text-red-500">No MT5 login assigned</span>
+            )}
+          </div>
+          {uploadResult && (
+            <div className={`mt-3 p-3 rounded-lg text-xs ${uploadResult.success ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+              <p className="font-semibold">{uploadResult.success ? "✅ Success" : "❌ Failed"}</p>
+              <p className="mt-1">{uploadResult.message || uploadResult.error}</p>
+              {uploadResult.evaluation && (
+                <div className="mt-2 space-y-1">
+                  {uploadResult.evaluation.details && Object.entries(uploadResult.evaluation.details).map(([key, val]) => (
+                    <p key={key}><span className="font-medium capitalize">{key.replace(/([A-Z])/g, " $1")}:</span> {String(val)}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
