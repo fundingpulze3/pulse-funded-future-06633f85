@@ -378,11 +378,20 @@ const Admin = () => {
 
   // Helper to assign/change a user's role
   const changeUserRole = async (userId: string, newRole: string) => {
+    // NEVER allow modifying the administrator role
+    if (userRoles[userId] === "administrator") {
+      toast.error("Cannot modify the administrator role");
+      return;
+    }
+    // NEVER allow assigning administrator role
+    if (newRole === "administrator") {
+      toast.error("Cannot assign administrator role");
+      return;
+    }
     if (newRole === "none") {
-      await supabase.from("user_roles").delete().eq("user_id", userId);
+      await supabase.from("user_roles").delete().eq("user_id", userId).neq("role", "administrator");
     } else {
-      // Upsert: delete old then insert new
-      await supabase.from("user_roles").delete().eq("user_id", userId);
+      await supabase.from("user_roles").delete().eq("user_id", userId).neq("role", "administrator");
       const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: newRole as any });
       if (error) { toast.error(error.message); return; }
     }
