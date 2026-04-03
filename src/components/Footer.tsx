@@ -101,7 +101,7 @@ const Footer = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Funding Pulze. All rights reserved.
+            © 2025 - 26 Funding Pulze. All rights reserved.
           </p>
           <div className="flex items-center gap-5">
             {socialLinks.map((social) => (
