@@ -33,6 +33,11 @@ const RolesManager = ({ profiles, userRoles, onRoleChange }: RolesManagerProps) 
   };
 
   const handleRemoveRole = async (userId: string) => {
+    // Prevent removing administrator role
+    if (userRoles[userId] === "administrator") {
+      toast.error("Cannot modify the administrator role");
+      return;
+    }
     if (!confirm("Remove this user's role?")) return;
     await onRoleChange(userId, "none");
   };
