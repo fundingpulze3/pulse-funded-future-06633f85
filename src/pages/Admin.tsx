@@ -95,7 +95,6 @@ const Admin = () => {
   const [couponForm, setCouponForm] = useState<CouponForm>(emptyCouponForm);
   const [couponSaving, setCouponSaving] = useState(false);
   const [importUsersOpen, setImportUsersOpen] = useState(false);
-  const [couponSaving, setCouponSaving] = useState(false);
 
   // SEO: noindex for admin pages
   useEffect(() => {
