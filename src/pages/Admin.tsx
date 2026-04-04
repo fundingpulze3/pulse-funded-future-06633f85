@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Users, Trophy, Link2, Shield, Plus, Pencil, Trash2, Wallet,
+  Users, Trophy, Link2, Shield, Plus, Pencil, Trash2, Wallet, Upload,
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
@@ -38,6 +38,7 @@ import BlogAIChat from "@/components/admin/BlogAIChat";
 import UPISettings from "@/components/admin/UPISettings";
 import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
 import RolesManager from "@/components/admin/RolesManager";
+import ImportUsers from "@/components/admin/ImportUsers";
 import { useKillSwitch } from "@/hooks/useKillSwitch";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
@@ -93,6 +94,7 @@ const Admin = () => {
   const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
   const [couponForm, setCouponForm] = useState<CouponForm>(emptyCouponForm);
   const [couponSaving, setCouponSaving] = useState(false);
+  const [importUsersOpen, setImportUsersOpen] = useState(false);
 
   // SEO: noindex for admin pages
   useEffect(() => {
@@ -624,8 +626,14 @@ const Admin = () => {
                   <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Users</h2>
                   <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{visibleProfiles.length} registered users</p>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => exportCSV(visibleProfiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setImportUsersOpen(true)} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">
+                    <Upload size={14} className="mr-1" /> Import Users
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => exportCSV(visibleProfiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
+                </div>
               </div>
+              <ImportUsers open={importUsersOpen} onOpenChange={setImportUsersOpen} onImportComplete={fetchAll} />
               <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden overflow-x-auto">
                 <table className="w-full min-w-[600px]">
                   <thead>
