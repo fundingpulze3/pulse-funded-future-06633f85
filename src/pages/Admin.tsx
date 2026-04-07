@@ -337,6 +337,7 @@ const Admin = () => {
         { id: "upi_orders" as Tab, label: "UPI Payments", icon: <IndianRupee size={18} /> },
         { id: "upi_settings" as Tab, label: "UPI Settings", icon: <Smartphone size={18} /> },
         { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
+        { id: "email_marketing" as Tab, label: "Email Marketing", icon: <Mail size={18} /> },
         { id: "roles" as Tab, label: "Roles", icon: <ShieldCheck size={18} /> },
       ],
       roles: ["administrator", "admin"],
@@ -377,6 +378,7 @@ const Admin = () => {
     upi_settings: "UPI Settings",
     upi_orders: "UPI Payments",
     roles: "Role Management",
+    email_marketing: "Email Marketing",
   };
 
   // Helper to assign/change a user's role
