@@ -1029,6 +1029,11 @@ const Admin = () => {
               onRoleChange={changeUserRole}
             />
           )}
+
+          {/* ===== Email Marketing Tab ===== */}
+          {tab === "email_marketing" && (
+            <EmailMarketing />
+          )}
         </div>
       </div>
 
