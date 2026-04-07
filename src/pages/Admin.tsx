@@ -14,7 +14,7 @@ import {
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
-  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles, Smartphone, IndianRupee, Power,
+  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles, Smartphone, IndianRupee, Power, Mail,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
@@ -39,11 +39,12 @@ import UPISettings from "@/components/admin/UPISettings";
 import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
 import RolesManager from "@/components/admin/RolesManager";
 import ImportUsers from "@/components/admin/ImportUsers";
+import EmailMarketing from "@/components/admin/EmailMarketing";
 import { useKillSwitch } from "@/hooks/useKillSwitch";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders" | "roles";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders" | "roles" | "email_marketing";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
@@ -336,6 +337,7 @@ const Admin = () => {
         { id: "upi_orders" as Tab, label: "UPI Payments", icon: <IndianRupee size={18} /> },
         { id: "upi_settings" as Tab, label: "UPI Settings", icon: <Smartphone size={18} /> },
         { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
+        { id: "email_marketing" as Tab, label: "Email Marketing", icon: <Mail size={18} /> },
         { id: "roles" as Tab, label: "Roles", icon: <ShieldCheck size={18} /> },
       ],
       roles: ["administrator", "admin"],
@@ -376,6 +378,7 @@ const Admin = () => {
     upi_settings: "UPI Settings",
     upi_orders: "UPI Payments",
     roles: "Role Management",
+    email_marketing: "Email Marketing",
   };
 
   // Helper to assign/change a user's role
@@ -1025,6 +1028,11 @@ const Admin = () => {
               userRoles={userRoles}
               onRoleChange={changeUserRole}
             />
+          )}
+
+          {/* ===== Email Marketing Tab ===== */}
+          {tab === "email_marketing" && (
+            <EmailMarketing />
           )}
         </div>
       </div>
