@@ -507,6 +507,162 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campaign_events: {
+        Row: {
+          campaign_id: string
+          contact_email: string
+          created_at: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          link_url: string | null
+          metadata: Json | null
+          user_agent: string | null
+        }
+        Insert: {
+          campaign_id: string
+          contact_email: string
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          link_url?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          contact_email?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          link_url?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          group_id: string | null
+          html_content: string
+          id: string
+          name: string
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          total_recipients: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          group_id?: string | null
+          html_content?: string
+          id?: string
+          name: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          total_recipients?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          group_id?: string | null
+          html_content?: string
+          id?: string
+          name?: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          total_recipients?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "email_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_group_contacts: {
+        Row: {
+          created_at: string
+          email: string
+          group_id: string
+          id: string
+          name: string | null
+          subscribed: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          group_id: string
+          id?: string
+          name?: string | null
+          subscribed?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          group_id?: string
+          id?: string
+          name?: string | null
+          subscribed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_group_contacts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "email_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
