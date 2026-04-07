@@ -39,6 +39,7 @@ import UPISettings from "@/components/admin/UPISettings";
 import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
 import RolesManager from "@/components/admin/RolesManager";
 import ImportUsers from "@/components/admin/ImportUsers";
+import EmailMarketing from "@/components/admin/EmailMarketing";
 import { useKillSwitch } from "@/hooks/useKillSwitch";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
