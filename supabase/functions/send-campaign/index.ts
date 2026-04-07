@@ -21,7 +21,6 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Verify caller is admin
     const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!)
     const { data: { user }, error: authError } = await anonClient.auth.getUser(authHeader.replace('Bearer ', ''))
     if (authError || !user) {
@@ -37,7 +36,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'campaign_id required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Get campaign
     const { data: campaign, error: campErr } = await supabase.from('email_campaigns').select('*').eq('id', campaign_id).single()
     if (campErr || !campaign) {
       return new Response(JSON.stringify({ error: 'Campaign not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -47,7 +45,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Campaign already sent/sending' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Get contacts from group
     const { data: contacts, error: contactsErr } = await supabase
       .from('email_group_contacts')
       .select('*')
@@ -58,10 +55,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'No contacts in group' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Update campaign status to sending
     await supabase.from('email_campaigns').update({ status: 'sending', total_recipients: contacts.length }).eq('id', campaign_id)
 
-    // SMTP config
     const SMTP_HOST = Deno.env.get('SMTP_HOST')!
     const SMTP_PORT = parseInt(Deno.env.get('SMTP_PORT') || '465')
     const SMTP_USERNAME = Deno.env.get('SMTP_USERNAME')!
@@ -83,30 +78,45 @@ Deno.serve(async (req) => {
 
     for (const contact of contacts) {
       try {
-        // Build tracking pixel and wrapped links
         const trackingPixel = `<img src="${trackingBaseUrl}?type=open&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}" width="1" height="1" style="display:none" />`
 
-        // Replace links with tracking redirects
         let htmlWithTracking = campaign.html_content.replace(
           /href="(https?:\/\/[^"]+)"/g,
           (_: string, url: string) => `href="${trackingBaseUrl}?type=click&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}&url=${encodeURIComponent(url)}"`
         )
         htmlWithTracking += trackingPixel
 
+        // Generate unique Message-ID for anti-spam
+        const messageId = `<${crypto.randomUUID()}@fundingpulze.com>`
+
         await client.send({
           from: `Funding Pulze <${SMTP_FROM}>`,
           to: contact.email,
           subject: campaign.subject,
           html: htmlWithTracking,
+          headers: {
+            'Message-ID': messageId,
+            'X-Mailer': 'FundingPulze-Marketing/1.0',
+            'Reply-To': SMTP_FROM,
+            'List-Unsubscribe': `<mailto:${SMTP_FROM}?subject=unsubscribe>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            'Precedence': 'bulk',
+            'X-Auto-Response-Suppress': 'OOF, AutoReply',
+            'MIME-Version': '1.0',
+          },
         })
 
-        // Log sent event
         await supabase.from('email_campaign_events').insert({
           campaign_id,
           contact_email: contact.email,
           event_type: 'sent',
         })
         sentCount++
+
+        // Small delay between sends to avoid rate limiting
+        if (contacts.length > 10) {
+          await new Promise(r => setTimeout(r, 200))
+        }
       } catch (err) {
         console.error(`Failed to send to ${contact.email}:`, err)
         failCount++
@@ -115,7 +125,6 @@ Deno.serve(async (req) => {
 
     await client.close()
 
-    // Update campaign status
     await supabase.from('email_campaigns').update({
       status: 'sent',
       sent_at: new Date().toISOString(),
