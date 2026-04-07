@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/tabs";
 import {
   Users, Plus, Trash2, Send, Calendar, BarChart3, Clock,
-  Mail, Eye, MousePointer, TrendingUp, Upload,
+  Mail, Eye, MousePointer, TrendingUp, Upload, Code, FileText,
+  Layout, UserPlus, FileUp,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -25,6 +26,35 @@ import { toast } from "sonner";
 
 const PIE_COLORS = ["hsl(142,70%,45%)", "hsl(200,70%,50%)", "hsl(45,90%,55%)", "hsl(0,70%,55%)", "hsl(270,60%,55%)", "hsl(30,80%,50%)"];
 
+// ---- Predefined Email Templates ----
+const EMAIL_TEMPLATES: { name: string; description: string; html: string }[] = [
+  {
+    name: "Welcome Email",
+    description: "Clean welcome email for new users",
+    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5}table{border-spacing:0}.wrapper{max-width:600px;margin:0 auto;background:#ffffff}.header{background:#000000;padding:30px 40px;text-align:center}.header h1{color:#ffffff;font-size:22px;margin:0;letter-spacing:1px}.body-content{padding:40px}.body-content h2{color:#111;font-size:20px;margin:0 0 15px}.body-content p{color:#555;font-size:15px;line-height:1.6;margin:0 0 20px}.cta-btn{display:inline-block;background:#000;color:#fff!important;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:14px;font-weight:600;letter-spacing:0.5px}.footer{background:#fafafa;padding:25px 40px;text-align:center;border-top:1px solid #eee}.footer p{color:#999;font-size:12px;margin:0;line-height:1.6}</style></head><body><div class="wrapper"><div class="header"><h1>FUNDING PULZE</h1></div><div class="body-content"><h2>Welcome aboard! 🎉</h2><p>Thank you for joining Funding Pulze. We're excited to have you as part of our trading community.</p><p>Start your funded trading journey today and take advantage of our industry-leading challenge programs.</p><a href="https://fundingpulze.com" class="cta-btn">Get Started →</a></div><div class="footer"><p>© Funding Pulze. All rights reserved.<br/>You received this email because you're subscribed to our updates.</p></div></div></body></html>`,
+  },
+  {
+    name: "Promotion / Discount",
+    description: "Limited time offer with CTA button",
+    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5}.wrapper{max-width:600px;margin:0 auto;background:#ffffff}.hero{background:linear-gradient(135deg,#000 0%,#222 100%);padding:50px 40px;text-align:center}.hero h1{color:#fff;font-size:36px;margin:0 0 8px;font-weight:800}.hero p{color:#ccc;font-size:16px;margin:0}.badge{display:inline-block;background:#FFD700;color:#000;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;margin-top:15px}.body-content{padding:40px;text-align:center}.body-content p{color:#555;font-size:15px;line-height:1.6;margin:0 0 25px}.cta-btn{display:inline-block;background:#000;color:#fff!important;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:15px;font-weight:600}.footer{background:#fafafa;padding:25px 40px;text-align:center;border-top:1px solid #eee}.footer p{color:#999;font-size:12px;margin:0}</style></head><body><div class="wrapper"><div class="hero"><h1>20% OFF</h1><p>All Challenge Programs</p><span class="badge">LIMITED TIME</span></div><div class="body-content"><p>Don't miss this exclusive offer! Use code <strong>PULZE20</strong> at checkout to save 20% on any challenge program.</p><p>Offer expires in 48 hours. Act now!</p><a href="https://fundingpulze.com" class="cta-btn">Claim Your Discount →</a></div><div class="footer"><p>© Funding Pulze. All rights reserved.</p></div></div></body></html>`,
+  },
+  {
+    name: "Newsletter Update",
+    description: "Weekly/monthly newsletter format",
+    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5}.wrapper{max-width:600px;margin:0 auto;background:#ffffff}.header{background:#000;padding:20px 40px;display:flex;align-items:center;justify-content:space-between}.header h1{color:#fff;font-size:18px;margin:0}.header span{color:#888;font-size:12px}.section{padding:30px 40px;border-bottom:1px solid #f0f0f0}.section h3{color:#111;font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:8px}.section p{color:#555;font-size:14px;line-height:1.6;margin:0 0 12px}.read-more{color:#000;font-weight:600;text-decoration:none;font-size:13px}.stat-row{display:flex;gap:20px;margin:15px 0}.stat{text-align:center;flex:1;padding:15px;background:#f8f8f8;border-radius:8px}.stat .num{font-size:24px;font-weight:800;color:#000;display:block}.stat .label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px}.footer{padding:25px 40px;text-align:center}.footer p{color:#999;font-size:12px;margin:0}</style></head><body><div class="wrapper"><div class="header"><h1>📰 Funding Pulze Weekly</h1><span>This Week's Update</span></div><div class="section"><h3>📈 Market Highlights</h3><p>Gold surged past $2,400 this week amid geopolitical tensions. EUR/USD tested the 1.0850 resistance level with strong momentum.</p><a href="https://fundingpulze.com" class="read-more">Read full analysis →</a></div><div class="section"><h3>🏆 Community Stats</h3><div class="stat-row"><div class="stat"><span class="num">$4.3M+</span><span class="label">Total Payouts</span></div><div class="stat"><span class="num">12K+</span><span class="label">Active Traders</span></div><div class="stat"><span class="num">95%</span><span class="label">Pass Rate</span></div></div></div><div class="section"><h3>🎓 Tips & Education</h3><p>Master risk management with our new guide: "The 2% Rule Every Funded Trader Should Follow."</p><a href="https://fundingpulze.com/blog" class="read-more">Read on our blog →</a></div><div class="footer"><p>© Funding Pulze. You received this because you're subscribed.<br/>Unsubscribe if you no longer wish to receive these emails.</p></div></div></body></html>`,
+  },
+  {
+    name: "Achievement / Milestone",
+    description: "Celebrate user or platform milestones",
+    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5}.wrapper{max-width:600px;margin:0 auto;background:#ffffff}.hero{background:#000;padding:50px 40px;text-align:center}.hero .emoji{font-size:48px;display:block;margin-bottom:15px}.hero h1{color:#FFD700;font-size:28px;margin:0 0 8px;font-weight:800}.hero p{color:#aaa;font-size:14px;margin:0}.body-content{padding:40px;text-align:center}.body-content p{color:#555;font-size:15px;line-height:1.7;margin:0 0 25px}.cta-btn{display:inline-block;background:#000;color:#fff!important;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:14px;font-weight:600}.social{padding:20px 40px;text-align:center}.social a{display:inline-block;margin:0 8px;color:#888;text-decoration:none;font-size:13px}.footer{padding:20px 40px;text-align:center;border-top:1px solid #f0f0f0}.footer p{color:#999;font-size:11px;margin:0}</style></head><body><div class="wrapper"><div class="hero"><span class="emoji">🏆</span><h1>We Hit $4.3M in Payouts!</h1><p>And it's all thanks to traders like you.</p></div><div class="body-content"><p>Our community of funded traders has collectively earned over $4.3 million in payouts. This milestone proves that with discipline and the right platform, anyone can succeed.</p><p>Ready to join the winners?</p><a href="https://fundingpulze.com" class="cta-btn">Start Your Challenge →</a></div><div class="social"><a href="https://instagram.com">Instagram</a> · <a href="https://twitter.com">Twitter</a> · <a href="https://discord.com">Discord</a></div><div class="footer"><p>© Funding Pulze. All rights reserved.</p></div></div></body></html>`,
+  },
+  {
+    name: "Plain Text Style",
+    description: "Simple text-only email, personal feel",
+    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;font-family:Georgia,'Times New Roman',serif;background:#f5f5f5}.wrapper{max-width:580px;margin:20px auto;background:#fff;padding:45px 50px;border:1px solid #eee;border-radius:4px}.wrapper h2{font-size:20px;color:#111;margin:0 0 20px;font-weight:normal}.wrapper p{color:#333;font-size:15px;line-height:1.8;margin:0 0 18px}.signature{margin-top:30px;padding-top:20px;border-top:1px solid #eee}.signature p{color:#888;font-size:13px;margin:0 0 4px;line-height:1.5}.signature strong{color:#333}</style></head><body><div class="wrapper"><h2>Hey there,</h2><p>Just wanted to drop you a quick note about something exciting we've been working on at Funding Pulze.</p><p>We've just launched new challenge sizes and improved our profit split — now up to 90% in your favor. If you've been thinking about getting funded, now's the perfect time.</p><p>Feel free to reply to this email if you have any questions. We're here to help.</p><div class="signature"><p><strong>Chirag</strong></p><p>Founder, Funding Pulze</p><p>support@fundingpulze.com</p></div></div></body></html>`,
+  },
+];
+
 export default function EmailMarketing() {
   const [activeTab, setActiveTab] = useState("groups");
   const [groups, setGroups] = useState<any[]>([]);
@@ -32,6 +62,7 @@ export default function EmailMarketing() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allProfiles, setAllProfiles] = useState<any[]>([]);
 
   // Group state
   const [groupDialog, setGroupDialog] = useState(false);
@@ -46,6 +77,10 @@ export default function EmailMarketing() {
   const [contactName, setContactName] = useState("");
   const [bulkDialog, setBulkDialog] = useState(false);
   const [bulkEmails, setBulkEmails] = useState("");
+  const [bulkMode, setBulkMode] = useState<"paste" | "csv">("paste");
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const [addUsersDialog, setAddUsersDialog] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
 
   // Campaign state
   const [campaignDialog, setCampaignDialog] = useState(false);
@@ -57,21 +92,26 @@ export default function EmailMarketing() {
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<"templates" | "code">("templates");
+  const [showPreview, setShowPreview] = useState(false);
+  const [templateDialog, setTemplateDialog] = useState(false);
 
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
     setLoading(true);
-    const [g, co, ca, ev] = await Promise.all([
+    const [g, co, ca, ev, pr] = await Promise.all([
       supabase.from("email_groups").select("*").order("created_at", { ascending: false }),
       supabase.from("email_group_contacts").select("*").order("created_at", { ascending: false }),
       supabase.from("email_campaigns").select("*").order("created_at", { ascending: false }),
       supabase.from("email_campaign_events").select("*").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("user_id, email, display_name").order("created_at", { ascending: false }),
     ]);
     if (g.data) setGroups(g.data);
     if (co.data) setContacts(co.data);
     if (ca.data) setCampaigns(ca.data);
     if (ev.data) setEvents(ev.data);
+    if (pr.data) setAllProfiles(pr.data);
     setLoading(false);
   };
 
@@ -104,14 +144,64 @@ export default function EmailMarketing() {
     toast.success("Contact added"); setContactDialog(false); setContactEmail(""); setContactName(""); fetchAll();
   };
 
+  const parseEmailsFromText = (text: string): { email: string; name: string | null }[] => {
+    const lines = text.split(/[\n\r]+/).filter(l => l.trim());
+    const results: { email: string; name: string | null }[] = [];
+    for (const line of lines) {
+      // Support: "name,email" or "email,name" or just "email"
+      const parts = line.split(/[,;\t]+/).map(p => p.trim().replace(/^["']|["']$/g, ""));
+      if (parts.length >= 2) {
+        const emailPart = parts.find(p => p.includes("@"));
+        const namePart = parts.find(p => !p.includes("@") && p.length > 0);
+        if (emailPart) results.push({ email: emailPart.toLowerCase(), name: namePart || null });
+      } else if (parts[0]?.includes("@")) {
+        results.push({ email: parts[0].toLowerCase(), name: null });
+      }
+    }
+    return results;
+  };
+
   const bulkAddContacts = async () => {
     if (!selectedGroupId || !bulkEmails.trim()) { toast.error("Enter emails"); return; }
-    const emails = bulkEmails.split(/[\n,;]+/).map(e => e.trim().toLowerCase()).filter(e => e && e.includes("@"));
-    if (emails.length === 0) { toast.error("No valid emails found"); return; }
-    const rows = emails.map(email => ({ group_id: selectedGroupId, email, name: null }));
+    const parsed = parseEmailsFromText(bulkEmails);
+    if (parsed.length === 0) { toast.error("No valid emails found"); return; }
+    const rows = parsed.map(p => ({ group_id: selectedGroupId, email: p.email, name: p.name }));
     const { error } = await supabase.from("email_group_contacts").upsert(rows, { onConflict: "group_id,email" });
     if (error) { toast.error(error.message); return; }
-    toast.success(`${emails.length} contacts added`); setBulkDialog(false); setBulkEmails(""); fetchAll();
+    toast.success(`${parsed.length} contacts added`); setBulkDialog(false); setBulkEmails(""); fetchAll();
+  };
+
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      if (text) setBulkEmails(text);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const addRegisteredUsers = async (userIds: string[]) => {
+    if (!selectedGroupId || userIds.length === 0) return;
+    const selectedUsers = allProfiles.filter(p => userIds.includes(p.user_id) && p.email);
+    const rows = selectedUsers.map(u => ({ group_id: selectedGroupId, email: u.email.toLowerCase(), name: u.display_name || null }));
+    if (rows.length === 0) { toast.error("No valid emails"); return; }
+    const { error } = await supabase.from("email_group_contacts").upsert(rows, { onConflict: "group_id,email" });
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${rows.length} users added to group`); setAddUsersDialog(false); setUserSearchQuery(""); fetchAll();
+  };
+
+  const addAllRegisteredUsers = async () => {
+    if (!selectedGroupId) return;
+    const validUsers = allProfiles.filter(p => p.email);
+    if (validUsers.length === 0) { toast.error("No users with email found"); return; }
+    if (!confirm(`Add all ${validUsers.length} registered users to this group?`)) return;
+    const rows = validUsers.map(u => ({ group_id: selectedGroupId, email: u.email.toLowerCase(), name: u.display_name || null }));
+    const { error } = await supabase.from("email_group_contacts").upsert(rows, { onConflict: "group_id,email" });
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${rows.length} users added to group`); setAddUsersDialog(false); fetchAll();
   };
 
   const deleteContact = async (id: string) => {
@@ -142,7 +232,7 @@ export default function EmailMarketing() {
   const closeCampaignDialog = () => {
     setCampaignDialog(false); setCampaignName(""); setCampaignSubject("");
     setCampaignHtml(""); setCampaignGroupId(""); setCampaignScheduleAt("");
-    setEditingCampaignId(null);
+    setEditingCampaignId(null); setEditorMode("templates"); setShowPreview(false);
   };
 
   const sendCampaign = async (id: string) => {
@@ -178,27 +268,14 @@ export default function EmailMarketing() {
     const sent = campaignEvents.filter(e => e.event_type === "sent").length;
     const opened = new Set(campaignEvents.filter(e => e.event_type === "open").map(e => e.contact_email)).size;
     const clicked = new Set(campaignEvents.filter(e => e.event_type === "click").map(e => e.contact_email)).size;
-    return {
-      sent,
-      opened,
-      clicked,
-      openRate: sent > 0 ? ((opened / sent) * 100).toFixed(1) : "0",
-      clickRate: sent > 0 ? ((clicked / sent) * 100).toFixed(1) : "0",
-    };
+    return { sent, opened, clicked, openRate: sent > 0 ? ((opened / sent) * 100).toFixed(1) : "0", clickRate: sent > 0 ? ((clicked / sent) * 100).toFixed(1) : "0" };
   }, [campaignEvents]);
 
-  // Opens by hour (for "best time to send")
   const opensByHour = useMemo(() => {
     const hours: Record<number, number> = {};
     for (let i = 0; i < 24; i++) hours[i] = 0;
-    campaignEvents.filter(e => e.event_type === "open").forEach(e => {
-      const h = new Date(e.created_at).getHours();
-      hours[h]++;
-    });
-    return Object.entries(hours).map(([hour, count]) => ({
-      hour: `${String(hour).padStart(2, "0")}:00`,
-      opens: count,
-    }));
+    campaignEvents.filter(e => e.event_type === "open").forEach(e => { hours[new Date(e.created_at).getHours()]++; });
+    return Object.entries(hours).map(([hour, count]) => ({ hour: `${String(hour).padStart(2, "0")}:00`, opens: count }));
   }, [campaignEvents]);
 
   const bestHour = useMemo(() => {
@@ -206,32 +283,39 @@ export default function EmailMarketing() {
     return sorted[0]?.opens > 0 ? sorted[0].hour : "N/A";
   }, [opensByHour]);
 
-  // Opens over time
   const opensTimeline = useMemo(() => {
     const buckets: Record<string, { opens: number; clicks: number }> = {};
     campaignEvents.filter(e => e.event_type === "open" || e.event_type === "click").forEach(e => {
       const key = e.created_at?.slice(0, 10);
       if (!buckets[key]) buckets[key] = { opens: 0, clicks: 0 };
-      if (e.event_type === "open") buckets[key].opens++;
-      else buckets[key].clicks++;
+      if (e.event_type === "open") buckets[key].opens++; else buckets[key].clicks++;
     });
     return Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0])).map(([date, d]) => ({ date: date.slice(5), ...d }));
   }, [campaignEvents]);
 
-  // Campaign performance pie
   const campaignPie = useMemo(() => {
     if (selectedCampaignId) return [];
     const campStats: Record<string, number> = {};
     events.filter(e => e.event_type === "open").forEach(e => {
       const camp = campaigns.find(c => c.id === e.campaign_id);
-      const name = camp?.name || "Unknown";
-      campStats[name] = (campStats[name] || 0) + 1;
+      campStats[camp?.name || "Unknown"] = (campStats[camp?.name || "Unknown"] || 0) + 1;
     });
     return Object.entries(campStats).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value]) => ({ name, value }));
   }, [events, campaigns, selectedCampaignId]);
 
   const getGroupName = (id: string) => groups.find(g => g.id === id)?.name || "Unknown";
   const getGroupContacts = (id: string) => contacts.filter(c => c.group_id === id);
+
+  const filteredUsers = useMemo(() => {
+    const existingEmails = new Set(selectedGroupId ? getGroupContacts(selectedGroupId).map(c => c.email?.toLowerCase()) : []);
+    return allProfiles.filter(p => {
+      if (!p.email) return false;
+      if (existingEmails.has(p.email.toLowerCase())) return false;
+      if (!userSearchQuery) return true;
+      const q = userSearchQuery.toLowerCase();
+      return p.email.toLowerCase().includes(q) || p.display_name?.toLowerCase().includes(q);
+    });
+  }, [allProfiles, selectedGroupId, contacts, userSearchQuery]);
 
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
@@ -292,12 +376,17 @@ export default function EmailMarketing() {
           {/* Contacts for selected group */}
           {selectedGroupId && (
             <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-[hsl(0,0%,93%)] flex items-center justify-between">
+              <div className="px-5 py-3 border-b border-[hsl(0,0%,93%)] flex items-center justify-between flex-wrap gap-2">
                 <h3 className="text-sm font-display font-semibold text-[hsl(0,0%,10%)]">
                   Contacts in "{groups.find(g => g.id === selectedGroupId)?.name}"
                 </h3>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setBulkDialog(true)} className="text-xs"><Upload size={12} className="mr-1" />Bulk Add</Button>
+                <div className="flex gap-2 flex-wrap">
+                  <Button size="sm" variant="outline" onClick={() => setAddUsersDialog(true)} className="text-xs">
+                    <UserPlus size={12} className="mr-1" />Add Users
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setBulkMode("paste"); setBulkEmails(""); setBulkDialog(true); }} className="text-xs">
+                    <Upload size={12} className="mr-1" />Bulk Add
+                  </Button>
                   <Button size="sm" onClick={() => { setContactEmail(""); setContactName(""); setContactDialog(true); }} className="text-xs bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)]">
                     <Plus size={12} className="mr-1" /> Add Contact
                   </Button>
@@ -369,7 +458,7 @@ export default function EmailMarketing() {
                               <button onClick={() => {
                                 setCampaignName(c.name); setCampaignSubject(c.subject); setCampaignHtml(c.html_content);
                                 setCampaignGroupId(c.group_id || ""); setCampaignScheduleAt(c.scheduled_at ? c.scheduled_at.slice(0, 16) : "");
-                                setEditingCampaignId(c.id); setCampaignDialog(true);
+                                setEditingCampaignId(c.id); setEditorMode("code"); setCampaignDialog(true);
                               }} className="px-2 py-1 rounded text-[10px] bg-[hsl(0,0%,93%)] hover:bg-[hsl(0,0%,88%)]">Edit</button>
                               <button disabled={sending} onClick={() => sendCampaign(c.id)} className="px-2 py-1 rounded text-[10px] bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] flex items-center gap-1">
                                 <Send size={10} /> Send Now
@@ -400,20 +489,17 @@ export default function EmailMarketing() {
               <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Campaign Analytics</h2>
               <p className="text-xs text-[hsl(0,0%,50%)]">{selectedCampaignId ? campaigns.find(c => c.id === selectedCampaignId)?.name : "All campaigns"}</p>
             </div>
-            <div className="flex gap-2">
-              <Select value={selectedCampaignId || "all"} onValueChange={v => setSelectedCampaignId(v === "all" ? null : v)}>
-                <SelectTrigger className="w-48 h-8 text-xs"><SelectValue placeholder="All Campaigns" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Campaigns</SelectItem>
-                  {campaigns.filter(c => c.status === "sent").map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={selectedCampaignId || "all"} onValueChange={v => setSelectedCampaignId(v === "all" ? null : v)}>
+              <SelectTrigger className="w-48 h-8 text-xs"><SelectValue placeholder="All Campaigns" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Campaigns</SelectItem>
+                {campaigns.filter(c => c.status === "sent").map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             {[
               { label: "Emails Sent", value: stats.sent.toLocaleString(), icon: <Send size={16} /> },
@@ -432,7 +518,6 @@ export default function EmailMarketing() {
             ))}
           </div>
 
-          {/* AI Recommended Best Time */}
           <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
             <div className="flex items-center gap-2 mb-1">
               <Clock size={16} className="text-[hsl(0,0%,40%)]" />
@@ -443,7 +528,6 @@ export default function EmailMarketing() {
             <p className="text-[11px] text-[hsl(0,0%,50%)]">Based on open rate analysis across your campaigns. Contacts are most engaged at this hour.</p>
           </div>
 
-          {/* Opens by Hour */}
           <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
             <div className="flex items-center gap-2 mb-4">
               <Clock size={16} className="text-[hsl(0,0%,40%)]" />
@@ -461,7 +545,6 @@ export default function EmailMarketing() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Opens & Clicks over time */}
             <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Eye size={16} className="text-[hsl(0,0%,40%)]" />
@@ -484,12 +567,9 @@ export default function EmailMarketing() {
                     <Area type="monotone" dataKey="clicks" stroke="hsl(200,70%,50%)" strokeWidth={2} fill="transparent" name="Clicks" />
                   </AreaChart>
                 </ResponsiveContainer>
-              ) : (
-                <p className="text-xs text-[hsl(0,0%,55%)] text-center py-12">No engagement data yet</p>
-              )}
+              ) : <p className="text-xs text-[hsl(0,0%,55%)] text-center py-12">No engagement data yet</p>}
             </div>
 
-            {/* Campaign performance pie */}
             <div className="bg-[hsl(0,0%,100%)] rounded-xl border border-[hsl(0,0%,90%)] p-5">
               <div className="flex items-center gap-2 mb-4">
                 <BarChart3 size={16} className="text-[hsl(0,0%,40%)]" />
@@ -517,9 +597,7 @@ export default function EmailMarketing() {
                     ))}
                   </div>
                 </>
-              ) : (
-                <p className="text-xs text-[hsl(0,0%,55%)] text-center py-12">{selectedCampaignId ? "Viewing single campaign" : "No data yet"}</p>
-              )}
+              ) : <p className="text-xs text-[hsl(0,0%,55%)] text-center py-12">{selectedCampaignId ? "Viewing single campaign" : "No data yet"}</p>}
             </div>
           </div>
         </TabsContent>
@@ -555,50 +633,166 @@ export default function EmailMarketing() {
         </DialogContent>
       </Dialog>
 
-      {/* ===== BULK ADD DIALOG ===== */}
+      {/* ===== BULK ADD DIALOG (CSV + Paste) ===== */}
       <Dialog open={bulkDialog} onOpenChange={setBulkDialog}>
-        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)]">
+        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)] max-w-lg">
           <DialogHeader><DialogTitle className="font-display">Bulk Add Contacts</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <p className="text-xs text-[hsl(0,0%,50%)]">Paste emails separated by commas, semicolons, or new lines</p>
-            <Textarea value={bulkEmails} onChange={e => setBulkEmails(e.target.value)} rows={8} placeholder="email1@example.com&#10;email2@example.com&#10;email3@example.com" />
+            <div className="flex gap-2">
+              <button onClick={() => setBulkMode("paste")} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${bulkMode === "paste" ? "bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]" : "bg-[hsl(0,0%,95%)] text-[hsl(0,0%,45%)]"}`}>
+                <FileText size={12} className="inline mr-1" />Copy & Paste
+              </button>
+              <button onClick={() => setBulkMode("csv")} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${bulkMode === "csv" ? "bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]" : "bg-[hsl(0,0%,95%)] text-[hsl(0,0%,45%)]"}`}>
+                <FileUp size={12} className="inline mr-1" />Upload CSV
+              </button>
+            </div>
+
+            {bulkMode === "csv" && (
+              <div className="border-2 border-dashed border-[hsl(0,0%,85%)] rounded-lg p-6 text-center">
+                <FileUp size={24} className="mx-auto mb-2 text-[hsl(0,0%,55%)]" />
+                <p className="text-xs text-[hsl(0,0%,50%)] mb-2">Upload a CSV file with emails (one per line or comma-separated)</p>
+                <p className="text-[10px] text-[hsl(0,0%,65%)] mb-3">Supports: name,email or email,name or just email per row</p>
+                <input ref={csvInputRef} type="file" accept=".csv,.txt" onChange={handleCsvUpload} className="hidden" />
+                <Button size="sm" variant="outline" onClick={() => csvInputRef.current?.click()} className="text-xs">
+                  <Upload size={12} className="mr-1" />Choose File
+                </Button>
+              </div>
+            )}
+
+            {(bulkMode === "paste" || bulkEmails) && (
+              <div>
+                <p className="text-xs text-[hsl(0,0%,50%)] mb-1">
+                  {bulkMode === "csv" ? "CSV content loaded — review and add:" : "Paste emails below (comma, semicolon, tab, or newline separated):"}
+                </p>
+                <Textarea value={bulkEmails} onChange={e => setBulkEmails(e.target.value)} rows={8} placeholder={"John Doe, john@example.com\njane@example.com\nBob, bob@company.com"} className="font-mono text-xs" />
+                {bulkEmails && (
+                  <p className="text-[10px] text-[hsl(0,0%,55%)] mt-1">
+                    {parseEmailsFromText(bulkEmails).length} valid emails detected
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkDialog(false)} className="text-xs">Cancel</Button>
-            <Button onClick={bulkAddContacts} className="text-xs bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]">Add All</Button>
+            <Button onClick={bulkAddContacts} className="text-xs bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]">
+              Add {bulkEmails ? parseEmailsFromText(bulkEmails).length : 0} Contacts
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ===== CAMPAIGN DIALOG ===== */}
-      <Dialog open={campaignDialog} onOpenChange={v => { if (!v) closeCampaignDialog(); else setCampaignDialog(true); }}>
-        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)] max-w-2xl">
-          <DialogHeader><DialogTitle className="font-display">{editingCampaignId ? "Edit Campaign" : "New Campaign"}</DialogTitle></DialogHeader>
-          <div className="space-y-3 max-h-[60vh] overflow-auto pr-2">
-            <div><Label className="text-xs">Campaign Name</Label><Input value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="e.g. Welcome Series #1" /></div>
-            <div><Label className="text-xs">Subject Line</Label><Input value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} placeholder="e.g. Welcome to Funding Pulze!" /></div>
-            <div>
-              <Label className="text-xs">Target Group</Label>
-              <Select value={campaignGroupId} onValueChange={setCampaignGroupId}>
-                <SelectTrigger className="text-xs"><SelectValue placeholder="Select group" /></SelectTrigger>
-                <SelectContent>
-                  {groups.map(g => (
-                    <SelectItem key={g.id} value={g.id}>{g.name} ({getGroupContacts(g.id).length} contacts)</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      {/* ===== ADD REGISTERED USERS DIALOG ===== */}
+      <Dialog open={addUsersDialog} onOpenChange={setAddUsersDialog}>
+        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)] max-w-lg">
+          <DialogHeader><DialogTitle className="font-display">Add Registered Users</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input value={userSearchQuery} onChange={e => setUserSearchQuery(e.target.value)} placeholder="Search by name or email..." className="text-xs" />
+              <Button size="sm" onClick={addAllRegisteredUsers} className="text-xs bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] whitespace-nowrap">
+                Add All ({allProfiles.filter(p => p.email).length})
+              </Button>
             </div>
-            <div>
-              <Label className="text-xs">Schedule (optional)</Label>
-              <Input type="datetime-local" value={campaignScheduleAt} onChange={e => setCampaignScheduleAt(e.target.value)} />
-              <p className="text-[10px] text-[hsl(0,0%,55%)] mt-1">Leave empty to save as draft</p>
-            </div>
-            <div>
-              <Label className="text-xs">Email HTML Content</Label>
-              <Textarea value={campaignHtml} onChange={e => setCampaignHtml(e.target.value)} rows={12} placeholder="<h1>Hello!</h1><p>Your email content here...</p>" className="font-mono text-xs" />
+            <div className="max-h-[350px] overflow-auto border border-[hsl(0,0%,90%)] rounded-lg">
+              {filteredUsers.slice(0, 100).map(u => (
+                <div key={u.user_id} className="flex items-center justify-between px-4 py-2.5 border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)]">
+                  <div>
+                    <p className="text-xs font-medium text-[hsl(0,0%,15%)]">{u.display_name || "—"}</p>
+                    <p className="text-[10px] text-[hsl(0,0%,50%)]">{u.email}</p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => addRegisteredUsers([u.user_id])} className="text-[10px] h-7 px-2">
+                    <Plus size={10} className="mr-1" />Add
+                  </Button>
+                </div>
+              ))}
+              {filteredUsers.length === 0 && <p className="text-xs text-[hsl(0,0%,55%)] text-center py-8">No more users to add</p>}
+              {filteredUsers.length > 100 && <p className="text-[10px] text-[hsl(0,0%,55%)] text-center py-2">Showing first 100 of {filteredUsers.length}</p>}
             </div>
           </div>
-          <DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== CAMPAIGN DIALOG (with templates + code editor) ===== */}
+      <Dialog open={campaignDialog} onOpenChange={v => { if (!v) closeCampaignDialog(); else setCampaignDialog(true); }}>
+        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)] max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader><DialogTitle className="font-display">{editingCampaignId ? "Edit Campaign" : "New Campaign"}</DialogTitle></DialogHeader>
+          <div className="space-y-3 flex-1 overflow-auto pr-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div><Label className="text-xs">Campaign Name</Label><Input value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="e.g. Welcome Series #1" /></div>
+              <div><Label className="text-xs">Subject Line</Label><Input value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} placeholder="e.g. Welcome to Funding Pulze!" /></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Target Group</Label>
+                <Select value={campaignGroupId} onValueChange={setCampaignGroupId}>
+                  <SelectTrigger className="text-xs"><SelectValue placeholder="Select group" /></SelectTrigger>
+                  <SelectContent>
+                    {groups.map(g => (
+                      <SelectItem key={g.id} value={g.id}>{g.name} ({getGroupContacts(g.id).length} contacts)</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Schedule (optional)</Label>
+                <Input type="datetime-local" value={campaignScheduleAt} onChange={e => setCampaignScheduleAt(e.target.value)} />
+              </div>
+            </div>
+
+            {/* Editor Mode Toggle */}
+            <div className="flex items-center gap-2 pt-2">
+              <Label className="text-xs font-semibold">Email Content</Label>
+              <div className="flex gap-1 bg-[hsl(0,0%,95%)] rounded-lg p-0.5">
+                <button onClick={() => setEditorMode("templates")} className={`px-3 py-1 rounded-md text-[10px] font-medium transition-all ${editorMode === "templates" ? "bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]" : "text-[hsl(0,0%,50%)]"}`}>
+                  <Layout size={10} className="inline mr-1" />Templates
+                </button>
+                <button onClick={() => setEditorMode("code")} className={`px-3 py-1 rounded-md text-[10px] font-medium transition-all ${editorMode === "code" ? "bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]" : "text-[hsl(0,0%,50%)]"}`}>
+                  <Code size={10} className="inline mr-1" />HTML Code
+                </button>
+              </div>
+              {campaignHtml && (
+                <button onClick={() => setShowPreview(!showPreview)} className="ml-auto text-[10px] px-3 py-1 rounded-md bg-[hsl(200,70%,93%)] text-[hsl(200,70%,30%)] hover:bg-[hsl(200,70%,88%)] flex items-center gap-1">
+                  <Eye size={10} />{showPreview ? "Hide Preview" : "Preview"}
+                </button>
+              )}
+            </div>
+
+            {/* Templates Grid */}
+            {editorMode === "templates" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {EMAIL_TEMPLATES.map((t, i) => (
+                  <div key={i} onClick={() => { setCampaignHtml(t.html); setEditorMode("code"); toast.success(`"${t.name}" template loaded`); }}
+                    className="bg-[hsl(0,0%,98%)] border border-[hsl(0,0%,90%)] rounded-lg p-4 cursor-pointer hover:border-[hsl(0,0%,60%)] hover:shadow-sm transition-all">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Layout size={14} className="text-[hsl(0,0%,40%)]" />
+                      <h4 className="text-xs font-semibold text-[hsl(0,0%,10%)]">{t.name}</h4>
+                    </div>
+                    <p className="text-[10px] text-[hsl(0,0%,50%)] leading-relaxed">{t.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Code Editor */}
+            {editorMode === "code" && (
+              <div className={`grid ${showPreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"} gap-3`}>
+                <div>
+                  <Textarea value={campaignHtml} onChange={e => setCampaignHtml(e.target.value)} rows={16} placeholder={"<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    /* Your CSS here */\n  </style>\n</head>\n<body>\n  <h1>Hello!</h1>\n  <p>Your email content here...</p>\n</body>\n</html>"} className="font-mono text-xs leading-relaxed" />
+                  <p className="text-[10px] text-[hsl(0,0%,55%)] mt-1">Full HTML + CSS supported. Links will be auto-tracked for click analytics.</p>
+                </div>
+                {showPreview && (
+                  <div className="border border-[hsl(0,0%,90%)] rounded-lg overflow-hidden bg-[hsl(0,0%,98%)]">
+                    <div className="px-3 py-1.5 bg-[hsl(0,0%,95%)] border-b border-[hsl(0,0%,90%)] flex items-center gap-1.5">
+                      <Eye size={10} className="text-[hsl(0,0%,50%)]" />
+                      <span className="text-[10px] font-medium text-[hsl(0,0%,45%)]">Live Preview</span>
+                    </div>
+                    <iframe srcDoc={campaignHtml} className="w-full h-[380px] border-0" sandbox="allow-same-origin" title="Email Preview" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter className="shrink-0 pt-3 border-t border-[hsl(0,0%,93%)]">
             <Button variant="outline" onClick={closeCampaignDialog} className="text-xs">Cancel</Button>
             <Button onClick={saveCampaign} className="text-xs bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]">
               {campaignScheduleAt ? <><Calendar size={12} className="mr-1" />Schedule</> : "Save Draft"}
