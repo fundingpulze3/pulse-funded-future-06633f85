@@ -3,7 +3,7 @@ import { motion, useInView } from "framer-motion";
 
 const stats = [
   { label: "Funded Traders", value: 2800, prefix: "", suffix: "+" },
-  { label: "Total Payouts", value: 4.2, prefix: "$", suffix: "M+", decimals: 1 },
+  { label: "Total Payouts", value: 4.3, prefix: "$", suffix: "M+", decimals: 1 },
   { label: "Countries", value: 85, prefix: "", suffix: "+" },
   { label: "Profit Split", value: 90, prefix: "", suffix: "%" },
 ];
