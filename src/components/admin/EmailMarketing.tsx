@@ -622,38 +622,38 @@ export default function EmailMarketing() {
 
       {/* ===== GROUP DIALOG ===== */}
       <Dialog open={groupDialog} onOpenChange={setGroupDialog}>
-        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)]">
-          <DialogHeader><DialogTitle className="font-display">{editingGroupId ? "Edit Group" : "New Group"}</DialogTitle></DialogHeader>
+         <DialogContent className="bg-white border-gray-200 text-black">
+          <DialogHeader><DialogTitle className="font-display text-black">{editingGroupId ? "Edit Group" : "New Group"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs">Group Name</Label><Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="e.g. Newsletter Subscribers" /></div>
-            <div><Label className="text-xs">Description</Label><Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Optional description" /></div>
+            <div><Label className="text-xs text-gray-700">Group Name</Label><Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="e.g. Newsletter Subscribers" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
+            <div><Label className="text-xs text-gray-700">Description</Label><Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Optional description" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setGroupDialog(false)} className="text-xs">Cancel</Button>
-            <Button onClick={saveGroup} className="text-xs bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]">Save</Button>
+            <Button variant="outline" onClick={() => setGroupDialog(false)} className="text-xs border-gray-300 text-black hover:bg-gray-100">Cancel</Button>
+            <Button onClick={saveGroup} className="text-xs bg-black text-white hover:bg-gray-800">Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* ===== CONTACT DIALOG ===== */}
       <Dialog open={contactDialog} onOpenChange={setContactDialog}>
-        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)]">
-          <DialogHeader><DialogTitle className="font-display">Add Contact</DialogTitle></DialogHeader>
+         <DialogContent className="bg-white border-gray-200 text-black">
+          <DialogHeader><DialogTitle className="font-display text-black">Add Contact</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs">Email</Label><Input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="email@example.com" type="email" /></div>
-            <div><Label className="text-xs">Name (optional)</Label><Input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="John Doe" /></div>
+            <div><Label className="text-xs text-gray-700">Email</Label><Input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="email@example.com" type="email" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
+            <div><Label className="text-xs text-gray-700">Name (optional)</Label><Input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="John Doe" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setContactDialog(false)} className="text-xs">Cancel</Button>
-            <Button onClick={addContact} className="text-xs bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]">Add</Button>
+            <Button variant="outline" onClick={() => setContactDialog(false)} className="text-xs border-gray-300 text-black hover:bg-gray-100">Cancel</Button>
+            <Button onClick={addContact} className="text-xs bg-black text-white hover:bg-gray-800">Add</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* ===== BULK ADD DIALOG (CSV + Paste) ===== */}
       <Dialog open={bulkDialog} onOpenChange={setBulkDialog}>
-        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)] max-w-lg">
-          <DialogHeader><DialogTitle className="font-display">Bulk Add Contacts</DialogTitle></DialogHeader>
+         <DialogContent className="bg-white border-gray-200 text-black max-w-lg">
+          <DialogHeader><DialogTitle className="font-display text-black">Bulk Add Contacts</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="flex gap-2">
               <button onClick={() => setBulkMode("paste")} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${bulkMode === "paste" ? "bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)]" : "bg-[hsl(0,0%,95%)] text-[hsl(0,0%,45%)]"}`}>
@@ -681,7 +681,7 @@ export default function EmailMarketing() {
                 <p className="text-xs text-[hsl(0,0%,50%)] mb-1">
                   {bulkMode === "csv" ? "CSV content loaded — review and add:" : "Paste emails below (comma, semicolon, tab, or newline separated):"}
                 </p>
-                <Textarea value={bulkEmails} onChange={e => setBulkEmails(e.target.value)} rows={8} placeholder={"John Doe, john@example.com\njane@example.com\nBob, bob@company.com"} className="font-mono text-xs" />
+                <Textarea value={bulkEmails} onChange={e => setBulkEmails(e.target.value)} rows={8} placeholder={"John Doe, john@example.com\njane@example.com\nBob, bob@company.com"} className="font-mono text-xs bg-white border-gray-300 text-black placeholder:text-gray-400" />
                 {bulkEmails && (
                   <p className="text-[10px] text-[hsl(0,0%,55%)] mt-1">
                     {parseEmailsFromText(bulkEmails).length} valid emails detected
@@ -701,11 +701,11 @@ export default function EmailMarketing() {
 
       {/* ===== ADD REGISTERED USERS DIALOG ===== */}
       <Dialog open={addUsersDialog} onOpenChange={setAddUsersDialog}>
-        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)] max-w-lg">
-          <DialogHeader><DialogTitle className="font-display">Add Registered Users</DialogTitle></DialogHeader>
+         <DialogContent className="bg-white border-gray-200 text-black max-w-lg">
+          <DialogHeader><DialogTitle className="font-display text-black">Add Registered Users</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="flex gap-2">
-              <Input value={userSearchQuery} onChange={e => setUserSearchQuery(e.target.value)} placeholder="Search by name or email..." className="text-xs" />
+              <Input value={userSearchQuery} onChange={e => setUserSearchQuery(e.target.value)} placeholder="Search by name or email..." className="text-xs bg-white border-gray-300 text-black placeholder:text-gray-400" />
               <Button size="sm" onClick={addAllRegisteredUsers} className="text-xs bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] whitespace-nowrap">
                 Add All ({allProfiles.filter(p => p.email).length})
               </Button>
@@ -731,12 +731,12 @@ export default function EmailMarketing() {
 
       {/* ===== CAMPAIGN DIALOG (with templates + code editor) ===== */}
       <Dialog open={campaignDialog} onOpenChange={v => { if (!v) closeCampaignDialog(); else setCampaignDialog(true); }}>
-        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)] max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader><DialogTitle className="font-display">{editingCampaignId ? "Edit Campaign" : "New Campaign"}</DialogTitle></DialogHeader>
+         <DialogContent className="bg-white border-gray-200 text-black max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader><DialogTitle className="font-display text-black">{editingCampaignId ? "Edit Campaign" : "New Campaign"}</DialogTitle></DialogHeader>
           <div className="space-y-3 flex-1 overflow-auto pr-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><Label className="text-xs">Campaign Name</Label><Input value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="e.g. Welcome Series #1" /></div>
-              <div><Label className="text-xs">Subject Line</Label><Input value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} placeholder="e.g. Welcome to Funding Pulze!" /></div>
+              <div><Label className="text-xs text-gray-700">Campaign Name</Label><Input value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="e.g. Welcome Series #1" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
+              <div><Label className="text-xs text-gray-700">Subject Line</Label><Input value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} placeholder="e.g. Welcome to Funding Pulze!" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
@@ -752,7 +752,7 @@ export default function EmailMarketing() {
               </div>
               <div>
                 <Label className="text-xs">Schedule (optional)</Label>
-                <Input type="datetime-local" value={campaignScheduleAt} onChange={e => setCampaignScheduleAt(e.target.value)} />
+                <Input type="datetime-local" value={campaignScheduleAt} onChange={e => setCampaignScheduleAt(e.target.value)} className="bg-white border-gray-300 text-black" />
               </div>
             </div>
 
@@ -794,7 +794,7 @@ export default function EmailMarketing() {
             {editorMode === "code" && (
               <div className={`grid ${showPreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"} gap-3`}>
                 <div>
-                  <Textarea value={campaignHtml} onChange={e => setCampaignHtml(e.target.value)} rows={16} placeholder={"<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    /* Your CSS here */\n  </style>\n</head>\n<body>\n  <h1>Hello!</h1>\n  <p>Your email content here...</p>\n</body>\n</html>"} className="font-mono text-xs leading-relaxed" />
+                  <Textarea value={campaignHtml} onChange={e => setCampaignHtml(e.target.value)} rows={16} placeholder={"<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    /* Your CSS here */\n  </style>\n</head>\n<body>\n  <h1>Hello!</h1>\n  <p>Your email content here...</p>\n</body>\n</html>"} className="font-mono text-xs leading-relaxed bg-white border-gray-300 text-black placeholder:text-gray-400" />
                   <p className="text-[10px] text-[hsl(0,0%,55%)] mt-1">Full HTML + CSS supported. Links will be auto-tracked for click analytics.</p>
                 </div>
                 {showPreview && (
