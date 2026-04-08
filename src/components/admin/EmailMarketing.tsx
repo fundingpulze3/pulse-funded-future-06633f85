@@ -484,6 +484,21 @@ export default function EmailMarketing() {
           </div>
         </TabsContent>
 
+        {/* ===== TEMPLATES TAB ===== */}
+        <TabsContent value="templates" className="space-y-4 mt-4">
+          <div>
+            <h2 className="text-lg font-display font-semibold text-[hsl(0,0%,5%)]">Email Template Builder</h2>
+            <p className="text-xs text-[hsl(0,0%,50%)]">Build, save, and reuse email templates with the visual builder or HTML editor</p>
+          </div>
+          <EmailTemplateBuilder onUseTemplate={(html) => {
+            setCampaignHtml(html);
+            setEditorMode("code");
+            setActiveTab("campaigns");
+            setCampaignDialog(true);
+            toast.success("Template loaded into campaign composer");
+          }} />
+        </TabsContent>
+
         {/* ===== ANALYTICS TAB ===== */}
         <TabsContent value="analytics" className="space-y-4 mt-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
