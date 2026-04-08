@@ -17,6 +17,23 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+const LIGHT_FIELD_CLASS = "bg-[hsl(0,0%,100%)] border-[hsl(0,0%,82%)] text-[hsl(0,0%,5%)] placeholder:text-[hsl(0,0%,55%)]";
+const LIGHT_DIALOG_CLASS = "bg-[hsl(0,0%,100%)] border-[hsl(0,0%,88%)] text-[hsl(0,0%,5%)]";
+const LIGHT_SELECT_CLASS = "bg-[hsl(0,0%,100%)] border-[hsl(0,0%,82%)] text-[hsl(0,0%,5%)]";
+const MAX_EMAIL_ASSET_SIZE = 5 * 1024 * 1024;
+
+const buildEmailAssetPath = (file: File) => {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+  const baseName = file.name
+    .replace(/\.[^.]+$/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "asset";
+
+  return `email-builder/${Date.now()}-${uid()}-${baseName}.${ext}`;
+};
+
 // ---- Block Types ----
 type BlockType = "header" | "logo" | "text" | "heading" | "button" | "image" | "divider" | "spacer" | "social" | "footer";
 
@@ -81,15 +98,41 @@ function BlockPropEditor({ block, onChange }: { block: EmailBlock; onChange: (pr
   const set = (key: string, val: string) => onChange({ ...p, [key]: val });
   const logoInputRef = useRef<HTMLInputElement>(null);
   const imgInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   const handleImageUpload = async (file: File, key: string) => {
-    const ext = file.name.split('.').pop();
-    const path = `email-builder/${uid()}.${ext}`;
-    const { error } = await supabase.storage.from("email-assets").upload(path, file, { upsert: true });
-    if (error) { toast.error("Upload failed"); return; }
-    const { data: { publicUrl } } = supabase.storage.from("email-assets").getPublicUrl(path);
-    set(key, publicUrl);
-    toast.success("Image uploaded");
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    if (file.size > MAX_EMAIL_ASSET_SIZE) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+
+    const path = buildEmailAssetPath(file);
+    setUploadingKey(key);
+
+    try {
+      const { error } = await supabase.storage.from("email-assets").upload(path, file, {
+        upsert: false,
+        cacheControl: "3600",
+        contentType: file.type,
+      });
+
+      if (error) throw error;
+
+      const { data } = supabase.storage.from("email-assets").getPublicUrl(path);
+      if (!data?.publicUrl) throw new Error("Could not generate image URL");
+
+      set(key, data.publicUrl);
+      toast.success("Image uploaded");
+    } catch (error: any) {
+      toast.error(error?.message || "Upload failed");
+    } finally {
+      setUploadingKey(null);
+    }
   };
 
   const fields: { key: string; label: string; type?: string; options?: string[] }[] = (() => {
@@ -113,35 +156,40 @@ function BlockPropEditor({ block, onChange }: { block: EmailBlock; onChange: (pr
       {(block.type === "logo") && (
         <div>
           <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "src"); e.target.value = ""; }} />
-          <Button size="sm" variant="outline" onClick={() => logoInputRef.current?.click()} className="text-[10px] mb-1 w-full">
-            <Upload size={10} className="mr-1" />Upload Logo
+          <Button size="sm" variant="outline" disabled={uploadingKey === "src"} onClick={() => logoInputRef.current?.click()} className="text-[10px] mb-1 w-full">
+            <Upload size={10} className="mr-1" />{uploadingKey === "src" ? "Uploading..." : "Upload Logo"}
           </Button>
         </div>
       )}
       {(block.type === "image") && (
         <div>
           <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "src"); e.target.value = ""; }} />
-          <Button size="sm" variant="outline" onClick={() => imgInputRef.current?.click()} className="text-[10px] mb-1 w-full">
-            <Upload size={10} className="mr-1" />Upload Image
+          <Button size="sm" variant="outline" disabled={uploadingKey === "src"} onClick={() => imgInputRef.current?.click()} className="text-[10px] mb-1 w-full">
+            <Upload size={10} className="mr-1" />{uploadingKey === "src" ? "Uploading..." : "Upload Image"}
           </Button>
+        </div>
+      )}
+      {p.src && (block.type === "logo" || block.type === "image") && (
+        <div className="rounded-lg border border-[hsl(0,0%,88%)] bg-[hsl(0,0%,100%)] p-2">
+          <img src={p.src} alt={p.alt || "Preview"} className="max-h-24 w-full rounded object-contain" loading="lazy" />
         </div>
       )}
       {fields.map(f => (
         <div key={f.key} className="flex items-center gap-2">
           <label className="text-[10px] text-[hsl(0,0%,40%)] w-16 shrink-0">{f.label}</label>
           {f.options ? (
-            <select value={p[f.key] || ""} onChange={e => set(f.key, e.target.value)} className="flex-1 h-7 text-xs rounded border border-[hsl(0,0%,85%)] px-2 bg-white">
+            <select value={p[f.key] || ""} onChange={e => set(f.key, e.target.value)} className={`flex-1 h-7 text-xs rounded border px-2 ${LIGHT_SELECT_CLASS}`} style={{ colorScheme: "light" }}>
               {f.options.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           ) : f.type === "textarea" ? (
-            <Textarea value={p[f.key] || ""} onChange={e => set(f.key, e.target.value)} rows={3} className="flex-1 text-xs" />
+            <Textarea value={p[f.key] || ""} onChange={e => set(f.key, e.target.value)} rows={3} className={`flex-1 text-xs ${LIGHT_FIELD_CLASS}`} style={{ colorScheme: "light" }} />
           ) : f.type === "color" ? (
             <div className="flex items-center gap-1 flex-1">
               <input type="color" value={p[f.key] || "#000000"} onChange={e => set(f.key, e.target.value)} className="w-7 h-7 rounded border-0 cursor-pointer" />
-              <Input value={p[f.key] || ""} onChange={e => set(f.key, e.target.value)} className="flex-1 h-7 text-xs font-mono" />
+              <Input value={p[f.key] || ""} onChange={e => set(f.key, e.target.value)} className={`flex-1 h-7 text-xs font-mono ${LIGHT_FIELD_CLASS}`} style={{ colorScheme: "light" }} />
             </div>
           ) : (
-            <Input value={p[f.key] || ""} onChange={e => set(f.key, e.target.value)} className="flex-1 h-7 text-xs" />
+            <Input value={p[f.key] || ""} onChange={e => set(f.key, e.target.value)} className={`flex-1 h-7 text-xs ${LIGHT_FIELD_CLASS}`} style={{ colorScheme: "light" }} />
           )}
         </div>
       ))}
@@ -410,16 +458,16 @@ export default function EmailTemplateBuilder({ onUseTemplate, standalone = true 
 
       {/* Save Template Dialog */}
       <Dialog open={saveDialog} onOpenChange={setSaveDialog}>
-        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)]">
+        <DialogContent className={LIGHT_DIALOG_CLASS} style={{ colorScheme: "light" }}>
           <DialogHeader><DialogTitle className="font-display">{editingTemplateId ? "Update Template" : "Save as Template"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs">Template Name</Label><Input value={templateName} onChange={e => setTemplateName(e.target.value)} placeholder="e.g. Weekly Newsletter v2" /></div>
-            <div><Label className="text-xs">Description (optional)</Label><Input value={templateDesc} onChange={e => setTemplateDesc(e.target.value)} placeholder="Short description" /></div>
+            <div><Label className="text-xs text-[hsl(0,0%,35%)]">Template Name</Label><Input value={templateName} onChange={e => setTemplateName(e.target.value)} placeholder="e.g. Weekly Newsletter v2" className={LIGHT_FIELD_CLASS} style={{ colorScheme: "light" }} /></div>
+            <div><Label className="text-xs text-[hsl(0,0%,35%)]">Description (optional)</Label><Input value={templateDesc} onChange={e => setTemplateDesc(e.target.value)} placeholder="Short description" className={LIGHT_FIELD_CLASS} style={{ colorScheme: "light" }} /></div>
             <div>
-              <Label className="text-xs">Category</Label>
+              <Label className="text-xs text-[hsl(0,0%,35%)]">Category</Label>
               <Select value={templateCategory} onValueChange={setTemplateCategory}>
-                <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className={`text-xs ${LIGHT_SELECT_CLASS}`} style={{ colorScheme: "light" }}><SelectValue /></SelectTrigger>
+                <SelectContent className={LIGHT_DIALOG_CLASS}>
                   <SelectItem value="general">General</SelectItem>
                   <SelectItem value="promotional">Promotional</SelectItem>
                   <SelectItem value="newsletter">Newsletter</SelectItem>
@@ -440,7 +488,7 @@ export default function EmailTemplateBuilder({ onUseTemplate, standalone = true 
 
       {/* Saved Templates List Dialog */}
       <Dialog open={showTemplatesList} onOpenChange={setShowTemplatesList}>
-        <DialogContent className="bg-[hsl(0,0%,100%)] border-[hsl(0,0%,90%)] max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className={`${LIGHT_DIALOG_CLASS} max-w-3xl max-h-[80vh] overflow-hidden flex flex-col`} style={{ colorScheme: "light" }}>
           <DialogHeader><DialogTitle className="font-display">Saved Templates</DialogTitle></DialogHeader>
           <div className="flex-1 overflow-auto">
             {loadingTemplates ? (
