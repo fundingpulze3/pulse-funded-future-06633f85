@@ -336,6 +336,7 @@ export default function EmailMarketing() {
         <TabsList className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-lg p-1">
           <TabsTrigger value="groups" className="text-xs data-[state=active]:bg-[hsl(0,0%,0%)] data-[state=active]:text-[hsl(0,0%,100%)]"><Users size={14} className="mr-1.5" />Groups</TabsTrigger>
           <TabsTrigger value="campaigns" className="text-xs data-[state=active]:bg-[hsl(0,0%,0%)] data-[state=active]:text-[hsl(0,0%,100%)]"><Mail size={14} className="mr-1.5" />Campaigns</TabsTrigger>
+          <TabsTrigger value="templates" className="text-xs data-[state=active]:bg-[hsl(0,0%,0%)] data-[state=active]:text-[hsl(0,0%,100%)]"><Palette size={14} className="mr-1.5" />Templates</TabsTrigger>
           <TabsTrigger value="analytics" className="text-xs data-[state=active]:bg-[hsl(0,0%,0%)] data-[state=active]:text-[hsl(0,0%,100%)]"><BarChart3 size={14} className="mr-1.5" />Analytics</TabsTrigger>
         </TabsList>
 
