@@ -16,8 +16,9 @@ import {
 import {
   Users, Plus, Trash2, Send, Calendar, BarChart3, Clock,
   Mail, Eye, MousePointer, TrendingUp, Upload, Code, FileText,
-  Layout, UserPlus, FileUp,
+  Layout, UserPlus, FileUp, Palette,
 } from "lucide-react";
+import EmailTemplateBuilder from "@/components/admin/EmailTemplateBuilder";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
