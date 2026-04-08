@@ -26,6 +26,9 @@ import {
 import { toast } from "sonner";
 
 const PIE_COLORS = ["hsl(142,70%,45%)", "hsl(200,70%,50%)", "hsl(45,90%,55%)", "hsl(0,70%,55%)", "hsl(270,60%,55%)", "hsl(30,80%,50%)"];
+const LIGHT_DIALOG_CLASS = "bg-[hsl(var(--popover))] border-[hsl(var(--border))] text-[hsl(var(--foreground))]";
+const LIGHT_FIELD_CLASS = "bg-[hsl(var(--background))] border-[hsl(var(--input))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]";
+const LIGHT_COLOR_SCHEME = { colorScheme: "light" as const };
 
 // ---- Predefined Email Templates ----
 const EMAIL_TEMPLATES: { name: string; description: string; html: string }[] = [
@@ -622,11 +625,11 @@ export default function EmailMarketing() {
 
       {/* ===== GROUP DIALOG ===== */}
       <Dialog open={groupDialog} onOpenChange={setGroupDialog}>
-         <DialogContent className="bg-white border-gray-200 text-black">
+         <DialogContent className={LIGHT_DIALOG_CLASS} style={LIGHT_COLOR_SCHEME}>
           <DialogHeader><DialogTitle className="font-display text-black">{editingGroupId ? "Edit Group" : "New Group"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs text-gray-700">Group Name</Label><Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="e.g. Newsletter Subscribers" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
-            <div><Label className="text-xs text-gray-700">Description</Label><Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Optional description" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
+            <div><Label className="text-xs text-[hsl(var(--muted-foreground))]">Group Name</Label><Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="e.g. Newsletter Subscribers" className={LIGHT_FIELD_CLASS} style={LIGHT_COLOR_SCHEME} /></div>
+            <div><Label className="text-xs text-[hsl(var(--muted-foreground))]">Description</Label><Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Optional description" className={LIGHT_FIELD_CLASS} style={LIGHT_COLOR_SCHEME} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setGroupDialog(false)} className="text-xs border-gray-300 text-black hover:bg-gray-100">Cancel</Button>
@@ -637,11 +640,11 @@ export default function EmailMarketing() {
 
       {/* ===== CONTACT DIALOG ===== */}
       <Dialog open={contactDialog} onOpenChange={setContactDialog}>
-         <DialogContent className="bg-white border-gray-200 text-black">
+         <DialogContent className={LIGHT_DIALOG_CLASS} style={LIGHT_COLOR_SCHEME}>
           <DialogHeader><DialogTitle className="font-display text-black">Add Contact</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs text-gray-700">Email</Label><Input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="email@example.com" type="email" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
-            <div><Label className="text-xs text-gray-700">Name (optional)</Label><Input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="John Doe" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
+            <div><Label className="text-xs text-[hsl(var(--muted-foreground))]">Email</Label><Input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="email@example.com" type="email" className={LIGHT_FIELD_CLASS} style={LIGHT_COLOR_SCHEME} /></div>
+            <div><Label className="text-xs text-[hsl(var(--muted-foreground))]">Name (optional)</Label><Input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="John Doe" className={LIGHT_FIELD_CLASS} style={LIGHT_COLOR_SCHEME} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setContactDialog(false)} className="text-xs border-gray-300 text-black hover:bg-gray-100">Cancel</Button>
@@ -652,7 +655,7 @@ export default function EmailMarketing() {
 
       {/* ===== BULK ADD DIALOG (CSV + Paste) ===== */}
       <Dialog open={bulkDialog} onOpenChange={setBulkDialog}>
-         <DialogContent className="bg-white border-gray-200 text-black max-w-lg">
+         <DialogContent className={`${LIGHT_DIALOG_CLASS} max-w-lg`} style={LIGHT_COLOR_SCHEME}>
           <DialogHeader><DialogTitle className="font-display text-black">Bulk Add Contacts</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="flex gap-2">
@@ -681,7 +684,7 @@ export default function EmailMarketing() {
                 <p className="text-xs text-[hsl(0,0%,50%)] mb-1">
                   {bulkMode === "csv" ? "CSV content loaded — review and add:" : "Paste emails below (comma, semicolon, tab, or newline separated):"}
                 </p>
-                <Textarea value={bulkEmails} onChange={e => setBulkEmails(e.target.value)} rows={8} placeholder={"John Doe, john@example.com\njane@example.com\nBob, bob@company.com"} className="font-mono text-xs bg-white border-gray-300 text-black placeholder:text-gray-400" />
+                <Textarea value={bulkEmails} onChange={e => setBulkEmails(e.target.value)} rows={8} placeholder={"John Doe, john@example.com\njane@example.com\nBob, bob@company.com"} className={`font-mono text-xs ${LIGHT_FIELD_CLASS}`} style={LIGHT_COLOR_SCHEME} />
                 {bulkEmails && (
                   <p className="text-[10px] text-[hsl(0,0%,55%)] mt-1">
                     {parseEmailsFromText(bulkEmails).length} valid emails detected
@@ -701,11 +704,11 @@ export default function EmailMarketing() {
 
       {/* ===== ADD REGISTERED USERS DIALOG ===== */}
       <Dialog open={addUsersDialog} onOpenChange={setAddUsersDialog}>
-         <DialogContent className="bg-white border-gray-200 text-black max-w-lg">
+         <DialogContent className={`${LIGHT_DIALOG_CLASS} max-w-lg`} style={LIGHT_COLOR_SCHEME}>
           <DialogHeader><DialogTitle className="font-display text-black">Add Registered Users</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="flex gap-2">
-              <Input value={userSearchQuery} onChange={e => setUserSearchQuery(e.target.value)} placeholder="Search by name or email..." className="text-xs bg-white border-gray-300 text-black placeholder:text-gray-400" />
+              <Input value={userSearchQuery} onChange={e => setUserSearchQuery(e.target.value)} placeholder="Search by name or email..." className={`text-xs ${LIGHT_FIELD_CLASS}`} style={LIGHT_COLOR_SCHEME} />
               <Button size="sm" onClick={addAllRegisteredUsers} className="text-xs bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] whitespace-nowrap">
                 Add All ({allProfiles.filter(p => p.email).length})
               </Button>
@@ -731,19 +734,19 @@ export default function EmailMarketing() {
 
       {/* ===== CAMPAIGN DIALOG (with templates + code editor) ===== */}
       <Dialog open={campaignDialog} onOpenChange={v => { if (!v) closeCampaignDialog(); else setCampaignDialog(true); }}>
-         <DialogContent className="bg-white border-gray-200 text-black max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+         <DialogContent className={`${LIGHT_DIALOG_CLASS} max-w-4xl max-h-[90vh] overflow-hidden flex flex-col`} style={LIGHT_COLOR_SCHEME}>
           <DialogHeader><DialogTitle className="font-display text-black">{editingCampaignId ? "Edit Campaign" : "New Campaign"}</DialogTitle></DialogHeader>
           <div className="space-y-3 flex-1 overflow-auto pr-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><Label className="text-xs text-gray-700">Campaign Name</Label><Input value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="e.g. Welcome Series #1" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
-              <div><Label className="text-xs text-gray-700">Subject Line</Label><Input value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} placeholder="e.g. Welcome to Funding Pulze!" className="bg-white border-gray-300 text-black placeholder:text-gray-400" /></div>
+              <div><Label className="text-xs text-[hsl(var(--muted-foreground))]">Campaign Name</Label><Input value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="e.g. Welcome Series #1" className={LIGHT_FIELD_CLASS} style={LIGHT_COLOR_SCHEME} /></div>
+              <div><Label className="text-xs text-[hsl(var(--muted-foreground))]">Subject Line</Label><Input value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} placeholder="e.g. Welcome to Funding Pulze!" className={LIGHT_FIELD_CLASS} style={LIGHT_COLOR_SCHEME} /></div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Target Group</Label>
                 <Select value={campaignGroupId} onValueChange={setCampaignGroupId}>
-                  <SelectTrigger className="text-xs"><SelectValue placeholder="Select group" /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className={`text-xs ${LIGHT_FIELD_CLASS}`} style={LIGHT_COLOR_SCHEME}><SelectValue placeholder="Select group" /></SelectTrigger>
+                  <SelectContent className={LIGHT_DIALOG_CLASS}>
                     {groups.map(g => (
                       <SelectItem key={g.id} value={g.id}>{g.name} ({getGroupContacts(g.id).length} contacts)</SelectItem>
                     ))}
@@ -752,7 +755,7 @@ export default function EmailMarketing() {
               </div>
               <div>
                 <Label className="text-xs">Schedule (optional)</Label>
-                <Input type="datetime-local" value={campaignScheduleAt} onChange={e => setCampaignScheduleAt(e.target.value)} className="bg-white border-gray-300 text-black" />
+                <Input type="datetime-local" value={campaignScheduleAt} onChange={e => setCampaignScheduleAt(e.target.value)} className={LIGHT_FIELD_CLASS} style={LIGHT_COLOR_SCHEME} />
               </div>
             </div>
 
@@ -794,7 +797,7 @@ export default function EmailMarketing() {
             {editorMode === "code" && (
               <div className={`grid ${showPreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"} gap-3`}>
                 <div>
-                  <Textarea value={campaignHtml} onChange={e => setCampaignHtml(e.target.value)} rows={16} placeholder={"<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    /* Your CSS here */\n  </style>\n</head>\n<body>\n  <h1>Hello!</h1>\n  <p>Your email content here...</p>\n</body>\n</html>"} className="font-mono text-xs leading-relaxed bg-white border-gray-300 text-black placeholder:text-gray-400" />
+                  <Textarea value={campaignHtml} onChange={e => setCampaignHtml(e.target.value)} rows={16} placeholder={"<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    /* Your CSS here */\n  </style>\n</head>\n<body>\n  <h1>Hello!</h1>\n  <p>Your email content here...</p>\n</body>\n</html>"} className={`font-mono text-xs leading-relaxed ${LIGHT_FIELD_CLASS}`} style={LIGHT_COLOR_SCHEME} />
                   <p className="text-[10px] text-[hsl(0,0%,55%)] mt-1">Full HTML + CSS supported. Links will be auto-tracked for click analytics.</p>
                 </div>
                 {showPreview && (

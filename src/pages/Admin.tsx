@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +67,13 @@ const emptyCouponForm: CouponForm = {
 };
 
 const HIDDEN_ADMIN_EMAILS = ["s.saurav2006@gmail.com"];
+const ADMIN_TABS: Tab[] = ["dashboard", "analytics", "revenue", "seo", "users", "challenges", "orders", "referrals", "coupons", "utm", "helpcenter", "support", "blog", "blog_ai", "certificates", "pages", "knowledgebase", "credentials", "user_certificates", "cert_templates", "user_phases", "kyc", "payouts", "upi_settings", "upi_orders", "roles", "email_marketing"];
+
+const getInitialAdminTab = (): Tab => {
+  if (typeof window === "undefined") return "dashboard";
+  const requestedTab = new URLSearchParams(window.location.search).get("tab");
+  return requestedTab && ADMIN_TABS.includes(requestedTab as Tab) ? (requestedTab as Tab) : "dashboard";
+};
 
 const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -74,7 +81,8 @@ const Admin = () => {
   const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const { isKilled, toggle: toggleKillSwitch } = useKillSwitch();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("dashboard");
+  const location = useLocation();
+  const [tab, setTab] = useState<Tab>(getInitialAdminTab);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [challenges, setChallenges] = useState<any[]>([]);
   const [referrals, setReferrals] = useState<any[]>([]);
@@ -125,9 +133,23 @@ const Admin = () => {
   }, []);
 
   useEffect(() => {
+    const requestedTab = new URLSearchParams(location.search).get("tab");
+    if (requestedTab && ADMIN_TABS.includes(requestedTab as Tab) && requestedTab !== tab) {
+      setTab(requestedTab as Tab);
+    }
+  }, [location.search, tab]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("tab") === tab) return;
+    params.set("tab", tab);
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+  }, [tab, location.pathname, location.search, navigate]);
+
+  useEffect(() => {
     if (!authLoading && !adminLoading) {
-      if (!user) { navigate("/auth"); return; }
-      if (!isAdmin) { toast.error("Access denied."); navigate("/"); return; }
+      if (!user) { navigate("/auth", { replace: true }); return; }
+      if (!isAdmin) { toast.error("Access denied."); navigate("/", { replace: true }); return; }
       // Employee can only see support — default to support tab
       if (userRole === "employee") setTab("support");
       fetchAll();
