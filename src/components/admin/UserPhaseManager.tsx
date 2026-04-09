@@ -51,57 +51,75 @@ const UserPhaseManager = () => {
 
   useEffect(() => { fetchAccounts(); }, []);
 
+  // Paginated fetch to bypass Supabase 1k row limit
+  const fetchAllRows = async (table: string, columns = "*", orderCol?: string) => {
+    const rows: any[] = [];
+    let from = 0;
+    const batchSize = 1000;
+    while (true) {
+      let q = supabase.from(table as any).select(columns).range(from, from + batchSize - 1);
+      if (orderCol) q = q.order(orderCol, { ascending: false });
+      const { data, error } = await q;
+      if (error) { console.error(`fetchAllRows(${table}):`, error.message); break; }
+      if (!data || data.length === 0) break;
+      rows.push(...data);
+      if (data.length < batchSize) break;
+      from += batchSize;
+    }
+    return rows;
+  };
+
   const fetchAccounts = async () => {
     setLoading(true);
-    const [purchasesRes, profilesRes, challengesRes, credsRes, certsRes] = await Promise.all([
-      supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("user_id, display_name, email"),
-      supabase.from("challenges").select("id, name, account_size, step_type"),
-      supabase.from("trading_credentials").select("id, mt5_login, challenge_id, assigned_to, purchase_id, is_assigned"),
-      supabase.from("user_certificates").select("purchase_id, account_number, stats"),
-    ]);
+    try {
+      const [purchases, profiles, challenges, creds, certs] = await Promise.all([
+        fetchAllRows("challenge_purchases", "*", "created_at"),
+        fetchAllRows("profiles", "user_id, display_name, email"),
+        fetchAllRows("challenges", "id, name, account_size, step_type"),
+        fetchAllRows("trading_credentials", "id, mt5_login, challenge_id, assigned_to, purchase_id, is_assigned"),
+        fetchAllRows("user_certificates", "purchase_id, account_number, stats"),
+      ]);
 
-    const profiles = profilesRes.data || [];
-    const challenges = challengesRes.data || [];
-    const creds = credsRes.data || [];
-    const certs = certsRes.data || [];
-    const purchases = (purchasesRes.data || []).filter((p: any) => {
-      const paymentStatus = String(p.payment_status || "").toLowerCase();
-      const status = String(p.status || "").toLowerCase();
-      return ["paid", "confirmed", "completed"].includes(paymentStatus) && status !== "pending";
-    });
+      const filteredPurchases = purchases.filter((p: any) => {
+        const paymentStatus = String(p.payment_status || "").toLowerCase();
+        const status = String(p.status || "").toLowerCase();
+        return ["paid", "confirmed", "completed"].includes(paymentStatus) && status !== "pending";
+      });
 
-    const mapped: UserAccount[] = purchases.map(p => {
-      const profile = profiles.find(pr => pr.user_id === p.user_id);
-      const challenge = challenges.find(c => c.id === p.challenge_id);
-      const cred = creds.find(c => c.purchase_id === p.id);
-      // Find stats for this purchase
-      const cert = certs.find(c => c.purchase_id === p.id && c.stats && Object.keys(c.stats as any).length > 0)
-        || (cred ? certs.find(c => c.account_number === cred.mt5_login && c.stats && Object.keys(c.stats as any).length > 0) : null);
-      return {
-        purchaseId: p.id,
-        userId: p.user_id,
-        userName: profile?.display_name || profile?.email?.split("@")[0] || "Unknown",
-        email: profile?.email || "",
-        challengeName: challenge?.name || "Unknown",
-        challengeId: p.challenge_id,
-        accountSize: challenge?.account_size || 0,
-        stepType: challenge?.step_type || "",
-        status: p.status,
-        mt5Login: cred?.mt5_login || null,
-        credentialId: cred?.id || null,
-        createdAt: p.created_at,
-        stats: (cert?.stats as Record<string, any>) || null,
-      };
-    });
+      const mapped: UserAccount[] = filteredPurchases.map(p => {
+        const profile = profiles.find(pr => pr.user_id === p.user_id);
+        const challenge = challenges.find(c => c.id === p.challenge_id);
+        const cred = creds.find(c => c.purchase_id === p.id);
+        const cert = certs.find(c => c.purchase_id === p.id && c.stats && Object.keys(c.stats as any).length > 0)
+          || (cred ? certs.find(c => c.account_number === cred.mt5_login && c.stats && Object.keys(c.stats as any).length > 0) : null);
+        return {
+          purchaseId: p.id,
+          userId: p.user_id,
+          userName: profile?.display_name || profile?.email?.split("@")[0] || "Unknown",
+          email: profile?.email || "",
+          challengeName: challenge?.name || "Unknown",
+          challengeId: p.challenge_id,
+          accountSize: challenge?.account_size || 0,
+          stepType: challenge?.step_type || "",
+          status: p.status,
+          mt5Login: cred?.mt5_login || null,
+          credentialId: cred?.id || null,
+          createdAt: p.created_at,
+          stats: (cert?.stats as Record<string, any>) || null,
+        };
+      });
 
-    setAccounts(mapped);
-    // Update selected account if it exists
-    if (selectedAccount) {
-      const updated = mapped.find(a => a.purchaseId === selectedAccount.purchaseId);
-      setSelectedAccount(updated || null);
+      setAccounts(mapped);
+      if (selectedAccount) {
+        const updated = mapped.find(a => a.purchaseId === selectedAccount.purchaseId);
+        setSelectedAccount(updated || null);
+      }
+    } catch (err: any) {
+      console.error("UserPhaseManager fetchAccounts error:", err);
+      toast.error("Failed to load accounts");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const changePhase = async (account: UserAccount, newStatus: string) => {
