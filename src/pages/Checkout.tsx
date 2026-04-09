@@ -299,6 +299,7 @@ const Checkout = () => {
           const result = await res.json();
           if (result.success) {
             window.fbq?.('track', 'Purchase', { value: total, currency: 'USD' });
+            (window as any).twq?.('event', 'tw-rbqyq-rbtr9', { value: total, currency: 'USD', conversion_id: purchaseIdRef.current, email_address: user?.email || null });
             toast.success("Payment successful!"); navigate("/dashboard");
           }
           else toast.error(result.error || "Payment verification failed.");
@@ -392,6 +393,7 @@ const Checkout = () => {
         }).select().single();
       if (error || !purchase) throw new Error("Failed to create order");
       window.fbq?.('track', 'Purchase', { value: total, currency: 'USD' });
+      (window as any).twq?.('event', 'tw-rbqyq-rbtr9', { value: total, currency: 'USD', conversion_id: purchase.id, email_address: user?.email || null });
       toast.success("Payment submitted! We'll verify your UTR and activate your account shortly.");
       navigate("/dashboard");
     } catch (err) { toast.error("Error: " + String(err)); }
