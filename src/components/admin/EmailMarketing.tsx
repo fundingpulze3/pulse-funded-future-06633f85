@@ -102,20 +102,34 @@ export default function EmailMarketing() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const fetchAllRows = async (table: string, columns = "*", orderCol = "created_at") => {
+    const rows: any[] = [];
+    const PAGE = 1000;
+    let from = 0;
+    while (true) {
+      const { data, error } = await (supabase.from(table as any) as any).select(columns).order(orderCol, { ascending: false }).range(from, from + PAGE - 1);
+      if (error || !data || data.length === 0) break;
+      rows.push(...data);
+      if (data.length < PAGE) break;
+      from += PAGE;
+    }
+    return rows;
+  };
+
   const fetchAll = async () => {
     setLoading(true);
     const [g, co, ca, ev, pr] = await Promise.all([
-      supabase.from("email_groups").select("*").order("created_at", { ascending: false }),
-      supabase.from("email_group_contacts").select("*").order("created_at", { ascending: false }),
-      supabase.from("email_campaigns").select("*").order("created_at", { ascending: false }),
-      supabase.from("email_campaign_events").select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("user_id, email, display_name").order("created_at", { ascending: false }),
+      fetchAllRows("email_groups"),
+      fetchAllRows("email_group_contacts"),
+      fetchAllRows("email_campaigns"),
+      fetchAllRows("email_campaign_events"),
+      fetchAllRows("profiles", "user_id, email, display_name"),
     ]);
-    if (g.data) setGroups(g.data);
-    if (co.data) setContacts(co.data);
-    if (ca.data) setCampaigns(ca.data);
-    if (ev.data) setEvents(ev.data);
-    if (pr.data) setAllProfiles(pr.data);
+    setGroups(g);
+    setContacts(co);
+    setCampaigns(ca);
+    setEvents(ev);
+    setAllProfiles(pr);
     setLoading(false);
   };
 
@@ -165,14 +179,24 @@ export default function EmailMarketing() {
     return results;
   };
 
+  const upsertInBatches = async (rows: any[]) => {
+    const BATCH = 500;
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const batch = rows.slice(i, i + BATCH);
+      const { error } = await supabase.from("email_group_contacts").upsert(batch, { onConflict: "group_id,email" });
+      if (error) throw error;
+    }
+  };
+
   const bulkAddContacts = async () => {
     if (!selectedGroupId || !bulkEmails.trim()) { toast.error("Enter emails"); return; }
     const parsed = parseEmailsFromText(bulkEmails);
     if (parsed.length === 0) { toast.error("No valid emails found"); return; }
     const rows = parsed.map(p => ({ group_id: selectedGroupId, email: p.email, name: p.name }));
-    const { error } = await supabase.from("email_group_contacts").upsert(rows, { onConflict: "group_id,email" });
-    if (error) { toast.error(error.message); return; }
-    toast.success(`${parsed.length} contacts added`); setBulkDialog(false); setBulkEmails(""); fetchAll();
+    try {
+      await upsertInBatches(rows);
+      toast.success(`${parsed.length} contacts added`); setBulkDialog(false); setBulkEmails(""); fetchAll();
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,9 +216,10 @@ export default function EmailMarketing() {
     const selectedUsers = allProfiles.filter(p => userIds.includes(p.user_id) && p.email);
     const rows = selectedUsers.map(u => ({ group_id: selectedGroupId, email: u.email.toLowerCase(), name: u.display_name || null }));
     if (rows.length === 0) { toast.error("No valid emails"); return; }
-    const { error } = await supabase.from("email_group_contacts").upsert(rows, { onConflict: "group_id,email" });
-    if (error) { toast.error(error.message); return; }
-    toast.success(`${rows.length} users added to group`); setAddUsersDialog(false); setUserSearchQuery(""); fetchAll();
+    try {
+      await upsertInBatches(rows);
+      toast.success(`${rows.length} users added to group`); setAddUsersDialog(false); setUserSearchQuery(""); fetchAll();
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const addAllRegisteredUsers = async () => {
@@ -203,9 +228,10 @@ export default function EmailMarketing() {
     if (validUsers.length === 0) { toast.error("No users with email found"); return; }
     if (!confirm(`Add all ${validUsers.length} registered users to this group?`)) return;
     const rows = validUsers.map(u => ({ group_id: selectedGroupId, email: u.email.toLowerCase(), name: u.display_name || null }));
-    const { error } = await supabase.from("email_group_contacts").upsert(rows, { onConflict: "group_id,email" });
-    if (error) { toast.error(error.message); return; }
-    toast.success(`${rows.length} users added to group`); setAddUsersDialog(false); fetchAll();
+    try {
+      await upsertInBatches(rows);
+      toast.success(`${rows.length} users added to group`); setAddUsersDialog(false); fetchAll();
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const deleteContact = async (id: string) => {
