@@ -147,14 +147,15 @@ const Admin = () => {
   }, [tab, location.pathname, location.search, navigate]);
 
   useEffect(() => {
-    if (!authLoading && !adminLoading) {
-      if (!user) { navigate("/auth", { replace: true }); return; }
-      if (!isAdmin) { toast.error("Access denied."); navigate("/", { replace: true }); return; }
-      // Employee can only see support — default to support tab
-      if (userRole === "employee") setTab("support");
-      fetchAll();
-    }
-  }, [user, authLoading, isAdmin, adminLoading, userRole]);
+    // Wait until BOTH auth and admin checks are fully resolved
+    if (authLoading || adminLoading) return;
+    if (!user) { navigate("/auth", { replace: true }); return; }
+    if (!isAdmin) { toast.error("Access denied."); navigate("/", { replace: true }); return; }
+    // Employee can only see support — default to support tab
+    if (userRole === "employee") setTab("support");
+    fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, adminLoading]);
 
   // Paginated fetch helper to get ALL rows beyond 1000 limit
   const fetchAllRows = async (table: string, orderCol: string, ascending: boolean = false) => {
