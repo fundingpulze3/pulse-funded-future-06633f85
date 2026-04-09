@@ -63,10 +63,6 @@ const ImportUsers = ({ open, onOpenChange, onImportComplete }: ImportUsersProps)
       toast.error("No valid emails found");
       return;
     }
-    if (emails.length > 200) {
-      toast.error("Maximum 200 emails per import");
-      return;
-    }
 
     setImporting(true);
     setResults([]);
@@ -76,27 +72,33 @@ const ImportUsers = ({ open, onOpenChange, onImportComplete }: ImportUsersProps)
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-users`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ emails }),
-        }
-      );
+      // Send in batches of 200 to the edge function
+      const BATCH = 200;
+      const allResults: ImportResult[] = [];
+      for (let i = 0; i < emails.length; i += BATCH) {
+        const batch = emails.slice(i, i + BATCH);
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-users`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ emails: batch }),
+          }
+        );
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Import failed");
+        allResults.push(...(data.results || []));
+      }
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Import failed");
-
-      setResults(data.results || []);
+      setResults(allResults);
       setShowResults(true);
 
-      const successCount = (data.results || []).filter((r: ImportResult) => r.status === "success").length;
-      const existsCount = (data.results || []).filter((r: ImportResult) => r.status === "exists").length;
-      const errorCount = (data.results || []).filter((r: ImportResult) => r.status === "error").length;
+      const successCount = allResults.filter((r) => r.status === "success").length;
+      const existsCount = allResults.filter((r) => r.status === "exists").length;
+      const errorCount = allResults.filter((r) => r.status === "error").length;
 
       toast.success(`Import done: ${successCount} created, ${existsCount} existing, ${errorCount} errors`);
       if (successCount > 0) onImportComplete();
@@ -161,7 +163,7 @@ const ImportUsers = ({ open, onOpenChange, onImportComplete }: ImportUsersProps)
             </div>
 
             <p className="text-[11px] text-[hsl(0,0%,55%)] bg-[hsl(0,0%,96%)] rounded-lg p-2.5">
-              Users will be created with a random password. They can use "Forgot Password" to set their own password. Max 200 emails per batch.
+              Users will be created with a random password. They can use "Forgot Password" to set their own password. No limit on number of emails.
             </p>
           </div>
         ) : (
