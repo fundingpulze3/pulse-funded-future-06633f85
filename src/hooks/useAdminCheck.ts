@@ -22,6 +22,9 @@ export const useAdminCheck = () => {
       return;
     }
 
+    // Reset loading on every user change to prevent stale isAdmin=false redirects
+    setLoading(true);
+
     const checkRole = async () => {
       try {
         let resolvedRole: UserRole = null;
