@@ -63,35 +63,41 @@ const CredentialsManager = () => {
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
-    const [credRes, chalRes] = await Promise.all([
-      supabase.from("trading_credentials").select("*").order("created_at", { ascending: false }),
-      supabase.from("challenges").select("id, name, account_size, step_type").order("account_size"),
-    ]);
-    let creds = (credRes.data || []) as Credential[];
-    
-    // Fetch profiles for assigned credentials
-    const assignedUserIds = [...new Set(creds.filter(c => c.assigned_to).map(c => c.assigned_to!))];
-    if (assignedUserIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, email")
-        .in("user_id", assignedUserIds);
-      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
-      creds = creds.map(c => ({
-        ...c,
-        assigned_profile: c.assigned_to ? (profileMap.get(c.assigned_to) || null) : null,
-      }));
-    }
-    
-    setCredentials(creds);
-    if (chalRes.data) {
-      setChallenges(chalRes.data);
-      if (chalRes.data[0]) {
-        if (!form.challenge_id) setForm(f => ({ ...f, challenge_id: chalRes.data[0].id }));
-        if (!bulkChallengeId) setBulkChallengeId(chalRes.data[0].id);
+    try {
+      const [credRes, chalRes] = await Promise.all([
+        supabase.from("trading_credentials").select("*").order("created_at", { ascending: false }),
+        supabase.from("challenges").select("id, name, account_size, step_type").order("account_size"),
+      ]);
+      let creds = (credRes.data || []) as Credential[];
+      
+      // Fetch profiles for assigned credentials
+      const assignedUserIds = [...new Set(creds.filter(c => c.assigned_to).map(c => c.assigned_to!))];
+      if (assignedUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, email")
+          .in("user_id", assignedUserIds);
+        const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+        creds = creds.map(c => ({
+          ...c,
+          assigned_profile: c.assigned_to ? (profileMap.get(c.assigned_to) || null) : null,
+        }));
       }
+      
+      setCredentials(creds);
+      if (chalRes.data) {
+        setChallenges(chalRes.data);
+        if (chalRes.data[0]) {
+          if (!form.challenge_id) setForm(f => ({ ...f, challenge_id: chalRes.data[0].id }));
+          if (!bulkChallengeId) setBulkChallengeId(chalRes.data[0].id);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching credentials:", err);
+      toast.error("Failed to load credentials");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const toggleFolder = (challengeId: string) => {

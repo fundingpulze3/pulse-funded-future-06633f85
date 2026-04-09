@@ -173,30 +173,36 @@ const Admin = () => {
   };
 
   const fetchAll = async () => {
-    const [profilesData, c, r, cp, pu, ur] = await Promise.all([
-      fetchAllRows("profiles", "created_at", false),
-      supabase.from("challenges").select("*").order("account_size", { ascending: true }),
-      supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
-      supabase.from("coupons").select("*").order("created_at", { ascending: false }),
-      supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("*"),
-    ]);
+    try {
+      const [profilesData, c, r, cp, pu, ur] = await Promise.all([
+        fetchAllRows("profiles", "created_at", false),
+        supabase.from("challenges").select("*").order("account_size", { ascending: true }),
+        supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
+        supabase.from("coupons").select("*").order("created_at", { ascending: false }),
+        supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
+        supabase.from("user_roles").select("*"),
+      ]);
 
-    // Fetch page_visits with pagination
-    const pageVisitsData = await fetchAllRows("page_visits", "created_at", false);
+      // Fetch page_visits with pagination
+      const pageVisitsData = await fetchAllRows("page_visits", "created_at", false);
 
-    setProfiles(profilesData);
-    if (c.data) setChallenges(c.data);
-    if (r.data) setReferrals(r.data);
-    if (cp.data) setCoupons(cp.data);
-    if (pu.data) setPurchases(pu.data);
-    setPageVisits(pageVisitsData);
-    if (ur.data) {
-      const roleMap: Record<string, string> = {};
-      ur.data.forEach((r: any) => { roleMap[r.user_id] = r.role; });
-      setUserRoles(roleMap);
+      setProfiles(profilesData);
+      if (c.data) setChallenges(c.data);
+      if (r.data) setReferrals(r.data);
+      if (cp.data) setCoupons(cp.data);
+      if (pu.data) setPurchases(pu.data);
+      setPageVisits(pageVisitsData);
+      if (ur.data) {
+        const roleMap: Record<string, string> = {};
+        ur.data.forEach((r: any) => { roleMap[r.user_id] = r.role; });
+        setUserRoles(roleMap);
+      }
+    } catch (err) {
+      console.error("Error fetching admin data:", err);
+      toast.error("Some data failed to load");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // UTM analytics
