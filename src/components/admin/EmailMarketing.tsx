@@ -107,7 +107,7 @@ export default function EmailMarketing() {
     const PAGE = 1000;
     let from = 0;
     while (true) {
-      const { data, error } = await supabase.from(table).select(columns).order(orderCol, { ascending: false }).range(from, from + PAGE - 1);
+      const { data, error } = await (supabase.from(table as any) as any).select(columns).order(orderCol, { ascending: false }).range(from, from + PAGE - 1);
       if (error || !data || data.length === 0) break;
       rows.push(...data);
       if (data.length < PAGE) break;
