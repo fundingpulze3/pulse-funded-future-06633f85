@@ -146,16 +146,14 @@ const Admin = () => {
     navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
   }, [tab, location.pathname, location.search, navigate]);
 
-  const hasInitialized = useState(false);
+  const hasInitialized = useRef(false);
   useEffect(() => {
-    // Wait until BOTH auth and admin checks are fully resolved
     if (authLoading || adminLoading) return;
     if (!user) { navigate("/auth", { replace: true }); return; }
     if (!isAdmin) { toast.error("Access denied."); navigate("/", { replace: true }); return; }
-    // Employee can only see support — default to support tab
     if (userRole === "employee") setTab("support");
-    if (!hasInitialized[0]) {
-      hasInitialized[0] = true;
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
       fetchAll();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
