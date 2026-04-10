@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -146,14 +146,16 @@ const Admin = () => {
     navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
   }, [tab, location.pathname, location.search, navigate]);
 
+  const hasInitialized = useRef(false);
   useEffect(() => {
-    // Wait until BOTH auth and admin checks are fully resolved
     if (authLoading || adminLoading) return;
     if (!user) { navigate("/auth", { replace: true }); return; }
     if (!isAdmin) { toast.error("Access denied."); navigate("/", { replace: true }); return; }
-    // Employee can only see support — default to support tab
     if (userRole === "employee") setTab("support");
-    fetchAll();
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      fetchAll();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, adminLoading]);
 
