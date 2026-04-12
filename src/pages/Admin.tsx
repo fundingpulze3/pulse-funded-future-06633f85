@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,7 +91,7 @@ const Admin = () => {
   const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const { isKilled, toggle: toggleKillSwitch } = useKillSwitch();
   const navigate = useNavigate();
-  const location = useLocation();
+  
   const [tab, setTab] = useState<Tab>(getInitialAdminTab);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [challenges, setChallenges] = useState<any[]>([]);
