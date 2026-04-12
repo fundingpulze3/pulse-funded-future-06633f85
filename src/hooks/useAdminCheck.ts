@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -11,28 +11,52 @@ export const useAdminCheck = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
+
+  // Cache: avoid re-fetching for the same user on token refreshes
+  const cachedUserId = useRef<string | null>(null);
+  const cachedRole = useRef<UserRole>(null);
+  const fetchingRef = useRef(false);
+
   const userId = user?.id ?? null;
 
   useEffect(() => {
     let mounted = true;
 
+    // Still waiting for auth to initialise
     if (authLoading) {
-      setLoading(true);
-      return () => {
-        mounted = false;
-      };
+      return () => { mounted = false; };
     }
 
+    // No user → reset
     if (!userId) {
+      cachedUserId.current = null;
+      cachedRole.current = null;
       setIsAdmin(false);
       setUserRole(null);
       setLoading(false);
-      return () => {
-        mounted = false;
-      };
+      return () => { mounted = false; };
+    }
+
+    // If we already resolved this user's role, reuse the cache instantly
+    // This prevents the flicker on token refreshes
+    if (cachedUserId.current === userId && cachedRole.current !== null) {
+      setUserRole(cachedRole.current);
+      setIsAdmin(
+        cachedRole.current === "administrator" ||
+        cachedRole.current === "admin" ||
+        cachedRole.current === "employee"
+      );
+      setLoading(false);
+      return () => { mounted = false; };
+    }
+
+    // Prevent concurrent fetches
+    if (fetchingRef.current) {
+      return () => { mounted = false; };
     }
 
     setLoading(true);
+    fetchingRef.current = true;
 
     const checkRole = async () => {
       try {
@@ -57,6 +81,10 @@ export const useAdminCheck = () => {
 
         if (!mounted) return;
 
+        // Cache the result
+        cachedUserId.current = userId;
+        cachedRole.current = resolvedRole;
+
         setUserRole(resolvedRole);
         setIsAdmin(resolvedRole === "administrator" || resolvedRole === "admin" || resolvedRole === "employee");
       } catch {
@@ -64,6 +92,7 @@ export const useAdminCheck = () => {
         setUserRole(null);
         setIsAdmin(false);
       } finally {
+        fetchingRef.current = false;
         if (mounted) setLoading(false);
       }
     };
