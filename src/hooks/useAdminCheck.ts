@@ -7,22 +7,31 @@ export type UserRole = "administrator" | "admin" | "moderator" | "employee" | "u
 const ROLE_PRIORITY: Exclude<UserRole, null>[] = ["administrator", "admin", "employee", "moderator", "user"];
 
 export const useAdminCheck = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
+  const userId = user?.id ?? null;
 
   useEffect(() => {
     let mounted = true;
 
-    if (!user) {
+    if (authLoading) {
+      setLoading(true);
+      return () => {
+        mounted = false;
+      };
+    }
+
+    if (!userId) {
       setIsAdmin(false);
       setUserRole(null);
       setLoading(false);
-      return;
+      return () => {
+        mounted = false;
+      };
     }
 
-    // Reset loading on every user change to prevent stale isAdmin=false redirects
     setLoading(true);
 
     const checkRole = async () => {
@@ -30,7 +39,7 @@ export const useAdminCheck = () => {
         let resolvedRole: UserRole = null;
 
         const { data: roleData, error: rpcError } = await supabase.rpc("get_user_role", {
-          _user_id: user.id,
+          _user_id: userId,
         });
 
         if (!rpcError && roleData) {
@@ -39,7 +48,7 @@ export const useAdminCheck = () => {
           const { data: roles, error: rolesError } = await supabase
             .from("user_roles")
             .select("role")
-            .eq("user_id", user.id);
+            .eq("user_id", userId);
 
           if (rolesError) throw rolesError;
 
@@ -64,7 +73,7 @@ export const useAdminCheck = () => {
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [authLoading, userId]);
 
   return { isAdmin, userRole, loading };
 };

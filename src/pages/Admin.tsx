@@ -68,6 +68,20 @@ const emptyCouponForm: CouponForm = {
 
 const HIDDEN_ADMIN_EMAILS = ["s.saurav2006@gmail.com"];
 const ADMIN_TABS: Tab[] = ["dashboard", "analytics", "revenue", "seo", "users", "challenges", "orders", "referrals", "coupons", "utm", "helpcenter", "support", "blog", "blog_ai", "certificates", "pages", "knowledgebase", "credentials", "user_certificates", "cert_templates", "user_phases", "kyc", "payouts", "upi_settings", "upi_orders", "roles", "email_marketing"];
+const ROLE_ALLOWED_TABS: Record<string, Tab[]> = {
+  administrator: ADMIN_TABS,
+  admin: ADMIN_TABS.filter((tab) => tab !== "user_certificates"),
+  employee: ["support"],
+  moderator: [],
+  user: [],
+};
+const ROLE_FALLBACK_TAB: Record<string, Tab> = {
+  administrator: "dashboard",
+  admin: "dashboard",
+  employee: "support",
+  moderator: "dashboard",
+  user: "dashboard",
+};
 
 const getInitialAdminTab = (): Tab => {
   if (typeof window === "undefined") return "dashboard";
@@ -151,13 +165,19 @@ const Admin = () => {
     if (authLoading || adminLoading) return;
     if (!user) { navigate("/auth", { replace: true }); return; }
     if (!isAdmin) { toast.error("Access denied."); navigate("/", { replace: true }); return; }
-    if (userRole === "employee") setTab("support");
+    if (userRole) {
+      const allowedTabs = ROLE_ALLOWED_TABS[userRole] ?? [];
+      if (allowedTabs.length > 0 && !allowedTabs.includes(tab)) {
+        setTab(ROLE_FALLBACK_TAB[userRole] ?? allowedTabs[0]);
+        return;
+      }
+    }
     if (!hasInitialized.current) {
       hasInitialized.current = true;
       fetchAll();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, adminLoading]);
+  }, [authLoading, adminLoading, user, isAdmin, userRole, tab, navigate]);
 
   // Paginated fetch helper to get ALL rows beyond 1000 limit
   const fetchAllRows = async (table: string, orderCol: string, ascending: boolean = false) => {
