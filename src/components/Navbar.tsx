@@ -26,7 +26,7 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const { user, signOut } = useAuth();
-  const { isAdmin } = useAdminCheck();
+  
   const navigate = useNavigate();
 
   useEffect(() => {
