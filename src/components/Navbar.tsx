@@ -103,15 +103,6 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
                 {link.label}
               </a>
             ))}
-            {isAdmin && (
-              <a
-                href="/admin"
-                onClick={(e) => { e.preventDefault(); navigate("/admin"); }}
-                className="text-sm font-medium text-primary hover:text-accent transition-colors duration-300 flex items-center gap-1"
-              >
-                <Shield size={14} /> Admin
-              </a>
-            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -193,15 +184,6 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
                       {link.label}
                     </a>
                   ))}
-                  {isAdmin && (
-                    <a
-                      href="/admin"
-                      onClick={(e) => { e.preventDefault(); navigate("/admin"); setMobileOpen(false); }}
-                      className="flex items-center gap-2 py-3 px-4 rounded-xl text-base font-medium text-primary hover:bg-accent/50 transition-all"
-                    >
-                      <Shield size={16} /> Admin
-                    </a>
-                  )}
                 </nav>
 
                 {/* Bottom section */}
