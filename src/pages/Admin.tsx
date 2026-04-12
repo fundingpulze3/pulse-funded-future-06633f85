@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,11 +83,7 @@ const ROLE_FALLBACK_TAB: Record<string, Tab> = {
   user: "dashboard",
 };
 
-const getInitialAdminTab = (): Tab => {
-  if (typeof window === "undefined") return "dashboard";
-  const requestedTab = new URLSearchParams(window.location.search).get("tab");
-  return requestedTab && ADMIN_TABS.includes(requestedTab as Tab) ? (requestedTab as Tab) : "dashboard";
-};
+const getInitialAdminTab = (): Tab => "dashboard";
 
 const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -95,7 +91,7 @@ const Admin = () => {
   const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const { isKilled, toggle: toggleKillSwitch } = useKillSwitch();
   const navigate = useNavigate();
-  const location = useLocation();
+  
   const [tab, setTab] = useState<Tab>(getInitialAdminTab);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [challenges, setChallenges] = useState<any[]>([]);
@@ -157,28 +153,10 @@ const Admin = () => {
   }, []);
 
   useEffect(() => {
-    const requestedTab = new URLSearchParams(location.search).get("tab");
-    if (!requestedTab || !ADMIN_TABS.includes(requestedTab as Tab)) return;
-
-    const nextTab = requestedTab as Tab;
-    if (userRole && !allowedTabs.includes(nextTab)) {
-      if (tab !== fallbackTab) {
-        setTab(fallbackTab);
-      }
-      return;
+    if (userRole && !allowedTabs.includes(tab)) {
+      setTab(fallbackTab);
     }
-
-    if (nextTab !== tab) {
-      setTab(nextTab);
-    }
-  }, [allowedTabs, fallbackTab, location.search, tab, userRole]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get("tab") === tab) return;
-    params.set("tab", tab);
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-  }, [tab, location.pathname, location.search, navigate]);
+  }, [allowedTabs, fallbackTab, tab, userRole]);
 
   const hasInitialized = useRef(false);
   useEffect(() => {
