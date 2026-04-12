@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { User, LogOut, Shield, Menu, X, LayoutDashboard } from "lucide-react";
+import { User, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
