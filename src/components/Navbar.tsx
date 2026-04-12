@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { User, LogOut, Shield, Menu, X, LayoutDashboard } from "lucide-react";
+import { User, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -27,7 +26,7 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const { user, signOut } = useAuth();
-  const { isAdmin } = useAdminCheck();
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -104,15 +103,6 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
                 {link.label}
               </a>
             ))}
-            {isAdmin && (
-              <a
-                href="/admin"
-                onClick={(e) => { e.preventDefault(); navigate("/admin"); }}
-                className="text-sm font-medium text-primary hover:text-accent transition-colors duration-300 flex items-center gap-1"
-              >
-                <Shield size={14} /> Admin
-              </a>
-            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -194,15 +184,6 @@ const Navbar = ({ isDark, onToggleTheme }: NavbarProps) => {
                       {link.label}
                     </a>
                   ))}
-                  {isAdmin && (
-                    <a
-                      href="/admin"
-                      onClick={(e) => { e.preventDefault(); navigate("/admin"); setMobileOpen(false); }}
-                      className="flex items-center gap-2 py-3 px-4 rounded-xl text-base font-medium text-primary hover:bg-accent/50 transition-all"
-                    >
-                      <Shield size={16} /> Admin
-                    </a>
-                  )}
                 </nav>
 
                 {/* Bottom section */}
