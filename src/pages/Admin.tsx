@@ -119,6 +119,16 @@ const Admin = () => {
   const [couponSaving, setCouponSaving] = useState(false);
   const [importUsersOpen, setImportUsersOpen] = useState(false);
 
+  const allowedTabs = useMemo<Tab[]>(() => {
+    if (!userRole) return ADMIN_TABS;
+    return ROLE_ALLOWED_TABS[userRole] ?? [];
+  }, [userRole]);
+
+  const fallbackTab = useMemo<Tab>(() => {
+    if (!userRole) return "dashboard";
+    return ROLE_FALLBACK_TAB[userRole] ?? allowedTabs[0] ?? "dashboard";
+  }, [allowedTabs, userRole]);
+
   // SEO: noindex for admin pages
   useEffect(() => {
     let meta = document.querySelector('meta[name="robots"]') as HTMLMetaElement;
@@ -148,10 +158,20 @@ const Admin = () => {
 
   useEffect(() => {
     const requestedTab = new URLSearchParams(location.search).get("tab");
-    if (requestedTab && ADMIN_TABS.includes(requestedTab as Tab) && requestedTab !== tab) {
-      setTab(requestedTab as Tab);
+    if (!requestedTab || !ADMIN_TABS.includes(requestedTab as Tab)) return;
+
+    const nextTab = requestedTab as Tab;
+    if (userRole && !allowedTabs.includes(nextTab)) {
+      if (tab !== fallbackTab) {
+        setTab(fallbackTab);
+      }
+      return;
     }
-  }, [location.search, tab]);
+
+    if (nextTab !== tab) {
+      setTab(nextTab);
+    }
+  }, [allowedTabs, fallbackTab, location.search, tab, userRole]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -165,19 +185,18 @@ const Admin = () => {
     if (authLoading || adminLoading) return;
     if (!user) { navigate("/auth", { replace: true }); return; }
     if (!isAdmin) { toast.error("Access denied."); navigate("/", { replace: true }); return; }
-    if (userRole) {
-      const allowedTabs = ROLE_ALLOWED_TABS[userRole] ?? [];
-      if (allowedTabs.length > 0 && !allowedTabs.includes(tab)) {
-        setTab(ROLE_FALLBACK_TAB[userRole] ?? allowedTabs[0]);
-        return;
+    if (userRole && allowedTabs.length > 0 && !allowedTabs.includes(tab)) {
+      if (tab !== fallbackTab) {
+        setTab(fallbackTab);
       }
+      return;
     }
     if (!hasInitialized.current) {
       hasInitialized.current = true;
       fetchAll();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, adminLoading, user, isAdmin, userRole, tab, navigate]);
+  }, [authLoading, adminLoading, user, isAdmin, userRole, tab, navigate, allowedTabs, fallbackTab]);
 
   // Paginated fetch helper to get ALL rows beyond 1000 limit
   const fetchAllRows = async (table: string, orderCol: string, ascending: boolean = false) => {
