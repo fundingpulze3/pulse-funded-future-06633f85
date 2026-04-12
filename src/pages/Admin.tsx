@@ -83,11 +83,7 @@ const ROLE_FALLBACK_TAB: Record<string, Tab> = {
   user: "dashboard",
 };
 
-const getInitialAdminTab = (): Tab => {
-  if (typeof window === "undefined") return "dashboard";
-  const requestedTab = new URLSearchParams(window.location.search).get("tab");
-  return requestedTab && ADMIN_TABS.includes(requestedTab as Tab) ? (requestedTab as Tab) : "dashboard";
-};
+const getInitialAdminTab = (): Tab => "dashboard";
 
 const Admin = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -157,28 +153,10 @@ const Admin = () => {
   }, []);
 
   useEffect(() => {
-    const requestedTab = new URLSearchParams(location.search).get("tab");
-    if (!requestedTab || !ADMIN_TABS.includes(requestedTab as Tab)) return;
-
-    const nextTab = requestedTab as Tab;
-    if (userRole && !allowedTabs.includes(nextTab)) {
-      if (tab !== fallbackTab) {
-        setTab(fallbackTab);
-      }
-      return;
+    if (userRole && !allowedTabs.includes(tab)) {
+      setTab(fallbackTab);
     }
-
-    if (nextTab !== tab) {
-      setTab(nextTab);
-    }
-  }, [allowedTabs, fallbackTab, location.search, tab, userRole]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get("tab") === tab) return;
-    params.set("tab", tab);
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-  }, [tab, location.pathname, location.search, navigate]);
+  }, [allowedTabs, fallbackTab, tab, userRole]);
 
   const hasInitialized = useRef(false);
   useEffect(() => {
