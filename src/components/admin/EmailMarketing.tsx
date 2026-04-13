@@ -752,8 +752,8 @@ export default function EmailMarketing() {
                     <p className="text-xs font-medium text-[hsl(0,0%,15%)]">{u.display_name || "—"}</p>
                     <p className="text-[10px] text-[hsl(0,0%,50%)]">{u.email}</p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => addRegisteredUsers([u.user_id])} className="text-[10px] h-7 px-2">
-                    <Plus size={10} className="mr-1" />Add
+                  <Button size="sm" variant="outline" disabled={addingUserId === u.user_id} onClick={() => addRegisteredUsers([u.user_id], false)} className="text-[10px] h-7 px-2">
+                    {addingUserId === u.user_id ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" /> : <><Plus size={10} className="mr-1" />Add</>}
                   </Button>
                 </div>
               ))}
