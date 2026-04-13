@@ -477,7 +477,7 @@ export default function EmailMarketing() {
                   const sentCount = campEvents.filter(e => e.event_type === "sent").length;
                   const openRate = sentCount > 0 ? ((opens / sentCount) * 100).toFixed(1) : "0";
                   return (
-                    <tr key={c.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)]">
+                    <tr key={c.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)] cursor-pointer" onClick={() => setDetailCampaignId(c.id)}>
                       <td className="px-5 py-3">
                         <p className="text-sm font-medium text-[hsl(0,0%,10%)]">{c.name}</p>
                         <p className="text-[10px] text-[hsl(0,0%,50%)]">{c.subject}</p>
