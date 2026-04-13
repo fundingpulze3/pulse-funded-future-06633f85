@@ -98,7 +98,9 @@ Deno.serve(async (req) => {
         try {
           const trackingPixel = `<img src="${trackingBaseUrl}?type=open&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}" width="1" height="1" style="display:none" />`
 
-          let htmlWithTracking = campaign.html_content.replace(
+          // Fix bare LF — SMTP requires CRLF line endings (RFC 2822)
+          const sanitizedHtml = campaign.html_content.replace(/\r?\n/g, '\r\n')
+          let htmlWithTracking = sanitizedHtml.replace(
             /href="(https?:\/\/[^"]+)"/g,
             (_: string, url: string) => `href="${trackingBaseUrl}?type=click&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}&url=${encodeURIComponent(url)}"`
           )
