@@ -490,7 +490,7 @@ export default function EmailMarketing() {
                       </td>
                       <td className="px-5 py-3 text-xs text-[hsl(0,0%,50%)]">{c.sent_at ? new Date(c.sent_at).toLocaleString() : c.scheduled_at ? `Scheduled: ${new Date(c.scheduled_at).toLocaleString()}` : "—"}</td>
                       <td className="px-5 py-3">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                           {(c.status === "draft" || c.status === "scheduled") && (
                             <>
                               <button onClick={() => {
