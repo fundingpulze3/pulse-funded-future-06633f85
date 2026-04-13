@@ -211,15 +211,21 @@ export default function EmailMarketing() {
     e.target.value = "";
   };
 
-  const addRegisteredUsers = async (userIds: string[]) => {
+  const [addingUserId, setAddingUserId] = useState<string | null>(null);
+
+  const addRegisteredUsers = async (userIds: string[], closeAfter = true) => {
     if (!selectedGroupId || userIds.length === 0) return;
+    if (userIds.length === 1) setAddingUserId(userIds[0]);
     const selectedUsers = allProfiles.filter(p => userIds.includes(p.user_id) && p.email);
     const rows = selectedUsers.map(u => ({ group_id: selectedGroupId, email: u.email.toLowerCase(), name: u.display_name || null }));
-    if (rows.length === 0) { toast.error("No valid emails"); return; }
+    if (rows.length === 0) { toast.error("No valid emails"); setAddingUserId(null); return; }
     try {
       await upsertInBatches(rows);
-      toast.success(`${rows.length} users added to group`); setAddUsersDialog(false); setUserSearchQuery(""); fetchAll();
-    } catch (err: any) { toast.error(err.message); }
+      toast.success(`${rows.length} user${rows.length > 1 ? 's' : ''} added to group`);
+      if (closeAfter && userIds.length > 5) { setAddUsersDialog(false); setUserSearchQuery(""); }
+      fetchAll();
+    } catch (err: any) { toast.error(err.message || "Failed to add user"); }
+    setAddingUserId(null);
   };
 
   const addAllRegisteredUsers = async () => {
