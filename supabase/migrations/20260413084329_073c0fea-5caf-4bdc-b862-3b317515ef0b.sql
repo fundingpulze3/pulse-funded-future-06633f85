@@ -1,0 +1,1 @@
+UPDATE email_campaigns SET status = 'draft' WHERE status = 'sending' AND sent_at IS NULL;
