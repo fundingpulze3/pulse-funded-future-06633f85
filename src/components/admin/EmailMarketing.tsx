@@ -96,6 +96,7 @@ export default function EmailMarketing() {
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [detailCampaignId, setDetailCampaignId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<"templates" | "code">("templates");
   const [showPreview, setShowPreview] = useState(false);
   const [templateDialog, setTemplateDialog] = useState(false);
