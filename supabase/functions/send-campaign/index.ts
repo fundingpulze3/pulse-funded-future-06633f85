@@ -27,7 +27,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
     const { data: roleCheck } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
-    if (!roleCheck) {
+    const { data: adminCheck } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'administrator' })
+    if (!roleCheck && !adminCheck) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
@@ -45,17 +46,29 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Campaign already sent/sending' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const { data: contacts, error: contactsErr } = await supabase
-      .from('email_group_contacts')
-      .select('*')
-      .eq('group_id', campaign.group_id)
-      .eq('subscribed', true)
+    // Fetch ALL contacts using pagination (bypass 1000 row limit)
+    const allContacts: any[] = []
+    const PAGE_SIZE = 1000
+    let offset = 0
+    while (true) {
+      const { data: batch, error: batchErr } = await supabase
+        .from('email_group_contacts')
+        .select('*')
+        .eq('group_id', campaign.group_id)
+        .eq('subscribed', true)
+        .range(offset, offset + PAGE_SIZE - 1)
 
-    if (contactsErr || !contacts || contacts.length === 0) {
+      if (batchErr || !batch || batch.length === 0) break
+      allContacts.push(...batch)
+      if (batch.length < PAGE_SIZE) break
+      offset += PAGE_SIZE
+    }
+
+    if (allContacts.length === 0) {
       return new Response(JSON.stringify({ error: 'No contacts in group' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    await supabase.from('email_campaigns').update({ status: 'sending', total_recipients: contacts.length }).eq('id', campaign_id)
+    await supabase.from('email_campaigns').update({ status: 'sending', total_recipients: allContacts.length }).eq('id', campaign_id)
 
     const SMTP_HOST = Deno.env.get('SMTP_HOST')!
     const SMTP_PORT = parseInt(Deno.env.get('SMTP_PORT') || '465')
@@ -63,67 +76,84 @@ Deno.serve(async (req) => {
     const SMTP_PASSWORD = Deno.env.get('SMTP_PASSWORD')!
     const SMTP_FROM = Deno.env.get('SMTP_FROM_ADDRESS') || 'support@fundingpulze.com'
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: SMTP_HOST,
-        port: SMTP_PORT,
-        tls: true,
-        auth: { username: SMTP_USERNAME, password: SMTP_PASSWORD },
-      },
-    })
-
     const trackingBaseUrl = `${supabaseUrl}/functions/v1/email-tracking`
     let sentCount = 0
     let failCount = 0
 
-    for (const contact of contacts) {
-      try {
-        const trackingPixel = `<img src="${trackingBaseUrl}?type=open&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}" width="1" height="1" style="display:none" />`
+    // Process in batches with a fresh SMTP connection per batch to avoid timeouts
+    const BATCH_SIZE = 50
+    for (let batchStart = 0; batchStart < allContacts.length; batchStart += BATCH_SIZE) {
+      const batch = allContacts.slice(batchStart, batchStart + BATCH_SIZE)
+      
+      const client = new SMTPClient({
+        connection: {
+          hostname: SMTP_HOST,
+          port: SMTP_PORT,
+          tls: true,
+          auth: { username: SMTP_USERNAME, password: SMTP_PASSWORD },
+        },
+      })
 
-        let htmlWithTracking = campaign.html_content.replace(
-          /href="(https?:\/\/[^"]+)"/g,
-          (_: string, url: string) => `href="${trackingBaseUrl}?type=click&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}&url=${encodeURIComponent(url)}"`
-        )
-        htmlWithTracking += trackingPixel
+      for (const contact of batch) {
+        try {
+          const trackingPixel = `<img src="${trackingBaseUrl}?type=open&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}" width="1" height="1" style="display:none" />`
 
-        // Generate unique Message-ID for anti-spam
-        const messageId = `<${crypto.randomUUID()}@fundingpulze.com>`
+          let htmlWithTracking = campaign.html_content.replace(
+            /href="(https?:\/\/[^"]+)"/g,
+            (_: string, url: string) => `href="${trackingBaseUrl}?type=click&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}&url=${encodeURIComponent(url)}"`
+          )
+          htmlWithTracking += trackingPixel
 
-        await client.send({
-          from: `Funding Pulze <${SMTP_FROM}>`,
-          to: contact.email,
-          subject: campaign.subject,
-          html: htmlWithTracking,
-          headers: {
-            'Message-ID': messageId,
-            'X-Mailer': 'FundingPulze-Marketing/1.0',
-            'Reply-To': SMTP_FROM,
-            'List-Unsubscribe': `<mailto:${SMTP_FROM}?subject=unsubscribe>`,
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-            'Precedence': 'bulk',
-            'X-Auto-Response-Suppress': 'OOF, AutoReply',
-            'MIME-Version': '1.0',
-          },
-        })
+          const messageId = `<${crypto.randomUUID()}@fundingpulze.com>`
 
-        await supabase.from('email_campaign_events').insert({
-          campaign_id,
-          contact_email: contact.email,
-          event_type: 'sent',
-        })
-        sentCount++
+          await client.send({
+            from: `Funding Pulze <${SMTP_FROM}>`,
+            to: contact.email,
+            subject: campaign.subject,
+            html: htmlWithTracking,
+            headers: {
+              'Message-ID': messageId,
+              'X-Mailer': 'FundingPulze-Marketing/1.0',
+              'Reply-To': SMTP_FROM,
+              'List-Unsubscribe': `<mailto:${SMTP_FROM}?subject=unsubscribe>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+              'Precedence': 'bulk',
+              'X-Auto-Response-Suppress': 'OOF, AutoReply',
+              'MIME-Version': '1.0',
+            },
+          })
 
-        // Small delay between sends to avoid rate limiting
-        if (contacts.length > 10) {
-          await new Promise(r => setTimeout(r, 200))
+          sentCount++
+
+          // Small delay between sends to avoid rate limiting
+          if (batch.length > 5) {
+            await new Promise(r => setTimeout(r, 100))
+          }
+        } catch (err) {
+          console.error(`Failed to send to ${contact.email}:`, err)
+          failCount++
         }
-      } catch (err) {
-        console.error(`Failed to send to ${contact.email}:`, err)
-        failCount++
       }
-    }
 
-    await client.close()
+      try { await client.close() } catch {}
+
+      // Log batch events in bulk
+      const sentEvents = batch.slice(0, sentCount - (batchStart > 0 ? allContacts.slice(0, batchStart).length : 0)).map(c => ({
+        campaign_id,
+        contact_email: c.email,
+        event_type: 'sent',
+      }))
+      if (sentEvents.length > 0) {
+        await supabase.from('email_campaign_events').insert(sentEvents)
+      }
+
+      // Update progress
+      await supabase.from('email_campaigns').update({
+        total_recipients: sentCount,
+      }).eq('id', campaign_id)
+
+      console.log(`Batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: sent ${sentCount}/${allContacts.length}`)
+    }
 
     await supabase.from('email_campaigns').update({
       status: 'sent',
