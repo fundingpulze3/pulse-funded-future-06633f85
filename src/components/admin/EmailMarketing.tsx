@@ -96,6 +96,7 @@ export default function EmailMarketing() {
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [detailCampaignId, setDetailCampaignId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<"templates" | "code">("templates");
   const [showPreview, setShowPreview] = useState(false);
   const [templateDialog, setTemplateDialog] = useState(false);
@@ -476,7 +477,7 @@ export default function EmailMarketing() {
                   const sentCount = campEvents.filter(e => e.event_type === "sent").length;
                   const openRate = sentCount > 0 ? ((opens / sentCount) * 100).toFixed(1) : "0";
                   return (
-                    <tr key={c.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)]">
+                    <tr key={c.id} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,98%)] cursor-pointer" onClick={() => setDetailCampaignId(c.id)}>
                       <td className="px-5 py-3">
                         <p className="text-sm font-medium text-[hsl(0,0%,10%)]">{c.name}</p>
                         <p className="text-[10px] text-[hsl(0,0%,50%)]">{c.subject}</p>
@@ -489,7 +490,7 @@ export default function EmailMarketing() {
                       </td>
                       <td className="px-5 py-3 text-xs text-[hsl(0,0%,50%)]">{c.sent_at ? new Date(c.sent_at).toLocaleString() : c.scheduled_at ? `Scheduled: ${new Date(c.scheduled_at).toLocaleString()}` : "—"}</td>
                       <td className="px-5 py-3">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                           {(c.status === "draft" || c.status === "scheduled") && (
                             <>
                               <button onClick={() => {
@@ -850,6 +851,131 @@ export default function EmailMarketing() {
               {campaignScheduleAt ? <><Calendar size={12} className="mr-1" />Schedule</> : "Save Draft"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* ===== CAMPAIGN DETAIL DIALOG ===== */}
+      <Dialog open={!!detailCampaignId} onOpenChange={v => { if (!v) setDetailCampaignId(null); }}>
+        <DialogContent className={`${LIGHT_DIALOG_CLASS} max-w-3xl max-h-[85vh] overflow-hidden flex flex-col`} style={LIGHT_COLOR_SCHEME}>
+          {(() => {
+            const camp = campaigns.find(c => c.id === detailCampaignId);
+            if (!camp) return <p className="text-sm text-[hsl(0,0%,50%)]">Campaign not found</p>;
+            const campEvts = events.filter(e => e.campaign_id === detailCampaignId);
+            const sentEmails = campEvts.filter(e => e.event_type === "sent");
+            const openEmails = campEvts.filter(e => e.event_type === "open");
+            const clickEmails = campEvts.filter(e => e.event_type === "click");
+            const uniqueOpens = new Set(openEmails.map(e => e.contact_email)).size;
+            const uniqueClicks = new Set(clickEmails.map(e => e.contact_email)).size;
+            const openRate = sentEmails.length > 0 ? ((uniqueOpens / sentEmails.length) * 100).toFixed(1) : "0";
+            const clickRate = sentEmails.length > 0 ? ((uniqueClicks / sentEmails.length) * 100).toFixed(1) : "0";
+
+            // Per-contact breakdown
+            const contactMap: Record<string, { sent: boolean; opened: boolean; clicked: boolean; openedAt?: string; clickedAt?: string }> = {};
+            campEvts.forEach(e => {
+              if (!contactMap[e.contact_email]) contactMap[e.contact_email] = { sent: false, opened: false, clicked: false };
+              if (e.event_type === "sent") contactMap[e.contact_email].sent = true;
+              if (e.event_type === "open") { contactMap[e.contact_email].opened = true; if (!contactMap[e.contact_email].openedAt || e.created_at < contactMap[e.contact_email].openedAt!) contactMap[e.contact_email].openedAt = e.created_at; }
+              if (e.event_type === "click") { contactMap[e.contact_email].clicked = true; if (!contactMap[e.contact_email].clickedAt || e.created_at < contactMap[e.contact_email].clickedAt!) contactMap[e.contact_email].clickedAt = e.created_at; }
+            });
+            const contactList = Object.entries(contactMap).sort((a, b) => {
+              if (a[1].clicked !== b[1].clicked) return a[1].clicked ? -1 : 1;
+              if (a[1].opened !== b[1].opened) return a[1].opened ? -1 : 1;
+              return a[0].localeCompare(b[0]);
+            });
+
+            // Timeline data
+            const timeBuckets: Record<string, { opens: number; clicks: number }> = {};
+            campEvts.filter(e => e.event_type === "open" || e.event_type === "click").forEach(e => {
+              const key = e.created_at?.slice(0, 10);
+              if (!timeBuckets[key]) timeBuckets[key] = { opens: 0, clicks: 0 };
+              if (e.event_type === "open") timeBuckets[key].opens++; else timeBuckets[key].clicks++;
+            });
+            const timeline = Object.entries(timeBuckets).sort((a, b) => a[0].localeCompare(b[0])).map(([date, d]) => ({ date: date.slice(5), ...d }));
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display text-black text-lg">{camp.name}</DialogTitle>
+                  <p className="text-xs text-[hsl(0,0%,50%)]">{camp.subject} · {statusBadge(camp.status)} {camp.sent_at && <span className="ml-2">Sent {new Date(camp.sent_at).toLocaleString()}</span>}</p>
+                </DialogHeader>
+
+                <div className="flex-1 overflow-auto space-y-4 pr-1">
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { label: "Total Sent", value: sentEmails.length.toLocaleString(), icon: <Send size={14} />, color: "hsl(0,0%,15%)" },
+                      { label: "Opened", value: `${uniqueOpens} (${openRate}%)`, icon: <Eye size={14} />, color: "hsl(142,60%,40%)" },
+                      { label: "Clicked", value: `${uniqueClicks} (${clickRate}%)`, icon: <MousePointer size={14} />, color: "hsl(200,70%,45%)" },
+                      { label: "Recipients", value: camp.total_recipients.toLocaleString(), icon: <Users size={14} />, color: "hsl(270,50%,50%)" },
+                    ].map(s => (
+                      <div key={s.label} className="bg-[hsl(0,0%,98%)] rounded-lg border border-[hsl(0,0%,90%)] p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] uppercase tracking-wider text-[hsl(0,0%,50%)] font-medium">{s.label}</span>
+                          <span style={{ color: s.color }}>{s.icon}</span>
+                        </div>
+                        <p className="text-lg font-bold text-[hsl(0,0%,10%)]">{s.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Engagement Timeline */}
+                  {timeline.length > 0 && (
+                    <div className="bg-[hsl(0,0%,98%)] rounded-lg border border-[hsl(0,0%,90%)] p-4">
+                      <h3 className="text-xs font-semibold text-[hsl(0,0%,15%)] mb-3 flex items-center gap-1.5"><TrendingUp size={13} />Engagement Timeline</h3>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <AreaChart data={timeline}>
+                          <defs>
+                            <linearGradient id="detailOpenGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(142,70%,45%)" stopOpacity={0.2} />
+                              <stop offset="95%" stopColor="hsl(142,70%,45%)" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,93%)" />
+                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 9, fill: "hsl(0,0%,55%)" }} axisLine={false} tickLine={false} />
+                          <RechartsTooltip contentStyle={{ background: "#000", border: "none", borderRadius: 8, color: "#fff", fontSize: 11 }} />
+                          <Area type="monotone" dataKey="opens" stroke="hsl(142,70%,45%)" strokeWidth={2} fill="url(#detailOpenGrad)" name="Opens" />
+                          <Area type="monotone" dataKey="clicks" stroke="hsl(200,70%,50%)" strokeWidth={2} fill="transparent" name="Clicks" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* Per-Contact Breakdown */}
+                  <div className="bg-[hsl(0,0%,98%)] rounded-lg border border-[hsl(0,0%,90%)] overflow-hidden">
+                    <div className="px-4 py-2.5 border-b border-[hsl(0,0%,92%)]">
+                      <h3 className="text-xs font-semibold text-[hsl(0,0%,15%)]">Recipient Activity ({contactList.length} contacts)</h3>
+                    </div>
+                    <div className="max-h-[250px] overflow-auto">
+                      <table className="w-full">
+                        <thead className="sticky top-0 bg-[hsl(0,0%,96%)]">
+                          <tr className="text-[10px] uppercase tracking-wider text-[hsl(0,0%,50%)]">
+                            <th className="text-left px-4 py-2 font-medium">Email</th>
+                            <th className="text-center px-2 py-2 font-medium">Sent</th>
+                            <th className="text-center px-2 py-2 font-medium">Opened</th>
+                            <th className="text-center px-2 py-2 font-medium">Clicked</th>
+                            <th className="text-left px-2 py-2 font-medium">First Open</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {contactList.slice(0, 200).map(([email, data]) => (
+                            <tr key={email} className="border-b border-[hsl(0,0%,95%)] last:border-0 hover:bg-[hsl(0,0%,100%)]">
+                              <td className="px-4 py-2 text-xs text-[hsl(0,0%,20%)] truncate max-w-[200px]">{email}</td>
+                              <td className="px-2 py-2 text-center">{data.sent ? <span className="inline-block w-2 h-2 rounded-full bg-[hsl(142,60%,45%)]" /> : <span className="inline-block w-2 h-2 rounded-full bg-[hsl(0,0%,85%)]" />}</td>
+                              <td className="px-2 py-2 text-center">{data.opened ? <span className="inline-block w-2 h-2 rounded-full bg-[hsl(200,70%,50%)]" /> : <span className="inline-block w-2 h-2 rounded-full bg-[hsl(0,0%,85%)]" />}</td>
+                              <td className="px-2 py-2 text-center">{data.clicked ? <span className="inline-block w-2 h-2 rounded-full bg-[hsl(270,60%,55%)]" /> : <span className="inline-block w-2 h-2 rounded-full bg-[hsl(0,0%,85%)]" />}</td>
+                              <td className="px-2 py-2 text-[10px] text-[hsl(0,0%,50%)]">{data.openedAt ? new Date(data.openedAt).toLocaleString() : "—"}</td>
+                            </tr>
+                          ))}
+                          {contactList.length === 0 && <tr><td colSpan={5} className="text-center py-8 text-xs text-[hsl(0,0%,55%)]">No activity data yet</td></tr>}
+                          {contactList.length > 200 && <tr><td colSpan={5} className="text-center py-2 text-[10px] text-[hsl(0,0%,55%)]">Showing first 200 of {contactList.length}</td></tr>}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
