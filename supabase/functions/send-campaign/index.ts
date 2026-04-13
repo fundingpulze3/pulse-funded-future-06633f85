@@ -113,12 +113,9 @@ Deno.serve(async (req) => {
             html: htmlWithTracking,
             headers: {
               'Message-ID': messageId,
-              'X-Mailer': 'FundingPulze-Marketing/1.0',
               'Reply-To': SMTP_FROM,
               'List-Unsubscribe': `<mailto:${SMTP_FROM}?subject=unsubscribe>`,
               'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-              'Precedence': 'bulk',
-              'X-Auto-Response-Suppress': 'OOF, AutoReply',
               'MIME-Version': '1.0',
             },
           })
