@@ -41,7 +41,7 @@ const Auth = () => {
     if (user) navigate("/");
   }, [user, navigate]);
 
-  const withTimeout = <T,>(promise: Promise<T>, ms = 30000): Promise<T> =>
+  const withTimeout = <T,>(promise: Promise<T>, ms = 15000): Promise<T> =>
     Promise.race([
       promise,
       new Promise<never>((_, reject) =>
