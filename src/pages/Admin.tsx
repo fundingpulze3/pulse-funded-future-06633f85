@@ -40,11 +40,12 @@ import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
 import RolesManager from "@/components/admin/RolesManager";
 import ImportUsers from "@/components/admin/ImportUsers";
 import EmailMarketing from "@/components/admin/EmailMarketing";
+import AnnouncementManager from "@/components/admin/AnnouncementManager";
 import { useKillSwitch } from "@/hooks/useKillSwitch";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders" | "roles" | "email_marketing";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders" | "roles" | "email_marketing" | "announcement";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
@@ -67,7 +68,7 @@ const emptyCouponForm: CouponForm = {
 };
 
 const HIDDEN_ADMIN_EMAILS = ["s.saurav2006@gmail.com"];
-const ADMIN_TABS: Tab[] = ["dashboard", "analytics", "revenue", "seo", "users", "challenges", "orders", "referrals", "coupons", "utm", "helpcenter", "support", "blog", "blog_ai", "certificates", "pages", "knowledgebase", "credentials", "user_certificates", "cert_templates", "user_phases", "kyc", "payouts", "upi_settings", "upi_orders", "roles", "email_marketing"];
+const ADMIN_TABS: Tab[] = ["dashboard", "analytics", "revenue", "seo", "users", "challenges", "orders", "referrals", "coupons", "utm", "helpcenter", "support", "blog", "blog_ai", "certificates", "pages", "knowledgebase", "credentials", "user_certificates", "cert_templates", "user_phases", "kyc", "payouts", "upi_settings", "upi_orders", "roles", "email_marketing", "announcement"];
 const ROLE_ALLOWED_TABS: Record<string, Tab[]> = {
   administrator: ADMIN_TABS,
   admin: ADMIN_TABS.filter((tab) => tab !== "user_certificates"),
