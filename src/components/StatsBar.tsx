@@ -71,7 +71,7 @@ const StatsBar = () => {
           >
             <CountUp
               target={stat.value}
-              decimals={stat.decimals ?? 0}
+              decimals={(stat as any).decimals ?? 0}
               prefix={stat.prefix}
               suffix={stat.suffix}
               trigger={inView}
