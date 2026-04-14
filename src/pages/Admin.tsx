@@ -1085,6 +1085,11 @@ const Admin = () => {
           {tab === "email_marketing" && (
             <EmailMarketing />
           )}
+
+          {/* ===== Announcement Tab ===== */}
+          {tab === "announcement" && (
+            <AnnouncementManager />
+          )}
         </div>
       </div>
 
