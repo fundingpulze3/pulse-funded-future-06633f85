@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import fpLogoIcon from "@/assets/fp-logo-icon.png";
 import rankStudentImg from "@/assets/rank-student.png";
 import rankPractitionerImg from "@/assets/rank-practitioner.png";
@@ -404,6 +405,7 @@ const Dashboard = () => {
 
   return (
     <div className="h-screen bg-[hsl(220,20%,4%)] text-[hsl(0,0%,92%)] flex flex-col overflow-hidden">
+      <AnnouncementBar />
       <DashboardSidebar profile={profile} />
 
       <div className="flex flex-1 min-h-0">
