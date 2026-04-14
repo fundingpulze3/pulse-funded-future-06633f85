@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import Hero from "@/components/Hero";
 import MarqueeTrustBar from "@/components/MarqueeTrustBar";
 import WhyChoose from "@/components/WhyChoose";
@@ -38,6 +39,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground relative">
 
+      <AnnouncementBar />
       <ScrollProgress />
       <Navbar isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} />
       <Hero />
