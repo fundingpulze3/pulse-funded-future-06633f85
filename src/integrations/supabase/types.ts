@@ -149,6 +149,42 @@ export type Database = {
           },
         ]
       }
+      announcement_bar: {
+        Row: {
+          bg_color: string
+          created_at: string
+          id: string
+          is_active: boolean
+          link_text: string | null
+          link_url: string | null
+          message: string
+          text_color: string
+          updated_at: string
+        }
+        Insert: {
+          bg_color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          link_text?: string | null
+          link_url?: string | null
+          message?: string
+          text_color?: string
+          updated_at?: string
+        }
+        Update: {
+          bg_color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          link_text?: string | null
+          link_url?: string | null
+          message?: string
+          text_color?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_ai_conversations: {
         Row: {
           created_at: string

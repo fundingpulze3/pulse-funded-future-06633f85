@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 
 const stats = [
-  { label: "Funded Traders", value: 2800, prefix: "", suffix: "+" },
-  { label: "Total Payouts", value: 4.3, prefix: "$", suffix: "M+", decimals: 1 },
-  { label: "Countries", value: 85, prefix: "", suffix: "+" },
+  { label: "Funded Traders", value: 100, prefix: "", suffix: "K+" },
+  { label: "Total Payouts", value: 1, prefix: "$", suffix: "M+" },
+  { label: "Countries", value: 100, prefix: "", suffix: "+" },
   { label: "Profit Split", value: 90, prefix: "", suffix: "%" },
 ];
 
@@ -71,7 +71,7 @@ const StatsBar = () => {
           >
             <CountUp
               target={stat.value}
-              decimals={stat.decimals ?? 0}
+              decimals={(stat as any).decimals ?? 0}
               prefix={stat.prefix}
               suffix={stat.suffix}
               trigger={inView}
