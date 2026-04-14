@@ -387,6 +387,7 @@ const Admin = () => {
         { id: "upi_settings" as Tab, label: "UPI Settings", icon: <Smartphone size={18} /> },
         { id: "utm" as Tab, label: "UTM Tracker", icon: <Globe size={18} /> },
         { id: "email_marketing" as Tab, label: "Email Marketing", icon: <Mail size={18} /> },
+        { id: "announcement" as Tab, label: "Announcement", icon: <Bell size={18} /> },
         { id: "roles" as Tab, label: "Roles", icon: <ShieldCheck size={18} /> },
       ],
       roles: ["administrator", "admin"],
