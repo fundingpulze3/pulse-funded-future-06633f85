@@ -428,6 +428,7 @@ const Admin = () => {
     upi_orders: "UPI Payments",
     roles: "Role Management",
     email_marketing: "Email Marketing",
+    announcement: "Announcement",
   };
 
   // Helper to assign/change a user's role
