@@ -392,21 +392,18 @@ function parseMT5Statement(html: string): Record<string, any> {
     const report = JSON.parse(jsonMatch[1]);
     const parsed = parseJsonReport(report);
 
-    // Minimal sanity checks so we only store genuine, dashboard-ready stats.
+    // Minimal sanity checks — account number + numeric balance are required.
+    // Balance chart may be empty for some report formats, so don't require it.
     const ok =
       !!parsed.accountNumber &&
       typeof parsed.balance === "number" &&
-      typeof parsed.deposit === "number" &&
-      Array.isArray((parsed as any).balanceChart) &&
-      (parsed as any).balanceChart.length > 0;
+      typeof parsed.deposit === "number";
 
     if (!ok) {
       console.error("[parse-mt5] Parsed report failed sanity checks", {
         accountNumber: parsed.accountNumber,
         balance: parsed.balance,
         deposit: parsed.deposit,
-        hasBalanceChart: Array.isArray((parsed as any).balanceChart),
-        balanceChartLen: Array.isArray((parsed as any).balanceChart) ? (parsed as any).balanceChart.length : 0,
       });
       return {};
     }
