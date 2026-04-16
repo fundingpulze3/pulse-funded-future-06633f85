@@ -203,15 +203,11 @@ const Admin = () => {
         supabase.from("user_roles").select("*"),
       ]);
 
-      // Fetch page_visits with pagination
-      const pageVisitsData = await fetchAllRows("page_visits", "created_at", false);
-
       setProfiles(profilesData);
       if (c.data) setChallenges(c.data);
       if (r.data) setReferrals(r.data);
       if (cp.data) setCoupons(cp.data);
       if (pu.data) setPurchases(pu.data);
-      setPageVisits(pageVisitsData);
       if (ur.data) {
         const roleMap: Record<string, string> = {};
         ur.data.forEach((r: any) => { roleMap[r.user_id] = r.role; });
@@ -224,6 +220,15 @@ const Admin = () => {
       setLoading(false);
     }
   };
+
+  // Lazy-load page visits only when UTM tab is active
+  const pageVisitsLoaded = useRef(false);
+  useEffect(() => {
+    if (tab === "utm" && !pageVisitsLoaded.current && !loading) {
+      pageVisitsLoaded.current = true;
+      fetchAllRows("page_visits", "created_at", false).then(data => setPageVisits(data));
+    }
+  }, [tab, loading]);
 
   // UTM analytics
   const filteredVisits = useMemo(() =>
