@@ -135,15 +135,45 @@ async function handleWebhook(req: Request): Promise<Response> {
     })
   }
 
-  // Support both wrapped payload (body.data) and flat payload
-  const data = body.data || body
-  const emailType = data.action_type || data.type || ''
-  const recipientEmail = data.email || ''
-  const confirmationUrl = data.url || data.confirmation_url || ''
-  const token = data.token || ''
-  const newEmail = data.new_email || ''
+  // Support Supabase native send-email hook payload + Lovable wrapped payload
+  // Supabase native: { user: {...}, email_data: { token, token_hash, redirect_to, email_action_type, site_url } }
+  const emailData = body.email_data || body.data || body
+  const userObj = body.user || {}
+  const emailType = emailData.email_action_type || emailData.action_type || emailData.type || ''
+  const recipientEmail = userObj.email || emailData.email || body.email || ''
+  const token = emailData.token || ''
+  const tokenHash = emailData.token_hash || ''
+  const redirectTo = emailData.redirect_to || ''
+  const siteUrl = emailData.site_url || `https://${ROOT_DOMAIN}`
+  const newEmail = emailData.new_email || ''
 
-  console.log('Received auth event', { emailType, email: recipientEmail })
+  // Build a SAFE confirmation URL that points to our app's verify page directly,
+  // bypassing Supabase's /auth/v1/verify auto-consume endpoint (email scanners eat those).
+  // Pages like /reset-password call supabase.auth.verifyOtp({ type, token_hash }) themselves.
+  const buildConfirmUrl = () => {
+    if (emailData.url || emailData.confirmation_url) {
+      // Fallback: use the URL Supabase generated (older payload shape)
+      return emailData.url || emailData.confirmation_url
+    }
+    if (!tokenHash) return redirectTo || siteUrl
+    const base = redirectTo || siteUrl
+    const path = emailType === 'recovery'
+      ? '/reset-password'
+      : emailType === 'email_change'
+        ? '/auth/confirm'
+        : '/auth/confirm'
+    const url = new URL(path, base)
+    url.searchParams.set('token_hash', tokenHash)
+    url.searchParams.set('type', emailType)
+    if (redirectTo && !url.searchParams.has('next')) {
+      url.searchParams.set('next', redirectTo)
+    }
+    return url.toString()
+  }
+
+  const confirmationUrl = buildConfirmUrl()
+
+  console.log('Received auth event', { emailType, email: recipientEmail, hasTokenHash: !!tokenHash, confirmationUrl })
 
   const EmailTemplate = EMAIL_TEMPLATES[emailType]
   if (!EmailTemplate) {
