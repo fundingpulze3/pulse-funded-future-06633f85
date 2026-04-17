@@ -224,7 +224,7 @@ const Admin = () => {
   // Lazy-load page visits only when UTM tab is active
   const pageVisitsLoaded = useRef(false);
   useEffect(() => {
-    if (tab === "utm" && !pageVisitsLoaded.current && !loading) {
+    if ((tab === "utm" || tab === "analytics") && !pageVisitsLoaded.current && !loading) {
       pageVisitsLoaded.current = true;
       fetchAllRows("page_visits", "created_at", false).then(data => setPageVisits(data));
     }
