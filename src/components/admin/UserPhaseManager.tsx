@@ -147,15 +147,28 @@ const UserPhaseManager = () => {
       changed_by: session?.user?.id || null,
     } as any);
 
-    // Auto-assign credentials if moving to active phase and no creds assigned
-    if ((newStatus === "active" || newStatus === "phase2" || newStatus === "funded") && !account.mt5Login) {
+    // Auto-assign / swap credentials when progressing to a new phase
+    const isPhaseAdvance =
+      (oldStatus === "active" && (newStatus === "phase2" || newStatus === "funded")) ||
+      (oldStatus === "phase2" && newStatus === "funded");
+    const needsFirstCred = (newStatus === "active" || newStatus === "phase2" || newStatus === "funded") && !account.mt5Login;
+
+    if (isPhaseAdvance || needsFirstCred) {
+      // Free old credential when advancing phases
+      if (isPhaseAdvance && account.credentialId) {
+        await supabase
+          .from("trading_credentials")
+          .update({ is_assigned: false, assigned_to: null, purchase_id: null, assigned_at: null })
+          .eq("id", account.credentialId);
+      }
+
       const { data: availableCred } = await supabase
         .from("trading_credentials")
         .select("*")
         .eq("is_assigned", false)
         .eq("challenge_id", account.challengeId)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (availableCred) {
         await supabase
@@ -167,9 +180,26 @@ const UserPhaseManager = () => {
             assigned_at: new Date().toISOString(),
           })
           .eq("id", availableCred.id);
-        toast.success(`Credentials auto-assigned: FP ${availableCred.mt5_login}`);
+
+        try {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              type: "credentials",
+              recipientUserId: account.userId,
+              data: {
+                mt5Login: availableCred.mt5_login,
+                mt5Password: availableCred.mt5_password,
+                mt5Server: availableCred.mt5_server || "MEXAtlantic-Demo",
+                challengeName: account.challengeName,
+                accountSize: `$${Number(account.accountSize).toLocaleString()}`,
+              },
+            },
+          });
+        } catch (e) { console.error("credentials email failed", e); }
+
+        toast.success(`New credentials issued: FP ${availableCred.mt5_login}`);
       } else {
-        toast.warning("No available credentials in pool!");
+        toast.warning("No available credentials in pool for this challenge!");
       }
     }
 
