@@ -1,0 +1,1 @@
+ALTER TABLE public.email_campaigns ADD COLUMN IF NOT EXISTS from_address text NOT NULL DEFAULT 'support@fundingpulze.com';
