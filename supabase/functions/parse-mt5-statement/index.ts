@@ -250,6 +250,62 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ─── PHASE PROGRESSION: move purchase to next phase + issue new MT5 credentials ───
+    let newCredential: any = null;
+    if (nextPhaseStatus && purchaseRow) {
+      const oldStatus = purchaseRow.status;
+
+      // 1. Update purchase status
+      await adminClient
+        .from("challenge_purchases")
+        .update({ status: nextPhaseStatus })
+        .eq("id", purchaseRow.id);
+
+      // 2. Log status change
+      await adminClient.from("account_status_history").insert({
+        purchase_id: purchaseRow.id,
+        user_id: purchaseRow.user_id,
+        old_status: oldStatus,
+        new_status: nextPhaseStatus,
+        changed_by: null,
+        note: `Auto-progressed by MT5 statement upload (${certificateType})`,
+      });
+
+      // 3. Swap MT5 credentials — release the old account, assign a fresh one from the same challenge pool
+      if (issueNewCredential) {
+        // Free the previous credential
+        await adminClient
+          .from("trading_credentials")
+          .update({ is_assigned: false, assigned_to: null, purchase_id: null, assigned_at: null })
+          .eq("id", credential.id);
+
+        // Find a fresh unassigned credential for the same challenge
+        const { data: nextCred } = await adminClient
+          .from("trading_credentials")
+          .select("*")
+          .eq("challenge_id", challenge.id || credential.challenge_id)
+          .eq("is_assigned", false)
+          .limit(1)
+          .maybeSingle();
+
+        if (nextCred) {
+          await adminClient
+            .from("trading_credentials")
+            .update({
+              is_assigned: true,
+              assigned_to: purchaseRow.user_id,
+              purchase_id: purchaseRow.id,
+              assigned_at: new Date().toISOString(),
+            })
+            .eq("id", nextCred.id);
+          newCredential = nextCred;
+          console.log(`[parse-mt5] Issued new credential FP ${nextCred.mt5_login} for ${nextPhaseStatus}`);
+        } else {
+          console.warn(`[parse-mt5] No available credential in pool for challenge ${credential.challenge_id} — admin must add more`);
+        }
+      }
+    }
+
     // Send email notification for the certificate type
     try {
       const emailTypeMap: Record<string, string> = {
@@ -273,6 +329,19 @@ Deno.serve(async (req) => {
       }
     } catch (e) { console.error("Failed to send certificate email:", e); }
 
+    // Send credentials email if a new MT5 account was just issued
+    if (newCredential) {
+      try {
+        await sendEmailNotification(adminClient, supabaseUrl, purchaseRow!.user_id, "credentials", {
+          mt5Login: newCredential.mt5_login,
+          mt5Password: newCredential.mt5_password,
+          mt5Server: newCredential.mt5_server || "MEXAtlantic-Demo",
+          challengeName: challenge.name,
+          accountSize: `$${Number(challenge.account_size).toLocaleString()}`,
+        });
+      } catch (e) { console.error("Failed to send credentials email:", e); }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -280,7 +349,9 @@ Deno.serve(async (req) => {
         evaluation,
         parsed,
         certificateType,
-        message: `${title} issued for account #${parsed.accountNumber}`,
+        nextPhaseStatus,
+        newCredential: newCredential ? { mt5_login: newCredential.mt5_login, server: newCredential.mt5_server } : null,
+        message: `${title} issued for account #${parsed.accountNumber}${newCredential ? ` — New ${nextPhaseStatus} account FP ${newCredential.mt5_login} issued ✓` : nextPhaseStatus ? ` — Status moved to ${nextPhaseStatus} (no spare credentials in pool!)` : ""}`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
