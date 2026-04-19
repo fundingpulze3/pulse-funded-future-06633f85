@@ -152,6 +152,14 @@ Deno.serve(async (req) => {
     }
 
     // ─── PASSED: target reached + no breach ───
+    // Look up purchase to get the step_type & current status (1-step skips phase 2)
+    const { data: purchaseRow } = await adminClient
+      .from("challenge_purchases")
+      .select("id, status, user_id")
+      .eq("id", credential.purchase_id)
+      .maybeSingle();
+    const isOneStep = (challenge.step_type || "").toLowerCase().includes("one");
+
     const { data: existingCerts } = await adminClient
       .from("user_certificates")
       .select("certificate_type")
@@ -164,15 +172,27 @@ Deno.serve(async (req) => {
     let certificateType: string;
     let title: string;
     let description: string;
+    let nextPhaseStatus: string | null = null; // status to move purchase to
+    let issueNewCredential = false;            // whether to swap MT5 creds for next phase
 
     if (!existingTypes.includes("phase1_passed")) {
       certificateType = "phase1_passed";
       title = "Phase 1 Challenge Passed ✅";
       description = `Account #${parsed.accountNumber} passed Phase 1 — Profit: $${evaluation.profitAmount?.toFixed(2) || "N/A"} (${evaluation.profitPercent?.toFixed(2) || "N/A"}%)`;
-    } else if (!existingTypes.includes("phase2_passed")) {
+      // 1-step → straight to funded; 2-step → phase2 with NEW credentials
+      if (isOneStep) {
+        nextPhaseStatus = "funded";
+        issueNewCredential = true;
+      } else {
+        nextPhaseStatus = "phase2";
+        issueNewCredential = true;
+      }
+    } else if (!existingTypes.includes("phase2_passed") && !isOneStep) {
       certificateType = "phase2_passed";
       title = "Phase 2 Verification Passed ✅";
       description = `Account #${parsed.accountNumber} passed Phase 2 — Profit: $${evaluation.profitAmount?.toFixed(2) || "N/A"} (${evaluation.profitPercent?.toFixed(2) || "N/A"}%)`;
+      nextPhaseStatus = "funded";
+      issueNewCredential = true;
     } else if (!existingTypes.includes("funded")) {
       certificateType = "funded";
       title = "Funded Account Certificate 🏆";
