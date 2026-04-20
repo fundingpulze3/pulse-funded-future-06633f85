@@ -126,6 +126,8 @@ const Checkout = () => {
 
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState<{ code: string; type: string; value: number } | null>(null);
+  const couponAppliedRef = useRef(couponApplied);
+  useEffect(() => { couponAppliedRef.current = couponApplied; }, [couponApplied]);
   const [couponLoading, setCouponLoading] = useState(false);
   const [payMethod, setPayMethod] = useState<"paypal" | "crypto" | "upi">("paypal");
   const [upiConfig, setUpiConfig] = useState<{ upi_id: string; scanner_url: string }>({ upi_id: "", scanner_url: "" });
