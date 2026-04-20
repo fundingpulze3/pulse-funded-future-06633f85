@@ -181,13 +181,11 @@ Deno.serve(async (req) => {
       // Mark account "under review" — admin manually pushes to next phase from the panel.
       // 1-step → awaiting funded review; 2-step → awaiting phase 2 review.
       nextPhaseStatus = "phase1_passed";
-      issueNewCredential = false;
     } else if (!existingTypes.includes("phase2_passed") && !isOneStep) {
       certificateType = "phase2_passed";
       title = "Phase 2 Verification Passed ✅";
       description = `Account #${parsed.accountNumber} passed Phase 2 — Profit: $${evaluation.profitAmount?.toFixed(2) || "N/A"} (${evaluation.profitPercent?.toFixed(2) || "N/A"}%)`;
       nextPhaseStatus = "phase2_passed";
-      issueNewCredential = false;
     } else if (!existingTypes.includes("funded")) {
       certificateType = "funded";
       title = "Funded Account Certificate 🏆";
