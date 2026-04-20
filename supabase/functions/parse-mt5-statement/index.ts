@@ -292,19 +292,6 @@ Deno.serve(async (req) => {
       }
     } catch (e) { console.error("Failed to send certificate email:", e); }
 
-    // Send credentials email if a new MT5 account was just issued
-    if (newCredential) {
-      try {
-        await sendEmailNotification(adminClient, supabaseUrl, purchaseRow!.user_id, "credentials", {
-          mt5Login: newCredential.mt5_login,
-          mt5Password: newCredential.mt5_password,
-          mt5Server: newCredential.mt5_server || "MEXAtlantic-Demo",
-          challengeName: challenge.name,
-          accountSize: `$${Number(challenge.account_size).toLocaleString()}`,
-        });
-      } catch (e) { console.error("Failed to send credentials email:", e); }
-    }
-
     return new Response(
       JSON.stringify({
         success: true,
@@ -313,8 +300,7 @@ Deno.serve(async (req) => {
         parsed,
         certificateType,
         nextPhaseStatus,
-        newCredential: newCredential ? { mt5_login: newCredential.mt5_login, server: newCredential.mt5_server } : null,
-        message: `${title} issued for account #${parsed.accountNumber}${newCredential ? ` — New ${nextPhaseStatus} account FP ${newCredential.mt5_login} issued ✓` : nextPhaseStatus ? ` — Status moved to ${nextPhaseStatus} (no spare credentials in pool!)` : ""}`,
+        message: `${title} issued for account #${parsed.accountNumber}${nextPhaseStatus ? ` — Status set to ${nextPhaseStatus}. Awaiting admin push from User Phase Manager.` : ""}`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
