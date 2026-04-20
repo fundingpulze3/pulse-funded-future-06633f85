@@ -92,6 +92,7 @@ export default function EmailMarketing() {
   const [campaignSubject, setCampaignSubject] = useState("");
   const [campaignHtml, setCampaignHtml] = useState("");
   const [campaignGroupId, setCampaignGroupId] = useState("");
+  const [campaignFromAddress, setCampaignFromAddress] = useState("support@fundingpulze.com");
   const [campaignScheduleAt, setCampaignScheduleAt] = useState("");
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -253,6 +254,7 @@ export default function EmailMarketing() {
       name: campaignName, subject: campaignSubject, html_content: campaignHtml,
       group_id: campaignGroupId, status: campaignScheduleAt ? "scheduled" : "draft",
       scheduled_at: campaignScheduleAt ? new Date(campaignScheduleAt).toISOString() : null,
+      from_address: campaignFromAddress || "support@fundingpulze.com",
     };
     if (editingCampaignId) {
       const { error } = await supabase.from("email_campaigns").update(payload).eq("id", editingCampaignId);
@@ -269,6 +271,7 @@ export default function EmailMarketing() {
   const closeCampaignDialog = () => {
     setCampaignDialog(false); setCampaignName(""); setCampaignSubject("");
     setCampaignHtml(""); setCampaignGroupId(""); setCampaignScheduleAt("");
+    setCampaignFromAddress("support@fundingpulze.com");
     setEditingCampaignId(null); setEditorMode("templates"); setShowPreview(false);
   };
 
@@ -496,6 +499,7 @@ export default function EmailMarketing() {
                               <button onClick={() => {
                                 setCampaignName(c.name); setCampaignSubject(c.subject); setCampaignHtml(c.html_content);
                                 setCampaignGroupId(c.group_id || ""); setCampaignScheduleAt(c.scheduled_at ? c.scheduled_at.slice(0, 16) : "");
+                                setCampaignFromAddress(c.from_address || "support@fundingpulze.com");
                                 setEditingCampaignId(c.id); setEditorMode("code"); setCampaignDialog(true);
                               }} className="px-2 py-1 rounded text-[10px] bg-[hsl(0,0%,93%)] hover:bg-[hsl(0,0%,88%)]">Edit</button>
                               <button disabled={sending} onClick={() => sendCampaign(c.id)} className="px-2 py-1 rounded text-[10px] bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] flex items-center gap-1">
@@ -773,6 +777,19 @@ export default function EmailMarketing() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div><Label className="text-xs text-[hsl(var(--muted-foreground))]">Campaign Name</Label><Input value={campaignName} onChange={e => setCampaignName(e.target.value)} placeholder="e.g. Welcome Series #1" className={LIGHT_FIELD_CLASS} style={LIGHT_COLOR_SCHEME} /></div>
               <div><Label className="text-xs text-[hsl(var(--muted-foreground))]">Subject Line</Label><Input value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} placeholder="e.g. Welcome to Funding Pulze!" className={LIGHT_FIELD_CLASS} style={LIGHT_COLOR_SCHEME} /></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">From Address</Label>
+                <Select value={campaignFromAddress} onValueChange={setCampaignFromAddress}>
+                  <SelectTrigger className={`text-xs ${LIGHT_FIELD_CLASS}`} style={LIGHT_COLOR_SCHEME}><SelectValue /></SelectTrigger>
+                  <SelectContent className={LIGHT_DIALOG_CLASS}>
+                    <SelectItem value="support@fundingpulze.com">support@fundingpulze.com</SelectItem>
+                    <SelectItem value="admin@fundingpulze.com">admin@fundingpulze.com</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div></div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>

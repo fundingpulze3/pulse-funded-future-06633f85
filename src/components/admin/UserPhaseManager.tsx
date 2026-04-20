@@ -33,7 +33,9 @@ interface UserAccount {
 const PHASES = [
   { value: "pending", label: "Pending", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
   { value: "active", label: "Active (Phase 1)", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { value: "phase1_passed", label: "Phase 1 Passed (Under Review)", color: "bg-amber-50 text-amber-700 border-amber-200" },
   { value: "phase2", label: "Phase 2", color: "bg-cyan-50 text-cyan-700 border-cyan-200" },
+  { value: "phase2_passed", label: "Phase 2 Passed (Under Review)", color: "bg-amber-50 text-amber-700 border-amber-200" },
   { value: "funded", label: "Funded", color: "bg-green-50 text-green-700 border-green-200" },
   { value: "breached", label: "Breached", color: "bg-red-50 text-red-700 border-red-200" },
   { value: "completed", label: "Completed", color: "bg-purple-50 text-purple-700 border-purple-200" },
@@ -147,21 +149,10 @@ const UserPhaseManager = () => {
       changed_by: session?.user?.id || null,
     } as any);
 
-    // Auto-assign / swap credentials when progressing to a new phase
-    const isPhaseAdvance =
-      (oldStatus === "active" && (newStatus === "phase2" || newStatus === "funded")) ||
-      (oldStatus === "phase2" && newStatus === "funded");
-    const needsFirstCred = (newStatus === "active" || newStatus === "phase2" || newStatus === "funded") && !account.mt5Login;
-
-    if (isPhaseAdvance || needsFirstCred) {
-      // Free old credential when advancing phases
-      if (isPhaseAdvance && account.credentialId) {
-        await supabase
-          .from("trading_credentials")
-          .update({ is_assigned: false, assigned_to: null, purchase_id: null, assigned_at: null })
-          .eq("id", account.credentialId);
-      }
-
+    // First-time credential assignment only (e.g. status set to "active" before any MT5 was issued).
+    // Phase advancement (active→phase2, phase2→funded) is handled by the dedicated "Push" button below.
+    const needsFirstCred = (newStatus === "active") && !account.mt5Login;
+    if (needsFirstCred) {
       const { data: availableCred } = await supabase
         .from("trading_credentials")
         .select("*")
@@ -197,7 +188,7 @@ const UserPhaseManager = () => {
           });
         } catch (e) { console.error("credentials email failed", e); }
 
-        toast.success(`New credentials issued: FP ${availableCred.mt5_login}`);
+        toast.success(`Credentials issued: FP ${availableCred.mt5_login}`);
       } else {
         toast.warning("No available credentials in pool for this challenge!");
       }
@@ -247,6 +238,95 @@ const UserPhaseManager = () => {
     toast.success(`Status → ${newStatus}`);
     setUpdating(null);
     fetchAccounts();
+  };
+
+  // ── Manual "Push to next phase" — used when account status is phase1_passed or phase2_passed ──
+  const pushToNextPhase = async (account: UserAccount) => {
+    const targetStatus = account.status === "phase1_passed"
+      ? (account.stepType?.toLowerCase().includes("one") ? "funded" : "phase2")
+      : "funded";
+
+    setUpdating(account.purchaseId);
+
+    try {
+      // 1. Check pool first
+      const { data: availableCred, error: poolErr } = await supabase
+        .from("trading_credentials")
+        .select("*")
+        .eq("is_assigned", false)
+        .eq("challenge_id", account.challengeId)
+        .limit(1)
+        .maybeSingle();
+
+      if (poolErr) throw poolErr;
+      if (!availableCred) {
+        toast.error(
+          `No spare ${targetStatus} credentials in the pool for ${account.challengeName}. Add credentials in 'Credentials' tab first.`,
+          { duration: 6000 }
+        );
+        setUpdating(null);
+        return;
+      }
+
+      // 2. Free old credential
+      if (account.credentialId) {
+        await supabase
+          .from("trading_credentials")
+          .update({ is_assigned: false, assigned_to: null, purchase_id: null, assigned_at: null })
+          .eq("id", account.credentialId);
+      }
+
+      // 3. Assign new credential
+      const { error: assignErr } = await supabase
+        .from("trading_credentials")
+        .update({
+          is_assigned: true,
+          assigned_to: account.userId,
+          purchase_id: account.purchaseId,
+          assigned_at: new Date().toISOString(),
+        })
+        .eq("id", availableCred.id);
+      if (assignErr) throw assignErr;
+
+      // 4. Update purchase status
+      const oldStatus = account.status;
+      await supabase.from("challenge_purchases").update({ status: targetStatus }).eq("id", account.purchaseId);
+
+      // 5. Log status change
+      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.from("account_status_history").insert({
+        purchase_id: account.purchaseId,
+        user_id: account.userId,
+        old_status: oldStatus,
+        new_status: targetStatus,
+        changed_by: session?.user?.id || null,
+        note: `Admin pushed to ${targetStatus} — new credential FP ${availableCred.mt5_login} issued.`,
+      } as any);
+
+      // 6. Send credentials email
+      try {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            type: "credentials",
+            recipientUserId: account.userId,
+            data: {
+              mt5Login: availableCred.mt5_login,
+              mt5Password: availableCred.mt5_password,
+              mt5Server: availableCred.mt5_server || "MEXAtlantic-Demo",
+              challengeName: account.challengeName,
+              accountSize: `$${Number(account.accountSize).toLocaleString()}`,
+            },
+          },
+        });
+      } catch (e) { console.error("credentials email failed", e); }
+
+      toast.success(`Pushed to ${targetStatus}. New credential FP ${availableCred.mt5_login} assigned & emailed.`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to push to next phase");
+    } finally {
+      setUpdating(null);
+      fetchAccounts();
+    }
   };
 
   // HTML Statement Upload Handler
@@ -362,9 +442,30 @@ const UserPhaseManager = () => {
           </div>
         </div>
 
+        {/* Manual Push Button — only when account is under review */}
+        {(selectedAccount.status === "phase1_passed" || selectedAccount.status === "phase2_passed") && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-xs font-semibold text-amber-900 uppercase tracking-wider mb-1">⚠ Account Under Review</p>
+            <p className="text-xs text-amber-800 mb-3">
+              {selectedAccount.status === "phase1_passed"
+                ? "Trader passed Phase 1. Push to Phase 2 will free this credential and assign a fresh one from the pool, then email the trader."
+                : "Trader passed Phase 2. Push to Funded will free this credential and assign a fresh funded MT5 account, then email the trader."}
+            </p>
+            <Button
+              size="sm"
+              disabled={updating === selectedAccount.purchaseId}
+              onClick={() => pushToNextPhase(selectedAccount)}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8"
+            >
+              {updating === selectedAccount.purchaseId ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <CheckCircle2 size={14} className="mr-1.5" />}
+              {selectedAccount.status === "phase1_passed" ? "Push to Phase 2" : "Push to Funded"}
+            </Button>
+          </div>
+        )}
+
         {/* Phase Selector */}
         <div className="bg-white rounded-xl border border-[hsl(0,0%,90%)] p-4">
-          <p className="text-xs font-semibold text-[hsl(0,0%,40%)] uppercase tracking-wider mb-3">Change Status</p>
+          <p className="text-xs font-semibold text-[hsl(0,0%,40%)] uppercase tracking-wider mb-3">Change Status (manual override)</p>
           <div className="flex flex-wrap gap-2">
             {PHASES.map(p => (
               <button
