@@ -92,6 +92,7 @@ export default function EmailMarketing() {
   const [campaignSubject, setCampaignSubject] = useState("");
   const [campaignHtml, setCampaignHtml] = useState("");
   const [campaignGroupId, setCampaignGroupId] = useState("");
+  const [campaignFromAddress, setCampaignFromAddress] = useState("support@fundingpulze.com");
   const [campaignScheduleAt, setCampaignScheduleAt] = useState("");
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -253,6 +254,7 @@ export default function EmailMarketing() {
       name: campaignName, subject: campaignSubject, html_content: campaignHtml,
       group_id: campaignGroupId, status: campaignScheduleAt ? "scheduled" : "draft",
       scheduled_at: campaignScheduleAt ? new Date(campaignScheduleAt).toISOString() : null,
+      from_address: campaignFromAddress || "support@fundingpulze.com",
     };
     if (editingCampaignId) {
       const { error } = await supabase.from("email_campaigns").update(payload).eq("id", editingCampaignId);
@@ -269,6 +271,7 @@ export default function EmailMarketing() {
   const closeCampaignDialog = () => {
     setCampaignDialog(false); setCampaignName(""); setCampaignSubject("");
     setCampaignHtml(""); setCampaignGroupId(""); setCampaignScheduleAt("");
+    setCampaignFromAddress("support@fundingpulze.com");
     setEditingCampaignId(null); setEditorMode("templates"); setShowPreview(false);
   };
 

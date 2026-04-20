@@ -72,9 +72,26 @@ Deno.serve(async (req) => {
 
     const SMTP_HOST = Deno.env.get('SMTP_HOST')!
     const SMTP_PORT = parseInt(Deno.env.get('SMTP_PORT') || '465')
-    const SMTP_USERNAME = Deno.env.get('SMTP_USERNAME')!
-    const SMTP_PASSWORD = Deno.env.get('SMTP_PASSWORD')!
-    const SMTP_FROM = Deno.env.get('SMTP_FROM_ADDRESS') || 'support@fundingpulze.com'
+    const DEFAULT_FROM = Deno.env.get('SMTP_FROM_ADDRESS') || 'support@fundingpulze.com'
+
+    // Pick credentials based on the campaign's from_address.
+    // admin@fundingpulze.com → SMTP_USERNAME_ADMIN / SMTP_PASSWORD_ADMIN
+    // anything else (default support@) → SMTP_USERNAME / SMTP_PASSWORD
+    const SMTP_FROM = (campaign.from_address || DEFAULT_FROM).trim()
+    const isAdminSender = SMTP_FROM.toLowerCase().startsWith('admin@')
+    const SMTP_USERNAME = isAdminSender
+      ? (Deno.env.get('SMTP_USERNAME_ADMIN') || SMTP_FROM)
+      : Deno.env.get('SMTP_USERNAME')!
+    const SMTP_PASSWORD = isAdminSender
+      ? Deno.env.get('SMTP_PASSWORD_ADMIN')!
+      : Deno.env.get('SMTP_PASSWORD')!
+
+    if (!SMTP_PASSWORD) {
+      return new Response(
+        JSON.stringify({ error: `SMTP password not configured for sender ${SMTP_FROM}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const trackingBaseUrl = `${supabaseUrl}/functions/v1/email-tracking`
     let sentCount = 0
