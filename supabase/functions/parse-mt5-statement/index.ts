@@ -246,18 +246,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ─── PHASE PROGRESSION: move purchase to next phase + issue new MT5 credentials ───
-    let newCredential: any = null;
+    // ─── PHASE PROGRESSION: mark purchase as "under review" so admin can push manually ───
     if (nextPhaseStatus && purchaseRow) {
       const oldStatus = purchaseRow.status;
 
-      // 1. Update purchase status
       await adminClient
         .from("challenge_purchases")
         .update({ status: nextPhaseStatus })
         .eq("id", purchaseRow.id);
 
-      // 2. Log status change
       await adminClient.from("account_status_history").insert({
         purchase_id: purchaseRow.id,
         user_id: purchaseRow.user_id,
