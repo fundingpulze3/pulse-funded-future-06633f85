@@ -629,6 +629,27 @@ const UserPhaseManager = () => {
         </Button>
       </div>
 
+      {/* Under Review banner — surfaces accounts awaiting manual push */}
+      {((statusCounts.phase1_passed || 0) + (statusCounts.phase2_passed || 0)) > 0 && statusFilter === "all" && (
+        <button
+          onClick={() => setStatusFilter("phase1_passed")}
+          className="w-full flex items-center justify-between bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl px-4 py-3 transition-colors text-left"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-bold">
+              {(statusCounts.phase1_passed || 0) + (statusCounts.phase2_passed || 0)}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Accounts awaiting manual push</p>
+              <p className="text-[11px] text-amber-700">
+                Phase 1 passed: {statusCounts.phase1_passed || 0} · Phase 2 passed: {statusCounts.phase2_passed || 0} — click an account to push it forward.
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-semibold text-amber-700">Review →</span>
+        </button>
+      )}
+
       {/* Status filter pills */}
       <div className="flex flex-wrap gap-1.5">
         <button
@@ -639,17 +660,25 @@ const UserPhaseManager = () => {
         >
           All ({statusCounts.all})
         </button>
-        {PHASES.map(p => (
-          <button
-            key={p.value}
-            onClick={() => setStatusFilter(p.value)}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-              statusFilter === p.value ? "bg-[hsl(0,0%,8%)] text-white" : "bg-[hsl(0,0%,95%)] text-[hsl(0,0%,45%)] hover:bg-[hsl(0,0%,90%)]"
-            }`}
-          >
-            {p.label.split(" (")[0]} ({statusCounts[p.value] || 0})
-          </button>
-        ))}
+        {PHASES.map(p => {
+          const isUnderReview = p.value === "phase1_passed" || p.value === "phase2_passed";
+          const count = statusCounts[p.value] || 0;
+          return (
+            <button
+              key={p.value}
+              onClick={() => setStatusFilter(p.value)}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                statusFilter === p.value
+                  ? "bg-[hsl(0,0%,8%)] text-white"
+                  : isUnderReview && count > 0
+                    ? "bg-amber-100 text-amber-800 hover:bg-amber-200 ring-1 ring-amber-300"
+                    : "bg-[hsl(0,0%,95%)] text-[hsl(0,0%,45%)] hover:bg-[hsl(0,0%,90%)]"
+              }`}
+            >
+              {p.label.split(" (")[0]} ({count})
+            </button>
+          );
+        })}
       </div>
 
       {/* Accounts Table */}
