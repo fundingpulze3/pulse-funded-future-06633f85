@@ -499,6 +499,7 @@ export default function EmailMarketing() {
                               <button onClick={() => {
                                 setCampaignName(c.name); setCampaignSubject(c.subject); setCampaignHtml(c.html_content);
                                 setCampaignGroupId(c.group_id || ""); setCampaignScheduleAt(c.scheduled_at ? c.scheduled_at.slice(0, 16) : "");
+                                setCampaignFromAddress(c.from_address || "support@fundingpulze.com");
                                 setEditingCampaignId(c.id); setEditorMode("code"); setCampaignDialog(true);
                               }} className="px-2 py-1 rounded text-[10px] bg-[hsl(0,0%,93%)] hover:bg-[hsl(0,0%,88%)]">Edit</button>
                               <button disabled={sending} onClick={() => sendCampaign(c.id)} className="px-2 py-1 rounded text-[10px] bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(0,0%,15%)] flex items-center gap-1">
