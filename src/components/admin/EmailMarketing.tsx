@@ -779,6 +779,18 @@ export default function EmailMarketing() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
+                <Label className="text-xs">From Address</Label>
+                <Select value={campaignFromAddress} onValueChange={setCampaignFromAddress}>
+                  <SelectTrigger className={`text-xs ${LIGHT_FIELD_CLASS}`} style={LIGHT_COLOR_SCHEME}><SelectValue /></SelectTrigger>
+                  <SelectContent className={LIGHT_DIALOG_CLASS}>
+                    <SelectItem value="support@fundingpulze.com">support@fundingpulze.com</SelectItem>
+                    <SelectItem value="admin@fundingpulze.com">admin@fundingpulze.com</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
                 <Label className="text-xs">Target Group</Label>
                 <Select value={campaignGroupId} onValueChange={setCampaignGroupId}>
                   <SelectTrigger className={`text-xs ${LIGHT_FIELD_CLASS}`} style={LIGHT_COLOR_SCHEME}><SelectValue placeholder="Select group" /></SelectTrigger>
