@@ -172,8 +172,7 @@ Deno.serve(async (req) => {
     let certificateType: string;
     let title: string;
     let description: string;
-    let nextPhaseStatus: string | null = null; // status to move purchase to
-    let issueNewCredential = false;            // whether to swap MT5 creds for next phase
+    let nextPhaseStatus: string | null = null; // status to move purchase to (under-review state)
 
     if (!existingTypes.includes("phase1_passed")) {
       certificateType = "phase1_passed";
