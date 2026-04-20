@@ -126,6 +126,8 @@ const Checkout = () => {
 
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState<{ code: string; type: string; value: number } | null>(null);
+  const couponAppliedRef = useRef(couponApplied);
+  useEffect(() => { couponAppliedRef.current = couponApplied; }, [couponApplied]);
   const [couponLoading, setCouponLoading] = useState(false);
   const [payMethod, setPayMethod] = useState<"paypal" | "crypto" | "upi">("paypal");
   const [upiConfig, setUpiConfig] = useState<{ upi_id: string; scanner_url: string }>({ upi_id: "", scanner_url: "" });
@@ -236,6 +238,7 @@ const Checkout = () => {
       .insert({
         user_id: user.id, challenge_id: challenge.id, amount_paid: totalRef.current,
         payment_status: "pending", status: "pending", swap_free: false,
+        coupon_code: couponAppliedRef.current?.code || null,
         utm_source: utm.utm_source || null, utm_medium: utm.utm_medium || null,
         utm_campaign: utm.utm_campaign || null, utm_term: utm.utm_term || null,
         utm_content: utm.utm_content || null,
@@ -385,6 +388,7 @@ const Checkout = () => {
         .insert({
           user_id: user.id, challenge_id: challenge.id, amount_paid: totalRef.current,
           payment_status: "pending", status: "pending", swap_free: false,
+          coupon_code: couponAppliedRef.current?.code || null,
           payment_method: "upi",
           utr_number: utrNumber.trim(),
           utm_source: utm.utm_source || null, utm_medium: utm.utm_medium || null,

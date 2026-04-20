@@ -392,6 +392,7 @@ export type Database = {
         Row: {
           amount_paid: number
           challenge_id: string
+          coupon_code: string | null
           created_at: string
           id: string
           last_payout_at: string | null
@@ -413,6 +414,7 @@ export type Database = {
         Insert: {
           amount_paid: number
           challenge_id: string
+          coupon_code?: string | null
           created_at?: string
           id?: string
           last_payout_at?: string | null
@@ -434,6 +436,7 @@ export type Database = {
         Update: {
           amount_paid?: number
           challenge_id?: string
+          coupon_code?: string | null
           created_at?: string
           id?: string
           last_payout_at?: string | null

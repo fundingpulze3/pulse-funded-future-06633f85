@@ -723,11 +723,15 @@ const Admin = () => {
                               const toastId = toast.loading("Generating login link...");
                               try {
                                 const { data: { session } } = await supabase.auth.getSession();
-                                const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-impersonate`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ user_id: p.user_id }) });
+                                const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-impersonate`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+                                  body: JSON.stringify({ user_id: p.user_id, redirect_to: `${window.location.origin}/dashboard` }),
+                                });
                                 const data = await res.json();
                                 if (!res.ok) throw new Error(data.error);
                                 toast.dismiss(toastId);
-                                window.open(data.url + `&redirect_to=${window.location.origin}`, "_blank");
+                                window.open(data.url, "_blank");
                               } catch (err: any) { toast.dismiss(toastId); toast.error(err.message || "Failed to impersonate"); }
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[hsl(0,0%,0%)] text-[hsl(0,0%,100%)] text-xs font-medium hover:bg-[hsl(0,0%,15%)] transition-colors"
