@@ -33,7 +33,9 @@ interface UserAccount {
 const PHASES = [
   { value: "pending", label: "Pending", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
   { value: "active", label: "Active (Phase 1)", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { value: "phase1_passed", label: "Phase 1 Passed (Under Review)", color: "bg-amber-50 text-amber-700 border-amber-200" },
   { value: "phase2", label: "Phase 2", color: "bg-cyan-50 text-cyan-700 border-cyan-200" },
+  { value: "phase2_passed", label: "Phase 2 Passed (Under Review)", color: "bg-amber-50 text-amber-700 border-amber-200" },
   { value: "funded", label: "Funded", color: "bg-green-50 text-green-700 border-green-200" },
   { value: "breached", label: "Breached", color: "bg-red-50 text-red-700 border-red-200" },
   { value: "completed", label: "Completed", color: "bg-purple-50 text-purple-700 border-purple-200" },
@@ -147,21 +149,10 @@ const UserPhaseManager = () => {
       changed_by: session?.user?.id || null,
     } as any);
 
-    // Auto-assign / swap credentials when progressing to a new phase
-    const isPhaseAdvance =
-      (oldStatus === "active" && (newStatus === "phase2" || newStatus === "funded")) ||
-      (oldStatus === "phase2" && newStatus === "funded");
-    const needsFirstCred = (newStatus === "active" || newStatus === "phase2" || newStatus === "funded") && !account.mt5Login;
-
-    if (isPhaseAdvance || needsFirstCred) {
-      // Free old credential when advancing phases
-      if (isPhaseAdvance && account.credentialId) {
-        await supabase
-          .from("trading_credentials")
-          .update({ is_assigned: false, assigned_to: null, purchase_id: null, assigned_at: null })
-          .eq("id", account.credentialId);
-      }
-
+    // First-time credential assignment only (e.g. status set to "active" before any MT5 was issued).
+    // Phase advancement (active→phase2, phase2→funded) is handled by the dedicated "Push" button below.
+    const needsFirstCred = (newStatus === "active") && !account.mt5Login;
+    if (needsFirstCred) {
       const { data: availableCred } = await supabase
         .from("trading_credentials")
         .select("*")
@@ -197,7 +188,7 @@ const UserPhaseManager = () => {
           });
         } catch (e) { console.error("credentials email failed", e); }
 
-        toast.success(`New credentials issued: FP ${availableCred.mt5_login}`);
+        toast.success(`Credentials issued: FP ${availableCred.mt5_login}`);
       } else {
         toast.warning("No available credentials in pool for this challenge!");
       }

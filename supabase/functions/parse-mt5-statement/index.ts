@@ -179,20 +179,16 @@ Deno.serve(async (req) => {
       certificateType = "phase1_passed";
       title = "Phase 1 Challenge Passed ✅";
       description = `Account #${parsed.accountNumber} passed Phase 1 — Profit: $${evaluation.profitAmount?.toFixed(2) || "N/A"} (${evaluation.profitPercent?.toFixed(2) || "N/A"}%)`;
-      // 1-step → straight to funded; 2-step → phase2 with NEW credentials
-      if (isOneStep) {
-        nextPhaseStatus = "funded";
-        issueNewCredential = true;
-      } else {
-        nextPhaseStatus = "phase2";
-        issueNewCredential = true;
-      }
+      // Mark account "under review" — admin manually pushes to next phase from the panel.
+      // 1-step → awaiting funded review; 2-step → awaiting phase 2 review.
+      nextPhaseStatus = "phase1_passed";
+      issueNewCredential = false;
     } else if (!existingTypes.includes("phase2_passed") && !isOneStep) {
       certificateType = "phase2_passed";
       title = "Phase 2 Verification Passed ✅";
       description = `Account #${parsed.accountNumber} passed Phase 2 — Profit: $${evaluation.profitAmount?.toFixed(2) || "N/A"} (${evaluation.profitPercent?.toFixed(2) || "N/A"}%)`;
-      nextPhaseStatus = "funded";
-      issueNewCredential = true;
+      nextPhaseStatus = "phase2_passed";
+      issueNewCredential = false;
     } else if (!existingTypes.includes("funded")) {
       certificateType = "funded";
       title = "Funded Account Certificate 🏆";
@@ -268,42 +264,9 @@ Deno.serve(async (req) => {
         old_status: oldStatus,
         new_status: nextPhaseStatus,
         changed_by: null,
-        note: `Auto-progressed by MT5 statement upload (${certificateType})`,
+        note: `Auto-marked under review by MT5 statement upload (${certificateType}). Awaiting admin push.`,
       });
-
-      // 3. Swap MT5 credentials — release the old account, assign a fresh one from the same challenge pool
-      if (issueNewCredential) {
-        // Free the previous credential
-        await adminClient
-          .from("trading_credentials")
-          .update({ is_assigned: false, assigned_to: null, purchase_id: null, assigned_at: null })
-          .eq("id", credential.id);
-
-        // Find a fresh unassigned credential for the same challenge
-        const { data: nextCred } = await adminClient
-          .from("trading_credentials")
-          .select("*")
-          .eq("challenge_id", challenge.id || credential.challenge_id)
-          .eq("is_assigned", false)
-          .limit(1)
-          .maybeSingle();
-
-        if (nextCred) {
-          await adminClient
-            .from("trading_credentials")
-            .update({
-              is_assigned: true,
-              assigned_to: purchaseRow.user_id,
-              purchase_id: purchaseRow.id,
-              assigned_at: new Date().toISOString(),
-            })
-            .eq("id", nextCred.id);
-          newCredential = nextCred;
-          console.log(`[parse-mt5] Issued new credential FP ${nextCred.mt5_login} for ${nextPhaseStatus}`);
-        } else {
-          console.warn(`[parse-mt5] No available credential in pool for challenge ${credential.challenge_id} — admin must add more`);
-        }
-      }
+      // NOTE: credential assignment is now handled manually by admin via "Push to Phase 2 / Funded" button.
     }
 
     // Send email notification for the certificate type
