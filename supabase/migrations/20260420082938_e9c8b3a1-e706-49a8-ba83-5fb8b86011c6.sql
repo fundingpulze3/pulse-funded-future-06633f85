@@ -1,0 +1,1 @@
+UPDATE public.email_campaigns SET status='draft', sent_at=NULL, total_recipients=0 WHERE id='97be1464-5d47-420b-8075-ad2608ff1a22'; DELETE FROM public.email_campaign_events WHERE campaign_id='97be1464-5d47-420b-8075-ad2608ff1a22';
