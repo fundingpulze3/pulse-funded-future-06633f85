@@ -225,21 +225,35 @@ const Dashboard = () => {
     });
   }, [purchases, stepFilter, statusFilter]);
 
+  // A "rich" stat blob has actual MT5 fields like balance/totalTrades, not just {userName, accountSize}
+  const isRichStats = (stats: Record<string, any> | null | undefined): boolean => {
+    if (!stats || typeof stats !== "object") return false;
+    return (
+      typeof stats.balance === "number" ||
+      typeof stats.totalTrades === "number" ||
+      typeof stats.equity === "number" ||
+      typeof stats.profit === "number"
+    );
+  };
+
+  // Pick the freshest cert that actually contains parsed MT5 stats for this account
+  const pickRichestCert = (matcher: (c: UserCertificate) => boolean): UserCertificate | null => {
+    const candidates = userCertificates.filter(c => matcher(c) && isRichStats(c.stats));
+    if (candidates.length === 0) return null;
+    // Prefer latest_stats type, otherwise the most recently created
+    const latest = candidates.find(c => c.certificate_type === "latest_stats");
+    if (latest) return latest;
+    return [...candidates].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+  };
+
   const activeAccountStats = useMemo(() => {
     const activePurchase = selectedAccount ? purchases.find(p => p.id === selectedAccount) : purchases[0];
     if (!activePurchase) return null;
     const purchaseCred = credentials.find(c => c.purchase_id === activePurchase.id);
     const accountLogin = purchaseCred?.mt5_login || null;
-    // Prefer latest_stats cert (always has freshest data), then fall back to any cert with stats
-    const matchedCert = userCertificates.find(c =>
-      c.purchase_id === activePurchase.id && c.certificate_type === "latest_stats" && c.stats && Object.keys(c.stats).length > 0
-    ) || (accountLogin ? userCertificates.find(c =>
-      c.account_number === accountLogin && c.certificate_type === "latest_stats" && c.stats && Object.keys(c.stats).length > 0
-    ) : null) || userCertificates.find(c =>
-      c.purchase_id === activePurchase.id && c.stats && Object.keys(c.stats).length > 0
-    ) || (accountLogin ? userCertificates.find(c =>
-      c.account_number === accountLogin && c.stats && Object.keys(c.stats).length > 0
-    ) : null);
+    const matchedCert =
+      pickRichestCert(c => c.purchase_id === activePurchase.id) ||
+      (accountLogin ? pickRichestCert(c => c.account_number === accountLogin) : null);
     const accountSize = activePurchase.challenges?.account_size || 0;
     const stats = matchedCert?.stats || {};
     return {
@@ -513,8 +527,8 @@ const Dashboard = () => {
                 const stepType = p.challenges?.step_type || "—";
                 const accountNumber = cred?.mt5_login || p.id.slice(0, 8);
                 const rank = getRank(p);
-                const purchaseCert = userCertificates.find(c => c.purchase_id === p.id && c.stats && Object.keys(c.stats).length > 0)
-                  || (cred ? userCertificates.find(c => c.account_number === cred.mt5_login && c.stats && Object.keys(c.stats).length > 0) : null);
+                const purchaseCert = pickRichestCert(c => c.purchase_id === p.id)
+                  || (cred ? pickRichestCert(c => c.account_number === cred.mt5_login) : null);
                 const trades = purchaseCert?.stats?.totalTrades ?? 0;
 
                 // Subtle accent hue per card based on status

@@ -235,6 +235,25 @@ const UserPhaseManager = () => {
         });
       }
 
+      // Carry forward the latest parsed MT5 stats so dashboard graphs/trades stay populated
+      // after the admin manually pushes a phase. NEVER overwrite with empty {accountSize, userName}.
+      let carriedStats: Record<string, any> = { accountSize: account.accountSize, userName: account.userName };
+      try {
+        const { data: existingCerts } = await supabase
+          .from("user_certificates")
+          .select("stats, certificate_type, created_at")
+          .eq("user_id", account.userId)
+          .eq("account_number", account.mt5Login)
+          .order("created_at", { ascending: false });
+        const richest = (existingCerts || []).find((c: any) => {
+          const s = c.stats;
+          return s && (typeof s.balance === "number" || typeof s.totalTrades === "number" || typeof s.equity === "number");
+        });
+        if (richest?.stats) {
+          carriedStats = { ...richest.stats, ...carriedStats };
+        }
+      } catch (e) { console.error("failed to carry forward stats", e); }
+
       await supabase.from("user_certificates").insert({
         id: certId,
         user_id: account.userId,
@@ -245,7 +264,7 @@ const UserPhaseManager = () => {
         credential_id: account.credentialId,
         purchase_id: account.purchaseId,
         certificate_image_url: certificateImageUrl,
-        stats: { accountSize: account.accountSize, userName: account.userName },
+        stats: carriedStats,
       });
       toast.success(`Certificate "${certTitle}" issued`);
     }
