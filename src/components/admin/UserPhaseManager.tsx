@@ -13,6 +13,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface UserAccount {
   purchaseId: string;
@@ -50,6 +52,9 @@ const UserPhaseManager = () => {
   const [selectedAccount, setSelectedAccount] = useState<UserAccount | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<any>(null);
+  // Manual credential dialog (replaces pool auto-pick when pushing to next phase)
+  const [pushDialog, setPushDialog] = useState<{ open: boolean; account: UserAccount | null; targetStatus: string }>({ open: false, account: null, targetStatus: "" });
+  const [credForm, setCredForm] = useState({ mt5Login: "", mt5Password: "", mt5Server: "MEXAtlantic-Demo" });
 
   useEffect(() => { fetchAccounts(); }, []);
 
@@ -274,70 +279,69 @@ const UserPhaseManager = () => {
     fetchAccounts();
   };
 
-  // ── Manual "Push to next phase" — used when account status is phase1_passed or phase2_passed ──
-  const pushToNextPhase = async (account: UserAccount) => {
+  // ── Open the manual-credential dialog when admin clicks "Push to next phase" ──
+  // We NO LONGER auto-pull from the pool. Admin must enter the new MT5 login/password/server
+  // for this trader, which guarantees credentials are never reused across users.
+  const openPushDialog = (account: UserAccount) => {
     const targetStatus = account.status === "phase1_passed"
       ? (account.stepType?.toLowerCase().includes("one") ? "funded" : "phase2")
       : "funded";
+    setCredForm({ mt5Login: "", mt5Password: "", mt5Server: "MEXAtlantic-Demo" });
+    setPushDialog({ open: true, account, targetStatus });
+  };
+
+  // ── Submit the manual credentials → create row, assign, flip status, email trader ──
+  const submitPushDialog = async () => {
+    const { account, targetStatus } = pushDialog;
+    if (!account) return;
+    const mt5Login = credForm.mt5Login.trim();
+    const mt5Password = credForm.mt5Password.trim();
+    const mt5Server = credForm.mt5Server.trim() || "MEXAtlantic-Demo";
+    if (!mt5Login || !mt5Password) {
+      toast.error("MT5 login and password are required.");
+      return;
+    }
 
     setUpdating(account.purchaseId);
-
     try {
-      // 1. Pull a credential that has NEVER been issued to anyone before.
-      //    NOTE: previously we accepted any is_assigned=false row, which meant
-      //    a credential freed from another trader could be re-issued. Now we
-      //    only allow truly virgin credentials (assigned_to + assigned_at null).
-      const { data: availableCred, error: poolErr } = await supabase
+      // Guard: refuse if this MT5 login already exists in the credentials pool — never reuse.
+      const { data: dup } = await supabase
         .from("trading_credentials")
-        .select("*")
-        .eq("is_assigned", false)
-        .is("assigned_to", null)
-        .is("assigned_at", null)
-        .eq("challenge_id", account.challengeId)
-        .limit(1)
+        .select("id, assigned_to")
+        .eq("mt5_login", mt5Login)
         .maybeSingle();
-
-      if (poolErr) throw poolErr;
-      if (!availableCred) {
-        toast.error(
-          `No fresh, never-used ${targetStatus} credentials in the pool for ${account.challengeName}. Add new credentials in 'Credentials' tab first — never reuse old MT5 logins.`,
-          { duration: 7000 }
-        );
+      if (dup) {
+        toast.error(`MT5 login ${mt5Login} already exists in the credentials pool — never reuse logins. Use a fresh one.`);
         setUpdating(null);
         return;
       }
 
-      // 2. Do NOT "free" the previous credential. Leave it historically
-      //    attached to its original purchase so it can never be re-issued
-      //    to another trader. We only repoint purchase_id on the new one.
-
-      // 3. Atomically claim the new credential (race-safe — fails if another
-      //    concurrent push grabbed it first).
-      const { data: claimed, error: assignErr } = await supabase
+      // 1. Create the new credential row pre-assigned to this trader/purchase.
+      const { data: created, error: insertErr } = await supabase
         .from("trading_credentials")
-        .update({
+        .insert({
+          challenge_id: account.challengeId,
+          mt5_login: mt5Login,
+          mt5_password: mt5Password,
+          mt5_server: mt5Server,
           is_assigned: true,
           assigned_to: account.userId,
-          purchase_id: account.purchaseId,
           assigned_at: new Date().toISOString(),
+          purchase_id: account.purchaseId,
         })
-        .eq("id", availableCred.id)
-        .eq("is_assigned", false)
-        .is("assigned_to", null)
-        .select("id")
-        .maybeSingle();
-      if (assignErr) throw assignErr;
-      if (!claimed) {
-        toast.error("Credential was just claimed by another push — refresh and try again.");
-        setUpdating(null);
-        return;
-      }
+        .select("id, mt5_login, mt5_password, mt5_server")
+        .single();
+      if (insertErr || !created) throw insertErr || new Error("Failed to create credential");
 
-      // 4. Update purchase status
+      // 2. Update purchase status.
       const oldStatus = account.status;
-      await supabase.from("challenge_purchases").update({ status: targetStatus }).eq("id", account.purchaseId);
+      const { error: updErr } = await supabase
+        .from("challenge_purchases")
+        .update({ status: targetStatus })
+        .eq("id", account.purchaseId);
+      if (updErr) throw updErr;
 
-      // 5. Log status change
+      // 3. Log status change.
       const { data: { session } } = await supabase.auth.getSession();
       await supabase.from("account_status_history").insert({
         purchase_id: account.purchaseId,
@@ -345,19 +349,19 @@ const UserPhaseManager = () => {
         old_status: oldStatus,
         new_status: targetStatus,
         changed_by: session?.user?.id || null,
-        note: `Admin pushed to ${targetStatus} — new credential FP ${availableCred.mt5_login} issued.`,
+        note: `Admin pushed to ${targetStatus} with manually-entered credential FP ${created.mt5_login}.`,
       } as any);
 
-      // 6. Send credentials email
+      // 4. Email the trader the new credentials.
       try {
         await supabase.functions.invoke("send-transactional-email", {
           body: {
             type: "credentials",
             recipientUserId: account.userId,
             data: {
-              mt5Login: availableCred.mt5_login,
-              mt5Password: availableCred.mt5_password,
-              mt5Server: availableCred.mt5_server || "MEXAtlantic-Demo",
+              mt5Login: created.mt5_login,
+              mt5Password: created.mt5_password,
+              mt5Server: created.mt5_server || "MEXAtlantic-Demo",
               challengeName: account.challengeName,
               accountSize: `$${Number(account.accountSize).toLocaleString()}`,
             },
@@ -365,7 +369,8 @@ const UserPhaseManager = () => {
         });
       } catch (e) { console.error("credentials email failed", e); }
 
-      toast.success(`Pushed to ${targetStatus}. New credential FP ${availableCred.mt5_login} assigned & emailed.`);
+      toast.success(`Pushed to ${targetStatus}. Credential FP ${created.mt5_login} assigned & emailed.`);
+      setPushDialog({ open: false, account: null, targetStatus: "" });
     } catch (err: any) {
       toast.error(err.message || "Failed to push to next phase");
     } finally {
@@ -443,6 +448,49 @@ const UserPhaseManager = () => {
     }));
   }, [selectedAccount]);
 
+  // Shared push-credentials dialog — rendered in both detail and list views.
+  const pushCredDialog = (
+    <Dialog open={pushDialog.open} onOpenChange={(o) => !o && setPushDialog({ open: false, account: null, targetStatus: "" })}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {pushDialog.targetStatus === "phase2" ? "Push to Phase 2 — enter NEW credentials" :
+             pushDialog.targetStatus === "funded" ? "Push to Funded — enter NEW credentials" :
+             "Push to next phase"}
+          </DialogTitle>
+          <DialogDescription asChild>
+            <div>
+              {pushDialog.account && (
+                <>Issuing a brand-new MT5 account to <b>{pushDialog.account.userName}</b> ({pushDialog.account.email}) for <b>{pushDialog.account.challengeName}</b>. These credentials will be saved to the credentials pool, locked to this trader, and emailed to them. Never reuse old logins.</>
+              )}
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div>
+            <Label htmlFor="cred-login" className="text-xs">MT5 Login *</Label>
+            <Input id="cred-login" value={credForm.mt5Login} onChange={e => setCredForm(f => ({ ...f, mt5Login: e.target.value }))} placeholder="e.g. 90460001" className="mt-1 h-9 text-sm" />
+          </div>
+          <div>
+            <Label htmlFor="cred-pass" className="text-xs">MT5 Password *</Label>
+            <Input id="cred-pass" value={credForm.mt5Password} onChange={e => setCredForm(f => ({ ...f, mt5Password: e.target.value }))} placeholder="MT5 investor / master password" className="mt-1 h-9 text-sm" />
+          </div>
+          <div>
+            <Label htmlFor="cred-server" className="text-xs">MT5 Server</Label>
+            <Input id="cred-server" value={credForm.mt5Server} onChange={e => setCredForm(f => ({ ...f, mt5Server: e.target.value }))} placeholder="MEXAtlantic-Demo" className="mt-1 h-9 text-sm" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={() => setPushDialog({ open: false, account: null, targetStatus: "" })} disabled={updating === pushDialog.account?.purchaseId}>Cancel</Button>
+          <Button size="sm" onClick={submitPushDialog} disabled={updating === pushDialog.account?.purchaseId} className="bg-amber-600 hover:bg-amber-700 text-white">
+            {updating === pushDialog.account?.purchaseId ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <CheckCircle2 size={14} className="mr-1.5" />}
+            Assign & email trader
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="w-5 h-5 border-2 border-[hsl(0,0%,30%)] border-t-transparent rounded-full animate-spin" />
@@ -493,17 +541,17 @@ const UserPhaseManager = () => {
             <p className="text-xs font-semibold text-amber-900 uppercase tracking-wider mb-1">⚠ Account Under Review</p>
             <p className="text-xs text-amber-800 mb-3">
               {selectedAccount.status === "phase1_passed"
-                ? "Trader passed Phase 1. Push to Phase 2 will free this credential and assign a fresh one from the pool, then email the trader."
-                : "Trader passed Phase 2. Push to Funded will free this credential and assign a fresh funded MT5 account, then email the trader."}
+                ? "Trader passed Phase 1. Enter the NEW MT5 credentials for the next phase — they will be assigned to this trader and emailed automatically. Never reuse old logins."
+                : "Trader passed Phase 2. Enter the NEW funded MT5 credentials — they will be assigned to this trader and emailed automatically. Never reuse old logins."}
             </p>
             <Button
               size="sm"
               disabled={updating === selectedAccount.purchaseId}
-              onClick={() => pushToNextPhase(selectedAccount)}
+              onClick={() => openPushDialog(selectedAccount)}
               className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8"
             >
               {updating === selectedAccount.purchaseId ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <CheckCircle2 size={14} className="mr-1.5" />}
-              {selectedAccount.status === "phase1_passed" ? "Push to Phase 2" : "Push to Funded"}
+              {selectedAccount.status === "phase1_passed" ? "Push to Phase 2 (enter credentials)" : "Push to Funded (enter credentials)"}
             </Button>
           </div>
         )}
@@ -646,6 +694,7 @@ const UserPhaseManager = () => {
             ))}
           </div>
         </div>
+        {pushCredDialog}
       </div>
     );
   }
@@ -795,6 +844,7 @@ const UserPhaseManager = () => {
           </table>
         </div>
       </div>
+      {pushCredDialog}
     </div>
   );
 };
