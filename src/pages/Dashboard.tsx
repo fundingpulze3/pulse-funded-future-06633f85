@@ -132,16 +132,9 @@ const Dashboard = () => {
     if (user) fetchAllData();
   }, [user, authLoading]);
 
-  useEffect(() => {
-    if (purchases.length === 0) {
-      setSelectedAccount(null);
-      return;
-    }
-    setSelectedAccount((prev) => {
-      if (prev && purchases.some((purchase) => purchase.id === prev)) return prev;
-      return purchases[0].id;
-    });
-  }, [purchases]);
+  // selectedAccount is a "view key": either `cred:<credentialId>` or `purchase:<purchaseId>`
+  // (used for purchases that don't have any credential assigned yet).
+  // We DON'T auto-select here yet — we wait until accountViews is built below.
 
   const withTimeout = <T,>(promise: Promise<T>, ms = 12000): Promise<T> =>
     new Promise((resolve, reject) => {
@@ -214,16 +207,8 @@ const Dashboard = () => {
     return { label: "Student", img: rankStudentImg, color: "text-[hsl(207,80%,65%)]" };
   };
 
-  const filteredPurchases = useMemo(() => {
-    return purchases.filter(p => {
-      // Step filter
-      if (stepFilter === "1-step" && !getStepType(p).includes("1")) return false;
-      if (stepFilter === "2-step" && !getStepType(p).includes("2")) return false;
-      // Status filter
-      if (statusFilter !== "all" && getAccountStatus(p) !== statusFilter) return false;
-      return true;
-    });
-  }, [purchases, stepFilter, statusFilter]);
+  // (filteredPurchases removed — replaced by accountViews / filteredViews below)
+
 
   // A "rich" stat blob has actual MT5 fields like balance/totalTrades, not just {userName, accountSize}
   const isRichStats = (stats: Record<string, any> | null | undefined): boolean => {
@@ -246,17 +231,114 @@ const Dashboard = () => {
     return [...candidates].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
   };
 
+  // ── Build "Account Views" ──────────────────────────────────────────────
+  // We render ONE card per CREDENTIAL (so phase 1 cred stays visible even after
+  // the trader gets a phase 2 cred under the same purchase). A purchase that
+  // has zero credentials still gets a single placeholder view.
+  type AccountView = {
+    key: string;                         // unique key for selection (`cred:<id>` or `purchase:<id>`)
+    purchase: Purchase;
+    credential: TradingCredential | null;
+    accountNumber: string;               // mt5_login if available, else fallback
+    phaseLabel: "Phase 1" | "Phase 2" | "Funded" | null;
+    derivedStatus: "ongoing" | "funded" | "breached" | "completed";
+  };
+
+  // Decide phase label for a credential view by looking at its richest cert
+  const phaseFromCert = (cert: UserCertificate | null): AccountView["phaseLabel"] => {
+    const t = cert?.certificate_type || "";
+    if (t.includes("phase1")) return "Phase 1";
+    if (t.includes("phase2")) return "Phase 2";
+    if (t.includes("funded")) return "Funded";
+    return null;
+  };
+
+  // Per-credential status: passed if cert is phase1/phase2_passed,
+  // breached if cert is breached, otherwise inherit purchase status.
+  const statusFromCert = (cert: UserCertificate | null, fallback: AccountView["derivedStatus"]): AccountView["derivedStatus"] => {
+    const t = (cert?.certificate_type || "").toLowerCase();
+    if (t.includes("breached") || t.includes("failed")) return "breached";
+    if (t.includes("passed") || t.includes("phase1_passed") || t.includes("phase2_passed")) return "completed";
+    if (t.includes("funded")) return "funded";
+    return fallback;
+  };
+
+  const accountViews = useMemo<AccountView[]>(() => {
+    const views: AccountView[] = [];
+    for (const p of purchases) {
+      const purchaseCreds = credentials
+        .filter(c => c.purchase_id === p.id)
+        // oldest first → phase 1 card sits above phase 2 card
+        .sort((a, b) => a.mt5_login.localeCompare(b.mt5_login));
+      const purchaseStatus = getAccountStatus(p) as AccountView["derivedStatus"];
+      if (purchaseCreds.length === 0) {
+        views.push({
+          key: `purchase:${p.id}`,
+          purchase: p,
+          credential: null,
+          accountNumber: p.id.slice(0, 8),
+          phaseLabel: null,
+          derivedStatus: purchaseStatus,
+        });
+        continue;
+      }
+      for (const cred of purchaseCreds) {
+        const cert = pickRichestCert(c => c.account_number === cred.mt5_login)
+          || pickRichestCert(c => c.credential_id === cred.id);
+        // For older creds whose phase is over, the latest_stats may be empty —
+        // fall back to type-based phase detection from any cert tied to this credential.
+        const anyCertForCred = userCertificates.find(c => c.account_number === cred.mt5_login || c.credential_id === cred.id) || null;
+        const phaseLabel = phaseFromCert(cert) || phaseFromCert(anyCertForCred);
+        views.push({
+          key: `cred:${cred.id}`,
+          purchase: p,
+          credential: cred,
+          accountNumber: cred.mt5_login,
+          phaseLabel,
+          derivedStatus: statusFromCert(cert || anyCertForCred, purchaseStatus),
+        });
+      }
+    }
+    return views;
+  }, [purchases, credentials, userCertificates]);
+
+  const filteredViews = useMemo(() => {
+    return accountViews.filter(v => {
+      if (stepFilter === "1-step" && !getStepType(v.purchase).includes("1")) return false;
+      if (stepFilter === "2-step" && !getStepType(v.purchase).includes("2")) return false;
+      if (statusFilter !== "all" && v.derivedStatus !== statusFilter) return false;
+      return true;
+    });
+  }, [accountViews, stepFilter, statusFilter]);
+
+  // Auto-select first view once data loads / when current selection becomes stale
+  useEffect(() => {
+    if (accountViews.length === 0) {
+      if (selectedAccount !== null) setSelectedAccount(null);
+      return;
+    }
+    if (!selectedAccount || !accountViews.some(v => v.key === selectedAccount)) {
+      setSelectedAccount(accountViews[0].key);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountViews]);
+
   const activeAccountStats = useMemo(() => {
-    const activePurchase = selectedAccount ? purchases.find(p => p.id === selectedAccount) : purchases[0];
-    if (!activePurchase) return null;
-    const purchaseCred = credentials.find(c => c.purchase_id === activePurchase.id);
-    const accountLogin = purchaseCred?.mt5_login || null;
-    const matchedCert =
-      pickRichestCert(c => c.purchase_id === activePurchase.id) ||
-      (accountLogin ? pickRichestCert(c => c.account_number === accountLogin) : null);
+    const activeView = (selectedAccount && accountViews.find(v => v.key === selectedAccount)) || accountViews[0];
+    if (!activeView) return null;
+    const activePurchase = activeView.purchase;
+    const cred = activeView.credential;
+    const accountLogin = cred?.mt5_login || null;
+    // Stats are matched STRICTLY by this credential's mt5 login when we have one,
+    // so phase 1 keeps showing phase 1 stats/graphs even after phase 2 starts.
+    const matchedCert = accountLogin
+      ? (pickRichestCert(c => c.account_number === accountLogin)
+          || pickRichestCert(c => c.credential_id === cred!.id))
+      : pickRichestCert(c => c.purchase_id === activePurchase.id);
     const accountSize = activePurchase.challenges?.account_size || 0;
     const stats = matchedCert?.stats || {};
     return {
+      view: activeView,
       purchase: activePurchase,
       stats, balance: stats.balance ?? accountSize, equity: stats.equity ?? stats.balance ?? accountSize,
       profit: stats.profit ?? 0, deposit: stats.deposit ?? accountSize, totalTrades: stats.totalTrades ?? 0,
@@ -282,7 +364,7 @@ const Dashboard = () => {
       maxConsecutiveLoss: stats.maxConsecutiveLoss ?? 0, drawdownDetailChart: stats.drawdownDetailChart,
       dailyDDPercent: stats.dailyDrawdownPercent ?? stats.maxDailyDrawdownPercent ?? 0,
     };
-  }, [purchases, userCertificates, selectedAccount, credentials]);
+  }, [accountViews, selectedAccount, userCertificates]);
 
   const chartData = useMemo(() => {
     if (!activeAccountStats?.balanceChart || !Array.isArray(activeAccountStats.balanceChart)) {
@@ -518,18 +600,21 @@ const Dashboard = () => {
           {/* Account Cards */}
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin scrollbar-thumb-[hsl(220,15%,15%)] scrollbar-track-transparent">
             <AnimatePresence>
-              {filteredPurchases.slice(0, 10).map((p, i) => {
-                const isActive = selectedAccount === p.id;
-                const status = getAccountStatus(p);
+              {filteredViews.slice(0, 20).map((v, i) => {
+                const p = v.purchase;
+                const isActive = selectedAccount === v.key;
+                const status = v.derivedStatus;
                 const sc = statusConfig[status] || statusConfig.ongoing;
-                const cred = credentials.find(c => c.purchase_id === p.id);
                 const challengeName = p.challenges?.name || "Account";
                 const stepType = p.challenges?.step_type || "—";
-                const accountNumber = cred?.mt5_login || p.id.slice(0, 8);
+                const accountNumber = v.accountNumber;
                 const rank = getRank(p);
-                const purchaseCert = pickRichestCert(c => c.purchase_id === p.id)
-                  || (cred ? pickRichestCert(c => c.account_number === cred.mt5_login) : null);
-                const trades = purchaseCert?.stats?.totalTrades ?? 0;
+                // Stats are scoped to THIS credential's mt5 login so phase 1 keeps phase 1 data
+                const cardCert = v.credential
+                  ? (pickRichestCert(c => c.account_number === v.credential!.mt5_login)
+                      || pickRichestCert(c => c.credential_id === v.credential!.id))
+                  : pickRichestCert(c => c.purchase_id === p.id);
+                const trades = cardCert?.stats?.totalTrades ?? 0;
 
                 // Subtle accent hue per card based on status
                 const accentMap: Record<string, string> = {
@@ -542,13 +627,13 @@ const Dashboard = () => {
 
                 return (
                   <motion.div
-                    key={p.id}
+                    key={v.key}
                     layout
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.97 }}
                     transition={{ duration: 0.2, delay: i * 0.02 }}
-                    onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); }}
+                    onClick={() => { setSelectedAccount(v.key); setActiveView("overview"); }}
                     className={`group cursor-pointer rounded-xl transition-all duration-200 overflow-hidden ${
                       isActive
                         ? `bg-[hsl(220,20%,8%)] ring-1 ring-[hsl(${accent})]/25 shadow-[0_0_24px_-6px_hsl(${accent},0.15)]`
@@ -573,9 +658,12 @@ const Dashboard = () => {
                               {sc.label}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                             <span className="text-[10px] text-[hsl(220,15%,45%)] truncate">{challengeName}</span>
                             <span className="text-[9px] px-1 py-px rounded bg-[hsl(220,15%,12%)] text-[hsl(220,15%,55%)] font-medium">{stepType}</span>
+                            {v.phaseLabel && (
+                              <span className="text-[9px] px-1 py-px rounded bg-[hsl(207,90%,77%)]/10 text-[hsl(207,90%,77%)] font-bold">{v.phaseLabel}</span>
+                            )}
                             <span className={`flex items-center gap-0.5 ml-auto shrink-0`}>
                               <img src={fpLogoIcon} alt="FP" className="w-3.5 h-3.5 object-contain opacity-40" />
                             </span>
@@ -625,16 +713,16 @@ const Dashboard = () => {
               })}
             </AnimatePresence>
 
-            {filteredPurchases.length === 0 && (
+            {filteredViews.length === 0 && (
               <div className="text-center py-12 text-[hsl(220,15%,40%)]">
                 <BarChart3 size={28} className="mx-auto mb-3 opacity-40" />
                 <p className="text-sm">No accounts match this filter.</p>
               </div>
             )}
 
-            {filteredPurchases.length > 10 && (
+            {filteredViews.length > 20 && (
               <p className="text-center text-[10px] text-[hsl(220,15%,35%)] pt-2">
-                Showing 10 of {filteredPurchases.length} accounts
+                Showing 20 of {filteredViews.length} accounts
               </p>
             )}
           </div>
@@ -654,23 +742,23 @@ const Dashboard = () => {
         <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
           {/* Mobile Account Selector */}
           <div className="lg:hidden p-3 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,20%,5%)]">
-            {filteredPurchases.length > 0 ? (
+            {filteredViews.length > 0 ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] uppercase tracking-widest text-[hsl(220,15%,40%)] font-semibold">Your Accounts</p>
-                  <span className="text-[10px] text-[hsl(220,15%,35%)]">{filteredPurchases.length} account{filteredPurchases.length > 1 ? "s" : ""}</span>
+                  <span className="text-[10px] text-[hsl(220,15%,35%)]">{filteredViews.length} account{filteredViews.length > 1 ? "s" : ""}</span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-                  {filteredPurchases.slice(0, 10).map(p => {
-                    const isActive = selectedAccount === p.id;
-                    const status = getAccountStatus(p);
+                  {filteredViews.slice(0, 20).map(v => {
+                    const p = v.purchase;
+                    const isActive = selectedAccount === v.key;
+                    const status = v.derivedStatus;
                     const sc = statusConfig[status] || statusConfig.ongoing;
-                    const cred = credentials.find(c => c.purchase_id === p.id);
-                    const accountNumber = cred?.mt5_login || p.id.slice(0, 8);
+                    const accountNumber = v.accountNumber;
                     return (
                       <button
-                        key={p.id}
-                        onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); }}
+                        key={v.key}
+                        onClick={() => { setSelectedAccount(v.key); setActiveView("overview"); }}
                         className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all text-left ${
                           isActive
                             ? "bg-[hsl(220,20%,9%)] border-[hsl(207,90%,77%)]/30"
@@ -681,6 +769,7 @@ const Dashboard = () => {
                           <p className="text-xs font-bold whitespace-nowrap">FP {accountNumber}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className={`text-[9px] font-bold ${sc.color}`}>{sc.label}</span>
+                            {v.phaseLabel && <span className="text-[9px] font-bold text-[hsl(207,90%,77%)]">{v.phaseLabel}</span>}
                             <span className="text-[9px] text-[hsl(220,15%,40%)]">${(p.challenges?.account_size || 0).toLocaleString()}</span>
                             {(() => { const r = getRank(p); return <img src={r.img} alt={r.label} className="w-4 h-4 rounded-full object-cover" />; })()}
                           </div>
