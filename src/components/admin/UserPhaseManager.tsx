@@ -249,8 +249,8 @@ const UserPhaseManager = () => {
           const s = c.stats;
           return s && (typeof s.balance === "number" || typeof s.totalTrades === "number" || typeof s.equity === "number");
         });
-        if (richest?.stats) {
-          carriedStats = { ...richest.stats, ...carriedStats };
+        if (richest && richest.stats && typeof richest.stats === "object") {
+          carriedStats = { ...(richest.stats as Record<string, any>), ...carriedStats };
         }
       } catch (e) { console.error("failed to carry forward stats", e); }
 
