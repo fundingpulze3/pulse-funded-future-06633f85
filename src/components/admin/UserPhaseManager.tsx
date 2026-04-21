@@ -151,18 +151,23 @@ const UserPhaseManager = () => {
 
     // First-time credential assignment only (e.g. status set to "active" before any MT5 was issued).
     // Phase advancement (active→phase2, phase2→funded) is handled by the dedicated "Push" button below.
+    // CRITICAL: only pick credentials that have NEVER been assigned to anyone — never reuse an
+    // mt5_login that was previously held by another trader (assigned_to / assigned_at must be null).
     const needsFirstCred = (newStatus === "active") && !account.mt5Login;
     if (needsFirstCred) {
       const { data: availableCred } = await supabase
         .from("trading_credentials")
         .select("*")
         .eq("is_assigned", false)
+        .is("assigned_to", null)
+        .is("assigned_at", null)
         .eq("challenge_id", account.challengeId)
         .limit(1)
         .maybeSingle();
 
       if (availableCred) {
-        await supabase
+        // Atomic claim: only succeed if still unclaimed (race-safe).
+        const { data: claimed, error: claimErr } = await supabase
           .from("trading_credentials")
           .update({
             is_assigned: true,
@@ -170,7 +175,17 @@ const UserPhaseManager = () => {
             purchase_id: account.purchaseId,
             assigned_at: new Date().toISOString(),
           })
-          .eq("id", availableCred.id);
+          .eq("id", availableCred.id)
+          .eq("is_assigned", false)
+          .is("assigned_to", null)
+          .select("id")
+          .maybeSingle();
+
+        if (claimErr || !claimed) {
+          toast.error("Credential was just claimed by another assignment — try again.");
+          setUpdating(null);
+          return;
+        }
 
         try {
           await supabase.functions.invoke("send-transactional-email", {
@@ -190,7 +205,7 @@ const UserPhaseManager = () => {
 
         toast.success(`Credentials issued: FP ${availableCred.mt5_login}`);
       } else {
-        toast.warning("No available credentials in pool for this challenge!");
+        toast.warning("No fresh, never-used credentials available for this challenge!");
       }
     }
 
