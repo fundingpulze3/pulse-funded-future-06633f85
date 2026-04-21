@@ -287,7 +287,7 @@ export default function EmailMarketing() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      toast.success(`Campaign sent! ${data.sent} delivered, ${data.failed} failed`);
+      toast.success(data.warning || `Campaign sent! ${data.sent} delivered, ${data.failed} failed`);
       fetchAll();
     } catch (err: any) {
       toast.error(err.message || "Failed to send");
