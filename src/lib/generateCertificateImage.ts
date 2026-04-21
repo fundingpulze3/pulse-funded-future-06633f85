@@ -12,39 +12,42 @@ interface CertificateConfig {
   certificateType: string;
 }
 
-// Text placement configs per certificate type (relative to canvas dimensions)
-// Coordinates are percentages of canvas width/height
+// Text placement configs per certificate type (relative to canvas dimensions).
+// Coordinates are normalized 0..1 of canvas width/height — measured against
+// the actual template artwork (2000×1347): name slot is centered in the right
+// glassy box; date sits just above the "Date" underline at the bottom-left.
 const LAYOUT: Record<string, {
   nameX: number; nameY: number; nameFontSize: number;
   dateX?: number; dateY?: number; dateFontSize?: number;
   profitX?: number; profitY?: number; profitFontSize?: number;
 }> = {
   phase1_passed: {
-    nameX: 0.575, nameY: 0.57, nameFontSize: 0.038,
-    dateX: 0.18, dateY: 0.942, dateFontSize: 0.016,
+    nameX: 0.71, nameY: 0.51, nameFontSize: 0.052,
+    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
   },
   phase2_passed: {
-    nameX: 0.575, nameY: 0.57, nameFontSize: 0.038,
-    dateX: 0.18, dateY: 0.942, dateFontSize: 0.016,
+    nameX: 0.71, nameY: 0.51, nameFontSize: 0.052,
+    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
   },
+  // Payout cert has TWO slots: profit share (top) + name (bottom)
   payout: {
-    profitX: 0.62, profitY: 0.44, profitFontSize: 0.032,
-    nameX: 0.575, nameY: 0.57, nameFontSize: 0.038,
-    dateX: 0.18, dateY: 0.942, dateFontSize: 0.016,
+    profitX: 0.77, profitY: 0.46, profitFontSize: 0.052,
+    nameX: 0.77, nameY: 0.665, nameFontSize: 0.044,
+    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
   },
   funded: {
-    nameX: 0.575, nameY: 0.57, nameFontSize: 0.038,
-    dateX: 0.18, dateY: 0.942, dateFontSize: 0.016,
+    nameX: 0.71, nameY: 0.51, nameFontSize: 0.052,
+    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
   },
   max_allocation: {
-    nameX: 0.575, nameY: 0.57, nameFontSize: 0.038,
-    dateX: 0.18, dateY: 0.942, dateFontSize: 0.016,
+    nameX: 0.71, nameY: 0.51, nameFontSize: 0.052,
+    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
   },
 };
 
 const DEFAULT_LAYOUT: typeof LAYOUT[string] = {
-  nameX: 0.575, nameY: 0.57, nameFontSize: 0.035,
-  dateX: 0.18, dateY: 0.942, dateFontSize: 0.018,
+  nameX: 0.71, nameY: 0.51, nameFontSize: 0.050,
+  dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {

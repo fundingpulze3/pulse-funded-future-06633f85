@@ -147,8 +147,10 @@ Deno.serve(async (req) => {
             .select("id")
             .eq("challenge_id", purchase.challenge_id)
             .eq("is_assigned", false)
+            .is("assigned_to", null)
+            .is("assigned_at", null)
             .limit(1)
-            .single();
+            .maybeSingle();
 
           if (cred) {
             await adminClient
