@@ -184,13 +184,19 @@ Deno.serve(async (req) => {
             client = createSmtpClient(smtpUsername, smtpPassword)
 
             try {
+              const fallbackTrackingPixel = `<img src="${trackingBaseUrl}?type=open&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}" width="1" height="1" style="display:none" />`
+              const fallbackSanitizedHtml = campaign.html_content.replace(/\r?\n/g, '\r\n')
+              const fallbackHtmlWithTracking = fallbackSanitizedHtml.replace(
+                /href="(https?:\/\/[^\"]+)"/g,
+                (_: string, url: string) => `href="${trackingBaseUrl}?type=click&cid=${campaign_id}&email=${encodeURIComponent(contact.email)}&url=${encodeURIComponent(url)}"`
+              ) + fallbackTrackingPixel
               const messageId = `<${crypto.randomUUID()}@fundingpulze.com>`
 
               await client.send({
                 from: `Funding Pulze <${effectiveFrom}>`,
                 to: contact.email,
                 subject: campaign.subject,
-                html: htmlWithTracking,
+                html: fallbackHtmlWithTracking,
                 headers: {
                   'Message-ID': messageId,
                   'Reply-To': REQUESTED_FROM,
