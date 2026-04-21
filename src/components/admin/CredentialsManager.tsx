@@ -214,6 +214,8 @@ const CredentialsManager = () => {
         .select("id, mt5_login, mt5_password, mt5_server")
         .eq("challenge_id", p.challenge_id)
         .eq("is_assigned", false)
+        .is("assigned_to", null)
+        .is("assigned_at", null)
         .limit(1)
         .maybeSingle();
       if (freeCred) {

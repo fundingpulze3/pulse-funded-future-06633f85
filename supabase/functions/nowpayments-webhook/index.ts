@@ -67,14 +67,16 @@ Deno.serve(async (req) => {
         .update({ payment_status: "completed", status: "active" })
         .eq("id", order_id);
 
-      // Auto-assign credentials
+      // Auto-assign credentials — only NEVER-used credentials (assigned_to/at NULL)
       const { data: cred } = await adminClient
         .from("trading_credentials")
         .select("id")
         .eq("challenge_id", purchase.challenge_id)
         .eq("is_assigned", false)
+        .is("assigned_to", null)
+        .is("assigned_at", null)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (cred) {
         await adminClient
