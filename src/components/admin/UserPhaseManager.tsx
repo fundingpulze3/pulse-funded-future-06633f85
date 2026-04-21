@@ -277,70 +277,69 @@ const UserPhaseManager = () => {
     fetchAccounts();
   };
 
-  // ── Manual "Push to next phase" — used when account status is phase1_passed or phase2_passed ──
-  const pushToNextPhase = async (account: UserAccount) => {
+  // ── Open the manual-credential dialog when admin clicks "Push to next phase" ──
+  // We NO LONGER auto-pull from the pool. Admin must enter the new MT5 login/password/server
+  // for this trader, which guarantees credentials are never reused across users.
+  const openPushDialog = (account: UserAccount) => {
     const targetStatus = account.status === "phase1_passed"
       ? (account.stepType?.toLowerCase().includes("one") ? "funded" : "phase2")
       : "funded";
+    setCredForm({ mt5Login: "", mt5Password: "", mt5Server: "MEXAtlantic-Demo" });
+    setPushDialog({ open: true, account, targetStatus });
+  };
+
+  // ── Submit the manual credentials → create row, assign, flip status, email trader ──
+  const submitPushDialog = async () => {
+    const { account, targetStatus } = pushDialog;
+    if (!account) return;
+    const mt5Login = credForm.mt5Login.trim();
+    const mt5Password = credForm.mt5Password.trim();
+    const mt5Server = credForm.mt5Server.trim() || "MEXAtlantic-Demo";
+    if (!mt5Login || !mt5Password) {
+      toast.error("MT5 login and password are required.");
+      return;
+    }
 
     setUpdating(account.purchaseId);
-
     try {
-      // 1. Pull a credential that has NEVER been issued to anyone before.
-      //    NOTE: previously we accepted any is_assigned=false row, which meant
-      //    a credential freed from another trader could be re-issued. Now we
-      //    only allow truly virgin credentials (assigned_to + assigned_at null).
-      const { data: availableCred, error: poolErr } = await supabase
+      // Guard: refuse if this MT5 login already exists in the credentials pool — never reuse.
+      const { data: dup } = await supabase
         .from("trading_credentials")
-        .select("*")
-        .eq("is_assigned", false)
-        .is("assigned_to", null)
-        .is("assigned_at", null)
-        .eq("challenge_id", account.challengeId)
-        .limit(1)
+        .select("id, assigned_to")
+        .eq("mt5_login", mt5Login)
         .maybeSingle();
-
-      if (poolErr) throw poolErr;
-      if (!availableCred) {
-        toast.error(
-          `No fresh, never-used ${targetStatus} credentials in the pool for ${account.challengeName}. Add new credentials in 'Credentials' tab first — never reuse old MT5 logins.`,
-          { duration: 7000 }
-        );
+      if (dup) {
+        toast.error(`MT5 login ${mt5Login} already exists in the credentials pool — never reuse logins. Use a fresh one.`);
         setUpdating(null);
         return;
       }
 
-      // 2. Do NOT "free" the previous credential. Leave it historically
-      //    attached to its original purchase so it can never be re-issued
-      //    to another trader. We only repoint purchase_id on the new one.
-
-      // 3. Atomically claim the new credential (race-safe — fails if another
-      //    concurrent push grabbed it first).
-      const { data: claimed, error: assignErr } = await supabase
+      // 1. Create the new credential row pre-assigned to this trader/purchase.
+      const { data: created, error: insertErr } = await supabase
         .from("trading_credentials")
-        .update({
+        .insert({
+          challenge_id: account.challengeId,
+          mt5_login: mt5Login,
+          mt5_password: mt5Password,
+          mt5_server: mt5Server,
           is_assigned: true,
           assigned_to: account.userId,
-          purchase_id: account.purchaseId,
           assigned_at: new Date().toISOString(),
+          purchase_id: account.purchaseId,
         })
-        .eq("id", availableCred.id)
-        .eq("is_assigned", false)
-        .is("assigned_to", null)
-        .select("id")
-        .maybeSingle();
-      if (assignErr) throw assignErr;
-      if (!claimed) {
-        toast.error("Credential was just claimed by another push — refresh and try again.");
-        setUpdating(null);
-        return;
-      }
+        .select("id, mt5_login, mt5_password, mt5_server")
+        .single();
+      if (insertErr || !created) throw insertErr || new Error("Failed to create credential");
 
-      // 4. Update purchase status
+      // 2. Update purchase status.
       const oldStatus = account.status;
-      await supabase.from("challenge_purchases").update({ status: targetStatus }).eq("id", account.purchaseId);
+      const { error: updErr } = await supabase
+        .from("challenge_purchases")
+        .update({ status: targetStatus })
+        .eq("id", account.purchaseId);
+      if (updErr) throw updErr;
 
-      // 5. Log status change
+      // 3. Log status change.
       const { data: { session } } = await supabase.auth.getSession();
       await supabase.from("account_status_history").insert({
         purchase_id: account.purchaseId,
@@ -348,19 +347,19 @@ const UserPhaseManager = () => {
         old_status: oldStatus,
         new_status: targetStatus,
         changed_by: session?.user?.id || null,
-        note: `Admin pushed to ${targetStatus} — new credential FP ${availableCred.mt5_login} issued.`,
+        note: `Admin pushed to ${targetStatus} with manually-entered credential FP ${created.mt5_login}.`,
       } as any);
 
-      // 6. Send credentials email
+      // 4. Email the trader the new credentials.
       try {
         await supabase.functions.invoke("send-transactional-email", {
           body: {
             type: "credentials",
             recipientUserId: account.userId,
             data: {
-              mt5Login: availableCred.mt5_login,
-              mt5Password: availableCred.mt5_password,
-              mt5Server: availableCred.mt5_server || "MEXAtlantic-Demo",
+              mt5Login: created.mt5_login,
+              mt5Password: created.mt5_password,
+              mt5Server: created.mt5_server || "MEXAtlantic-Demo",
               challengeName: account.challengeName,
               accountSize: `$${Number(account.accountSize).toLocaleString()}`,
             },
@@ -368,7 +367,8 @@ const UserPhaseManager = () => {
         });
       } catch (e) { console.error("credentials email failed", e); }
 
-      toast.success(`Pushed to ${targetStatus}. New credential FP ${availableCred.mt5_login} assigned & emailed.`);
+      toast.success(`Pushed to ${targetStatus}. Credential FP ${created.mt5_login} assigned & emailed.`);
+      setPushDialog({ open: false, account: null, targetStatus: "" });
     } catch (err: any) {
       toast.error(err.message || "Failed to push to next phase");
     } finally {
