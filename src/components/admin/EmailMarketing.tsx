@@ -363,6 +363,7 @@ export default function EmailMarketing() {
       scheduled: "bg-[hsl(45,90%,90%)] text-[hsl(45,80%,30%)]",
       sending: "bg-[hsl(200,80%,90%)] text-[hsl(200,70%,30%)]",
       sent: "bg-[hsl(142,60%,90%)] text-[hsl(142,50%,25%)]",
+      failed: "bg-[hsl(0,85%,94%)] text-[hsl(0,72%,42%)]",
     };
     return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${colors[status] || colors.draft}`}>{status}</span>;
   };
@@ -494,7 +495,7 @@ export default function EmailMarketing() {
                       <td className="px-5 py-3 text-xs text-[hsl(0,0%,50%)]">{c.sent_at ? new Date(c.sent_at).toLocaleString() : c.scheduled_at ? `Scheduled: ${new Date(c.scheduled_at).toLocaleString()}` : "—"}</td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                          {(c.status === "draft" || c.status === "scheduled") && (
+                          {(c.status === "draft" || c.status === "scheduled" || c.status === "failed") && (
                             <>
                               <button onClick={() => {
                                 setCampaignName(c.name); setCampaignSubject(c.subject); setCampaignHtml(c.html_content);

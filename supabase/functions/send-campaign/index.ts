@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
     const trackingBaseUrl = `${supabaseUrl}/functions/v1/email-tracking`
     let sentCount = 0
     let failCount = 0
+    let lastErrorMessage = ''
 
     // Process in batches with a fresh SMTP connection per batch to avoid timeouts
     const BATCH_SIZE = 50
@@ -110,6 +111,8 @@ Deno.serve(async (req) => {
           auth: { username: SMTP_USERNAME, password: SMTP_PASSWORD },
         },
       })
+
+      const sentEvents: { campaign_id: string; contact_email: string; event_type: string; metadata?: Record<string, unknown> }[] = []
 
       for (const contact of batch) {
         try {
@@ -140,6 +143,11 @@ Deno.serve(async (req) => {
           })
 
           sentCount++
+          sentEvents.push({
+            campaign_id,
+            contact_email: contact.email,
+            event_type: 'sent',
+          })
 
           // Small delay between sends to avoid rate limiting
           if (batch.length > 5) {
@@ -148,37 +156,39 @@ Deno.serve(async (req) => {
         } catch (err) {
           console.error(`Failed to send to ${contact.email}:`, err)
           failCount++
+          lastErrorMessage = err instanceof Error ? err.message : String(err)
         }
       }
 
       try { await client.close() } catch {}
 
-      // Log batch events in bulk
-      const sentEvents = batch.slice(0, sentCount - (batchStart > 0 ? allContacts.slice(0, batchStart).length : 0)).map(c => ({
-        campaign_id,
-        contact_email: c.email,
-        event_type: 'sent',
-      }))
       if (sentEvents.length > 0) {
         await supabase.from('email_campaign_events').insert(sentEvents)
       }
 
       // Update progress
       await supabase.from('email_campaigns').update({
-        total_recipients: sentCount,
+        total_recipients: allContacts.length,
       }).eq('id', campaign_id)
 
       console.log(`Batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: sent ${sentCount}/${allContacts.length}`)
     }
 
+    const finalStatus = sentCount > 0 ? 'sent' : 'failed'
+
     await supabase.from('email_campaigns').update({
-      status: 'sent',
-      sent_at: new Date().toISOString(),
-      total_recipients: sentCount,
+      status: finalStatus,
+      sent_at: sentCount > 0 ? new Date().toISOString() : null,
+      total_recipients: allContacts.length,
     }).eq('id', campaign_id)
 
-    return new Response(JSON.stringify({ success: true, sent: sentCount, failed: failCount }), {
-      status: 200,
+    return new Response(JSON.stringify({
+      success: failCount === 0,
+      sent: sentCount,
+      failed: failCount,
+      error: failCount > 0 ? lastErrorMessage || 'Campaign delivery failed' : null,
+    }), {
+      status: failCount === 0 ? 200 : 502,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
