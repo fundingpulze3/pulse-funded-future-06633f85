@@ -239,17 +239,114 @@ const Dashboard = () => {
     return [...candidates].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
   };
 
+  // ── Build "Account Views" ──────────────────────────────────────────────
+  // We render ONE card per CREDENTIAL (so phase 1 cred stays visible even after
+  // the trader gets a phase 2 cred under the same purchase). A purchase that
+  // has zero credentials still gets a single placeholder view.
+  type AccountView = {
+    key: string;                         // unique key for selection (`cred:<id>` or `purchase:<id>`)
+    purchase: Purchase;
+    credential: TradingCredential | null;
+    accountNumber: string;               // mt5_login if available, else fallback
+    phaseLabel: "Phase 1" | "Phase 2" | "Funded" | null;
+    derivedStatus: "ongoing" | "funded" | "breached" | "completed";
+  };
+
+  // Decide phase label for a credential view by looking at its richest cert
+  const phaseFromCert = (cert: UserCertificate | null): AccountView["phaseLabel"] => {
+    const t = cert?.certificate_type || "";
+    if (t.includes("phase1")) return "Phase 1";
+    if (t.includes("phase2")) return "Phase 2";
+    if (t.includes("funded")) return "Funded";
+    return null;
+  };
+
+  // Per-credential status: passed if cert is phase1/phase2_passed,
+  // breached if cert is breached, otherwise inherit purchase status.
+  const statusFromCert = (cert: UserCertificate | null, fallback: AccountView["derivedStatus"]): AccountView["derivedStatus"] => {
+    const t = (cert?.certificate_type || "").toLowerCase();
+    if (t.includes("breached") || t.includes("failed")) return "breached";
+    if (t.includes("passed") || t.includes("phase1_passed") || t.includes("phase2_passed")) return "completed";
+    if (t.includes("funded")) return "funded";
+    return fallback;
+  };
+
+  const accountViews = useMemo<AccountView[]>(() => {
+    const views: AccountView[] = [];
+    for (const p of purchases) {
+      const purchaseCreds = credentials
+        .filter(c => c.purchase_id === p.id)
+        // oldest first → phase 1 card sits above phase 2 card
+        .sort((a, b) => a.mt5_login.localeCompare(b.mt5_login));
+      const purchaseStatus = getAccountStatus(p) as AccountView["derivedStatus"];
+      if (purchaseCreds.length === 0) {
+        views.push({
+          key: `purchase:${p.id}`,
+          purchase: p,
+          credential: null,
+          accountNumber: p.id.slice(0, 8),
+          phaseLabel: null,
+          derivedStatus: purchaseStatus,
+        });
+        continue;
+      }
+      for (const cred of purchaseCreds) {
+        const cert = pickRichestCert(c => c.account_number === cred.mt5_login)
+          || pickRichestCert(c => c.credential_id === cred.id);
+        // For older creds whose phase is over, the latest_stats may be empty —
+        // fall back to type-based phase detection from any cert tied to this credential.
+        const anyCertForCred = userCertificates.find(c => c.account_number === cred.mt5_login || c.credential_id === cred.id) || null;
+        const phaseLabel = phaseFromCert(cert) || phaseFromCert(anyCertForCred);
+        views.push({
+          key: `cred:${cred.id}`,
+          purchase: p,
+          credential: cred,
+          accountNumber: cred.mt5_login,
+          phaseLabel,
+          derivedStatus: statusFromCert(cert || anyCertForCred, purchaseStatus),
+        });
+      }
+    }
+    return views;
+  }, [purchases, credentials, userCertificates]);
+
+  const filteredViews = useMemo(() => {
+    return accountViews.filter(v => {
+      if (stepFilter === "1-step" && !getStepType(v.purchase).includes("1")) return false;
+      if (stepFilter === "2-step" && !getStepType(v.purchase).includes("2")) return false;
+      if (statusFilter !== "all" && v.derivedStatus !== statusFilter) return false;
+      return true;
+    });
+  }, [accountViews, stepFilter, statusFilter]);
+
+  // Auto-select first view once data loads / when current selection becomes stale
+  useEffect(() => {
+    if (accountViews.length === 0) {
+      if (selectedAccount !== null) setSelectedAccount(null);
+      return;
+    }
+    if (!selectedAccount || !accountViews.some(v => v.key === selectedAccount)) {
+      setSelectedAccount(accountViews[0].key);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountViews]);
+
   const activeAccountStats = useMemo(() => {
-    const activePurchase = selectedAccount ? purchases.find(p => p.id === selectedAccount) : purchases[0];
-    if (!activePurchase) return null;
-    const purchaseCred = credentials.find(c => c.purchase_id === activePurchase.id);
-    const accountLogin = purchaseCred?.mt5_login || null;
-    const matchedCert =
-      pickRichestCert(c => c.purchase_id === activePurchase.id) ||
-      (accountLogin ? pickRichestCert(c => c.account_number === accountLogin) : null);
+    const activeView = (selectedAccount && accountViews.find(v => v.key === selectedAccount)) || accountViews[0];
+    if (!activeView) return null;
+    const activePurchase = activeView.purchase;
+    const cred = activeView.credential;
+    const accountLogin = cred?.mt5_login || null;
+    // Stats are matched STRICTLY by this credential's mt5 login when we have one,
+    // so phase 1 keeps showing phase 1 stats/graphs even after phase 2 starts.
+    const matchedCert = accountLogin
+      ? (pickRichestCert(c => c.account_number === accountLogin)
+          || pickRichestCert(c => c.credential_id === cred!.id))
+      : pickRichestCert(c => c.purchase_id === activePurchase.id);
     const accountSize = activePurchase.challenges?.account_size || 0;
     const stats = matchedCert?.stats || {};
     return {
+      view: activeView,
       purchase: activePurchase,
       stats, balance: stats.balance ?? accountSize, equity: stats.equity ?? stats.balance ?? accountSize,
       profit: stats.profit ?? 0, deposit: stats.deposit ?? accountSize, totalTrades: stats.totalTrades ?? 0,
@@ -275,7 +372,7 @@ const Dashboard = () => {
       maxConsecutiveLoss: stats.maxConsecutiveLoss ?? 0, drawdownDetailChart: stats.drawdownDetailChart,
       dailyDDPercent: stats.dailyDrawdownPercent ?? stats.maxDailyDrawdownPercent ?? 0,
     };
-  }, [purchases, userCertificates, selectedAccount, credentials]);
+  }, [accountViews, selectedAccount, userCertificates]);
 
   const chartData = useMemo(() => {
     if (!activeAccountStats?.balanceChart || !Array.isArray(activeAccountStats.balanceChart)) {
