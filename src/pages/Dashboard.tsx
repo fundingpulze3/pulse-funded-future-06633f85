@@ -207,16 +207,8 @@ const Dashboard = () => {
     return { label: "Student", img: rankStudentImg, color: "text-[hsl(207,80%,65%)]" };
   };
 
-  const filteredPurchases = useMemo(() => {
-    return purchases.filter(p => {
-      // Step filter
-      if (stepFilter === "1-step" && !getStepType(p).includes("1")) return false;
-      if (stepFilter === "2-step" && !getStepType(p).includes("2")) return false;
-      // Status filter
-      if (statusFilter !== "all" && getAccountStatus(p) !== statusFilter) return false;
-      return true;
-    });
-  }, [purchases, stepFilter, statusFilter]);
+  // (filteredPurchases removed — replaced by accountViews / filteredViews below)
+
 
   // A "rich" stat blob has actual MT5 fields like balance/totalTrades, not just {userName, accountSize}
   const isRichStats = (stats: Record<string, any> | null | undefined): boolean => {
