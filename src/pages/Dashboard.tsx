@@ -608,18 +608,21 @@ const Dashboard = () => {
           {/* Account Cards */}
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin scrollbar-thumb-[hsl(220,15%,15%)] scrollbar-track-transparent">
             <AnimatePresence>
-              {filteredPurchases.slice(0, 10).map((p, i) => {
-                const isActive = selectedAccount === p.id;
-                const status = getAccountStatus(p);
+              {filteredViews.slice(0, 20).map((v, i) => {
+                const p = v.purchase;
+                const isActive = selectedAccount === v.key;
+                const status = v.derivedStatus;
                 const sc = statusConfig[status] || statusConfig.ongoing;
-                const cred = credentials.find(c => c.purchase_id === p.id);
                 const challengeName = p.challenges?.name || "Account";
                 const stepType = p.challenges?.step_type || "—";
-                const accountNumber = cred?.mt5_login || p.id.slice(0, 8);
+                const accountNumber = v.accountNumber;
                 const rank = getRank(p);
-                const purchaseCert = pickRichestCert(c => c.purchase_id === p.id)
-                  || (cred ? pickRichestCert(c => c.account_number === cred.mt5_login) : null);
-                const trades = purchaseCert?.stats?.totalTrades ?? 0;
+                // Stats are scoped to THIS credential's mt5 login so phase 1 keeps phase 1 data
+                const cardCert = v.credential
+                  ? (pickRichestCert(c => c.account_number === v.credential!.mt5_login)
+                      || pickRichestCert(c => c.credential_id === v.credential!.id))
+                  : pickRichestCert(c => c.purchase_id === p.id);
+                const trades = cardCert?.stats?.totalTrades ?? 0;
 
                 // Subtle accent hue per card based on status
                 const accentMap: Record<string, string> = {
@@ -632,13 +635,13 @@ const Dashboard = () => {
 
                 return (
                   <motion.div
-                    key={p.id}
+                    key={v.key}
                     layout
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.97 }}
                     transition={{ duration: 0.2, delay: i * 0.02 }}
-                    onClick={() => { setSelectedAccount(p.id); setActiveView("overview"); }}
+                    onClick={() => { setSelectedAccount(v.key); setActiveView("overview"); }}
                     className={`group cursor-pointer rounded-xl transition-all duration-200 overflow-hidden ${
                       isActive
                         ? `bg-[hsl(220,20%,8%)] ring-1 ring-[hsl(${accent})]/25 shadow-[0_0_24px_-6px_hsl(${accent},0.15)]`
@@ -663,9 +666,12 @@ const Dashboard = () => {
                               {sc.label}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                             <span className="text-[10px] text-[hsl(220,15%,45%)] truncate">{challengeName}</span>
                             <span className="text-[9px] px-1 py-px rounded bg-[hsl(220,15%,12%)] text-[hsl(220,15%,55%)] font-medium">{stepType}</span>
+                            {v.phaseLabel && (
+                              <span className="text-[9px] px-1 py-px rounded bg-[hsl(207,90%,77%)]/10 text-[hsl(207,90%,77%)] font-bold">{v.phaseLabel}</span>
+                            )}
                             <span className={`flex items-center gap-0.5 ml-auto shrink-0`}>
                               <img src={fpLogoIcon} alt="FP" className="w-3.5 h-3.5 object-contain opacity-40" />
                             </span>
@@ -715,16 +721,16 @@ const Dashboard = () => {
               })}
             </AnimatePresence>
 
-            {filteredPurchases.length === 0 && (
+            {filteredViews.length === 0 && (
               <div className="text-center py-12 text-[hsl(220,15%,40%)]">
                 <BarChart3 size={28} className="mx-auto mb-3 opacity-40" />
                 <p className="text-sm">No accounts match this filter.</p>
               </div>
             )}
 
-            {filteredPurchases.length > 10 && (
+            {filteredViews.length > 20 && (
               <p className="text-center text-[10px] text-[hsl(220,15%,35%)] pt-2">
-                Showing 10 of {filteredPurchases.length} accounts
+                Showing 20 of {filteredViews.length} accounts
               </p>
             )}
           </div>
