@@ -132,16 +132,9 @@ const Dashboard = () => {
     if (user) fetchAllData();
   }, [user, authLoading]);
 
-  useEffect(() => {
-    if (purchases.length === 0) {
-      setSelectedAccount(null);
-      return;
-    }
-    setSelectedAccount((prev) => {
-      if (prev && purchases.some((purchase) => purchase.id === prev)) return prev;
-      return purchases[0].id;
-    });
-  }, [purchases]);
+  // selectedAccount is a "view key": either `cred:<credentialId>` or `purchase:<purchaseId>`
+  // (used for purchases that don't have any credential assigned yet).
+  // We DON'T auto-select here yet — we wait until accountViews is built below.
 
   const withTimeout = <T,>(promise: Promise<T>, ms = 12000): Promise<T> =>
     new Promise((resolve, reject) => {
