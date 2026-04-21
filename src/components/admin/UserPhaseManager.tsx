@@ -50,6 +50,9 @@ const UserPhaseManager = () => {
   const [selectedAccount, setSelectedAccount] = useState<UserAccount | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<any>(null);
+  // Manual credential dialog (replaces pool auto-pick when pushing to next phase)
+  const [pushDialog, setPushDialog] = useState<{ open: boolean; account: UserAccount | null; targetStatus: string }>({ open: false, account: null, targetStatus: "" });
+  const [credForm, setCredForm] = useState({ mt5Login: "", mt5Password: "", mt5Server: "MEXAtlantic-Demo" });
 
   useEffect(() => { fetchAccounts(); }, []);
 
