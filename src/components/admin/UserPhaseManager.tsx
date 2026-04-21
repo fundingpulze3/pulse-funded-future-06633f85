@@ -496,17 +496,17 @@ const UserPhaseManager = () => {
             <p className="text-xs font-semibold text-amber-900 uppercase tracking-wider mb-1">⚠ Account Under Review</p>
             <p className="text-xs text-amber-800 mb-3">
               {selectedAccount.status === "phase1_passed"
-                ? "Trader passed Phase 1. Push to Phase 2 will free this credential and assign a fresh one from the pool, then email the trader."
-                : "Trader passed Phase 2. Push to Funded will free this credential and assign a fresh funded MT5 account, then email the trader."}
+                ? "Trader passed Phase 1. Enter the NEW MT5 credentials for the next phase — they will be assigned to this trader and emailed automatically. Never reuse old logins."
+                : "Trader passed Phase 2. Enter the NEW funded MT5 credentials — they will be assigned to this trader and emailed automatically. Never reuse old logins."}
             </p>
             <Button
               size="sm"
               disabled={updating === selectedAccount.purchaseId}
-              onClick={() => pushToNextPhase(selectedAccount)}
+              onClick={() => openPushDialog(selectedAccount)}
               className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8"
             >
               {updating === selectedAccount.purchaseId ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <CheckCircle2 size={14} className="mr-1.5" />}
-              {selectedAccount.status === "phase1_passed" ? "Push to Phase 2" : "Push to Funded"}
+              {selectedAccount.status === "phase1_passed" ? "Push to Phase 2 (enter credentials)" : "Push to Funded (enter credentials)"}
             </Button>
           </div>
         )}
