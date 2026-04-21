@@ -73,24 +73,46 @@ Deno.serve(async (req) => {
     const SMTP_HOST = Deno.env.get('SMTP_HOST')!
     const SMTP_PORT = parseInt(Deno.env.get('SMTP_PORT') || '465')
     const DEFAULT_FROM = Deno.env.get('SMTP_FROM_ADDRESS') || 'support@fundingpulze.com'
+    const SUPPORT_SMTP_USERNAME = Deno.env.get('SMTP_USERNAME')!
+    const SUPPORT_SMTP_PASSWORD = Deno.env.get('SMTP_PASSWORD')!
+    const REQUESTED_FROM = (campaign.from_address || DEFAULT_FROM).trim()
+    const isAdminSender = REQUESTED_FROM.toLowerCase().startsWith('admin@')
+    const ADMIN_SMTP_USERNAME = Deno.env.get('SMTP_USERNAME_ADMIN') || REQUESTED_FROM
+    const ADMIN_SMTP_PASSWORD = Deno.env.get('SMTP_PASSWORD_ADMIN') || ''
 
-    // Pick credentials based on the campaign's from_address.
-    // admin@fundingpulze.com → SMTP_USERNAME_ADMIN / SMTP_PASSWORD_ADMIN
-    // anything else (default support@) → SMTP_USERNAME / SMTP_PASSWORD
-    const SMTP_FROM = (campaign.from_address || DEFAULT_FROM).trim()
-    const isAdminSender = SMTP_FROM.toLowerCase().startsWith('admin@')
-    const SMTP_USERNAME = isAdminSender
-      ? (Deno.env.get('SMTP_USERNAME_ADMIN') || SMTP_FROM)
-      : Deno.env.get('SMTP_USERNAME')!
-    const SMTP_PASSWORD = isAdminSender
-      ? Deno.env.get('SMTP_PASSWORD_ADMIN')!
-      : Deno.env.get('SMTP_PASSWORD')!
-
-    if (!SMTP_PASSWORD) {
+    if (!SUPPORT_SMTP_USERNAME || !SUPPORT_SMTP_PASSWORD) {
       return new Response(
-        JSON.stringify({ error: `SMTP password not configured for sender ${SMTP_FROM}` }),
+        JSON.stringify({ error: 'Default SMTP credentials are not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    let smtpUsername = isAdminSender ? ADMIN_SMTP_USERNAME : SUPPORT_SMTP_USERNAME
+    let smtpPassword = isAdminSender ? ADMIN_SMTP_PASSWORD : SUPPORT_SMTP_PASSWORD
+    let effectiveFrom = REQUESTED_FROM
+    let fallbackWarning = ''
+
+    if (!smtpPassword) {
+      smtpUsername = SUPPORT_SMTP_USERNAME
+      smtpPassword = SUPPORT_SMTP_PASSWORD
+      effectiveFrom = DEFAULT_FROM
+      if (isAdminSender) {
+        fallbackWarning = `Admin sender credentials are missing, so this campaign was sent via ${DEFAULT_FROM}. Replies still route to ${REQUESTED_FROM}.`
+      }
+    }
+
+    const createSmtpClient = (username: string, password: string) => new SMTPClient({
+      connection: {
+        hostname: SMTP_HOST,
+        port: SMTP_PORT,
+        tls: true,
+        auth: { username, password },
+      },
+    })
+
+    const isSmtpAuthFailure = (error: unknown) => {
+      const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
+      return message.includes('535') || message.includes('authentication failed') || message.includes('auth failed')
     }
 
     const trackingBaseUrl = `${supabaseUrl}/functions/v1/email-tracking`
@@ -103,14 +125,7 @@ Deno.serve(async (req) => {
     for (let batchStart = 0; batchStart < allContacts.length; batchStart += BATCH_SIZE) {
       const batch = allContacts.slice(batchStart, batchStart + BATCH_SIZE)
       
-      const client = new SMTPClient({
-        connection: {
-          hostname: SMTP_HOST,
-          port: SMTP_PORT,
-          tls: true,
-          auth: { username: SMTP_USERNAME, password: SMTP_PASSWORD },
-        },
-      })
+      let client = createSmtpClient(smtpUsername, smtpPassword)
 
       const sentEvents: { campaign_id: string; contact_email: string; event_type: string; metadata?: Record<string, unknown> }[] = []
 
@@ -126,21 +141,25 @@ Deno.serve(async (req) => {
           )
           htmlWithTracking += trackingPixel
 
-          const messageId = `<${crypto.randomUUID()}@fundingpulze.com>`
+          const sendCurrentMessage = async () => {
+            const messageId = `<${crypto.randomUUID()}@fundingpulze.com>`
 
-          await client.send({
-            from: `Funding Pulze <${SMTP_FROM}>`,
-            to: contact.email,
-            subject: campaign.subject,
-            html: htmlWithTracking,
-            headers: {
-              'Message-ID': messageId,
-              'Reply-To': SMTP_FROM,
-              'List-Unsubscribe': `<mailto:${SMTP_FROM}?subject=unsubscribe>`,
-              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-              'MIME-Version': '1.0',
-            },
-          })
+            await client.send({
+              from: `Funding Pulze <${effectiveFrom}>`,
+              to: contact.email,
+              subject: campaign.subject,
+              html: htmlWithTracking,
+              headers: {
+                'Message-ID': messageId,
+                'Reply-To': REQUESTED_FROM,
+                'List-Unsubscribe': `<mailto:${REQUESTED_FROM}?subject=unsubscribe>`,
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                'MIME-Version': '1.0',
+              },
+            })
+          }
+
+          await sendCurrentMessage()
 
           sentCount++
           sentEvents.push({
@@ -154,6 +173,52 @@ Deno.serve(async (req) => {
             await new Promise(r => setTimeout(r, 100))
           }
         } catch (err) {
+          if (isAdminSender && effectiveFrom !== DEFAULT_FROM && isSmtpAuthFailure(err)) {
+            console.warn(`Admin SMTP auth failed for ${REQUESTED_FROM}. Falling back to ${DEFAULT_FROM}.`)
+            fallbackWarning = fallbackWarning || `Admin mailbox authentication failed, so this campaign was sent via ${DEFAULT_FROM}. Replies still route to ${REQUESTED_FROM}.`
+            smtpUsername = SUPPORT_SMTP_USERNAME
+            smtpPassword = SUPPORT_SMTP_PASSWORD
+            effectiveFrom = DEFAULT_FROM
+
+            try { await client.close() } catch {}
+            client = createSmtpClient(smtpUsername, smtpPassword)
+
+            try {
+              const messageId = `<${crypto.randomUUID()}@fundingpulze.com>`
+
+              await client.send({
+                from: `Funding Pulze <${effectiveFrom}>`,
+                to: contact.email,
+                subject: campaign.subject,
+                html: htmlWithTracking,
+                headers: {
+                  'Message-ID': messageId,
+                  'Reply-To': REQUESTED_FROM,
+                  'List-Unsubscribe': `<mailto:${REQUESTED_FROM}?subject=unsubscribe>`,
+                  'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                  'MIME-Version': '1.0',
+                },
+              })
+
+              sentCount++
+              sentEvents.push({
+                campaign_id,
+                contact_email: contact.email,
+                event_type: 'sent',
+              })
+
+              if (batch.length > 5) {
+                await new Promise(r => setTimeout(r, 100))
+              }
+              continue
+            } catch (retryErr) {
+              console.error(`Fallback send failed to ${contact.email}:`, retryErr)
+              failCount++
+              lastErrorMessage = retryErr instanceof Error ? retryErr.message : String(retryErr)
+              continue
+            }
+          }
+
           console.error(`Failed to send to ${contact.email}:`, err)
           failCount++
           lastErrorMessage = err instanceof Error ? err.message : String(err)
@@ -186,6 +251,7 @@ Deno.serve(async (req) => {
       success: failCount === 0,
       sent: sentCount,
       failed: failCount,
+      warning: fallbackWarning || null,
       error: failCount > 0 ? lastErrorMessage || 'Campaign delivery failed' : null,
     }), {
       status: failCount === 0 ? 200 : 502,
