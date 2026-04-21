@@ -448,6 +448,49 @@ const UserPhaseManager = () => {
     }));
   }, [selectedAccount]);
 
+  // Shared push-credentials dialog — rendered in both detail and list views.
+  const pushCredDialog = (
+    <Dialog open={pushDialog.open} onOpenChange={(o) => !o && setPushDialog({ open: false, account: null, targetStatus: "" })}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {pushDialog.targetStatus === "phase2" ? "Push to Phase 2 — enter NEW credentials" :
+             pushDialog.targetStatus === "funded" ? "Push to Funded — enter NEW credentials" :
+             "Push to next phase"}
+          </DialogTitle>
+          <DialogDescription asChild>
+            <div>
+              {pushDialog.account && (
+                <>Issuing a brand-new MT5 account to <b>{pushDialog.account.userName}</b> ({pushDialog.account.email}) for <b>{pushDialog.account.challengeName}</b>. These credentials will be saved to the credentials pool, locked to this trader, and emailed to them. Never reuse old logins.</>
+              )}
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div>
+            <Label htmlFor="cred-login" className="text-xs">MT5 Login *</Label>
+            <Input id="cred-login" value={credForm.mt5Login} onChange={e => setCredForm(f => ({ ...f, mt5Login: e.target.value }))} placeholder="e.g. 90460001" className="mt-1 h-9 text-sm" />
+          </div>
+          <div>
+            <Label htmlFor="cred-pass" className="text-xs">MT5 Password *</Label>
+            <Input id="cred-pass" value={credForm.mt5Password} onChange={e => setCredForm(f => ({ ...f, mt5Password: e.target.value }))} placeholder="MT5 investor / master password" className="mt-1 h-9 text-sm" />
+          </div>
+          <div>
+            <Label htmlFor="cred-server" className="text-xs">MT5 Server</Label>
+            <Input id="cred-server" value={credForm.mt5Server} onChange={e => setCredForm(f => ({ ...f, mt5Server: e.target.value }))} placeholder="MEXAtlantic-Demo" className="mt-1 h-9 text-sm" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={() => setPushDialog({ open: false, account: null, targetStatus: "" })} disabled={updating === pushDialog.account?.purchaseId}>Cancel</Button>
+          <Button size="sm" onClick={submitPushDialog} disabled={updating === pushDialog.account?.purchaseId} className="bg-amber-600 hover:bg-amber-700 text-white">
+            {updating === pushDialog.account?.purchaseId ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <CheckCircle2 size={14} className="mr-1.5" />}
+            Assign & email trader
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="w-5 h-5 border-2 border-[hsl(0,0%,30%)] border-t-transparent rounded-full animate-spin" />
