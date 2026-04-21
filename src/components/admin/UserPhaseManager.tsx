@@ -694,6 +694,7 @@ const UserPhaseManager = () => {
             ))}
           </div>
         </div>
+        {pushCredDialog}
       </div>
     );
   }
