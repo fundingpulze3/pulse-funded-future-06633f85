@@ -264,11 +264,16 @@ const UserPhaseManager = () => {
     setUpdating(account.purchaseId);
 
     try {
-      // 1. Check pool first
+      // 1. Pull a credential that has NEVER been issued to anyone before.
+      //    NOTE: previously we accepted any is_assigned=false row, which meant
+      //    a credential freed from another trader could be re-issued. Now we
+      //    only allow truly virgin credentials (assigned_to + assigned_at null).
       const { data: availableCred, error: poolErr } = await supabase
         .from("trading_credentials")
         .select("*")
         .eq("is_assigned", false)
+        .is("assigned_to", null)
+        .is("assigned_at", null)
         .eq("challenge_id", account.challengeId)
         .limit(1)
         .maybeSingle();
@@ -276,23 +281,20 @@ const UserPhaseManager = () => {
       if (poolErr) throw poolErr;
       if (!availableCred) {
         toast.error(
-          `No spare ${targetStatus} credentials in the pool for ${account.challengeName}. Add credentials in 'Credentials' tab first.`,
-          { duration: 6000 }
+          `No fresh, never-used ${targetStatus} credentials in the pool for ${account.challengeName}. Add new credentials in 'Credentials' tab first — never reuse old MT5 logins.`,
+          { duration: 7000 }
         );
         setUpdating(null);
         return;
       }
 
-      // 2. Free old credential
-      if (account.credentialId) {
-        await supabase
-          .from("trading_credentials")
-          .update({ is_assigned: false, assigned_to: null, purchase_id: null, assigned_at: null })
-          .eq("id", account.credentialId);
-      }
+      // 2. Do NOT "free" the previous credential. Leave it historically
+      //    attached to its original purchase so it can never be re-issued
+      //    to another trader. We only repoint purchase_id on the new one.
 
-      // 3. Assign new credential
-      const { error: assignErr } = await supabase
+      // 3. Atomically claim the new credential (race-safe — fails if another
+      //    concurrent push grabbed it first).
+      const { data: claimed, error: assignErr } = await supabase
         .from("trading_credentials")
         .update({
           is_assigned: true,
@@ -300,8 +302,17 @@ const UserPhaseManager = () => {
           purchase_id: account.purchaseId,
           assigned_at: new Date().toISOString(),
         })
-        .eq("id", availableCred.id);
+        .eq("id", availableCred.id)
+        .eq("is_assigned", false)
+        .is("assigned_to", null)
+        .select("id")
+        .maybeSingle();
       if (assignErr) throw assignErr;
+      if (!claimed) {
+        toast.error("Credential was just claimed by another push — refresh and try again.");
+        setUpdating(null);
+        return;
+      }
 
       // 4. Update purchase status
       const oldStatus = account.status;
