@@ -521,8 +521,12 @@ const Admin = () => {
                   onClick={async () => {
                     const next = !isKilled;
                     if (next && !confirm("⚠️ This will turn the entire website into a Hello World page. Continue?")) return;
-                    await toggleKillSwitch(next);
-                    toast.success(next ? "Kill switch ACTIVATED — site is now Hello World" : "Kill switch DEACTIVATED — site restored");
+                    try {
+                      await toggleKillSwitch(next);
+                      toast.success(next ? "Kill switch ACTIVATED — site is now Hello World" : "Kill switch DEACTIVATED — site restored");
+                    } catch (err: any) {
+                      toast.error(`Kill switch failed: ${err?.message ?? "unknown error"}`);
+                    }
                   }}
                   className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium transition-colors ${
                     isKilled ? "bg-red-100 text-red-700 hover:bg-red-200" : "text-[hsl(0,0%,45%)] hover:text-red-600 hover:bg-red-50"
@@ -590,8 +594,12 @@ const Admin = () => {
               onClick={async () => {
                 const next = !isKilled;
                 if (next && !confirm("⚠️ This will turn the entire website into a Hello World page. Continue?")) return;
-                await toggleKillSwitch(next);
-                toast.success(next ? "Kill switch ACTIVATED — site is now Hello World" : "Kill switch DEACTIVATED — site restored");
+                try {
+                  await toggleKillSwitch(next);
+                  toast.success(next ? "Kill switch ACTIVATED — site is now Hello World" : "Kill switch DEACTIVATED — site restored");
+                } catch (err: any) {
+                  toast.error(`Kill switch failed: ${err?.message ?? "unknown error"}`);
+                }
               }}
               title={sidebarCollapsed ? (isKilled ? "Restore Site" : "Kill Switch") : undefined}
               className={`w-full flex items-center gap-2 ${sidebarCollapsed ? "justify-center px-0" : "px-2.5"} py-2 rounded-lg text-[12px] font-medium transition-colors ${

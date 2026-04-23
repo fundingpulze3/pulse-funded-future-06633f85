@@ -21,25 +21,29 @@ export const useKillSwitch = () => {
   }, []);
 
   const toggle = async (value: boolean) => {
-    const { data: existing } = await supabase
+    const { data: existing, error: selErr } = await supabase
       .from("page_content")
       .select("id")
       .eq("page_slug", "system")
       .eq("section_key", "kill_switch")
       .maybeSingle();
 
+    if (selErr) throw selErr;
+
     if (existing) {
-      await supabase
+      const { error } = await supabase
         .from("page_content")
         .update({ content: value ? "true" : "false" })
         .eq("id", existing.id);
+      if (error) throw error;
     } else {
-      await supabase.from("page_content").insert({
+      const { error } = await supabase.from("page_content").insert({
         page_slug: "system",
         section_key: "kill_switch",
         title: "Kill Switch",
         content: value ? "true" : "false",
       });
+      if (error) throw error;
     }
     setIsKilled(value);
   };
