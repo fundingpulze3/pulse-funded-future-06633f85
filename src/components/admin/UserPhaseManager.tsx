@@ -514,11 +514,8 @@ const UserPhaseManager = () => {
     const dailyDD = s.dailyDrawdownPercent ?? s.maxDailyDrawdownPercent ?? 0;
     const gainPercent = s.gainPercent ?? (profit / selectedAccount.accountSize * 100);
     const profitFactor = s.profitFactor ?? 0;
-
-    // Pull challenge limits from purchase row for context
-    const challengeRow: any = (selectedAccount as any).challenges || (selectedAccount as any).challenge || null;
-    const dailyDDLimit = parseFloat(String(challengeRow?.daily_drawdown ?? "5")) || 5;
-    const maxDDLimit = parseFloat(String(challengeRow?.max_drawdown ?? "10")) || 10;
+    const dailyDDLimit = parseFloat(String(selectedAccount.dailyDrawdownLimit)) || 5;
+    const maxDDLimit = parseFloat(String(selectedAccount.maxDrawdownLimit)) || 10;
 
     return (
       <div className="space-y-5">
