@@ -30,6 +30,8 @@ interface UserAccount {
   credentialId: string | null;
   createdAt: string;
   stats: Record<string, any> | null;
+  dailyDrawdownLimit: string;
+  maxDrawdownLimit: string;
 }
 
 const PHASES = [
@@ -82,7 +84,7 @@ const UserPhaseManager = () => {
       const [purchases, profiles, challenges, creds, certs] = await Promise.all([
         fetchAllRows("challenge_purchases", "*", "created_at"),
         fetchAllRows("profiles", "user_id, display_name, email"),
-        fetchAllRows("challenges", "id, name, account_size, step_type"),
+        fetchAllRows("challenges", "id, name, account_size, step_type, daily_drawdown, max_drawdown"),
         fetchAllRows("trading_credentials", "id, mt5_login, challenge_id, assigned_to, purchase_id, is_assigned"),
         fetchAllRows("user_certificates", "purchase_id, account_number, stats"),
       ]);
@@ -113,6 +115,8 @@ const UserPhaseManager = () => {
           credentialId: cred?.id || null,
           createdAt: p.created_at,
           stats: (cert?.stats as Record<string, any>) || null,
+          dailyDrawdownLimit: challenge?.daily_drawdown || "5",
+          maxDrawdownLimit: challenge?.max_drawdown || "10",
         };
       });
 
@@ -507,8 +511,11 @@ const UserPhaseManager = () => {
     const totalTrades = s.totalTrades ?? 0;
     const winRate = s.winRate ?? 0;
     const maxDD = s.maxDrawdownPercent ?? 0;
+    const dailyDD = s.dailyDrawdownPercent ?? s.maxDailyDrawdownPercent ?? 0;
     const gainPercent = s.gainPercent ?? (profit / selectedAccount.accountSize * 100);
     const profitFactor = s.profitFactor ?? 0;
+    const dailyDDLimit = parseFloat(String(selectedAccount.dailyDrawdownLimit)) || 5;
+    const maxDDLimit = parseFloat(String(selectedAccount.maxDrawdownLimit)) || 10;
 
     return (
       <div className="space-y-5">
@@ -635,16 +642,30 @@ const UserPhaseManager = () => {
         </div>
 
         {/* More stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
-            { label: "Win Rate", value: `${Number(winRate).toFixed(1)}%` },
-            { label: "Gain", value: `${Number(gainPercent).toFixed(2)}%` },
-            { label: "Max Drawdown", value: `${Number(maxDD).toFixed(2)}%` },
-            { label: "Profit Factor", value: Number(profitFactor).toFixed(2) },
-          ].map(card => (
+            { label: "Win Rate", value: `${Number(winRate).toFixed(1)}%`, sub: "" },
+            { label: "Gain", value: `${Number(gainPercent).toFixed(2)}%`, sub: "" },
+            {
+              label: "Daily Drawdown",
+              value: `${Number(dailyDD).toFixed(2)}%`,
+              sub: `Limit ${dailyDDLimit}%`,
+              danger: dailyDD >= dailyDDLimit,
+              warn: dailyDD >= dailyDDLimit * 0.8,
+            },
+            {
+              label: "Max Drawdown",
+              value: `${Number(maxDD).toFixed(2)}%`,
+              sub: `Limit ${maxDDLimit}%`,
+              danger: maxDD >= maxDDLimit,
+              warn: maxDD >= maxDDLimit * 0.8,
+            },
+            { label: "Profit Factor", value: Number(profitFactor).toFixed(2), sub: "" },
+          ].map((card: any) => (
             <div key={card.label} className="bg-white rounded-xl border border-[hsl(0,0%,90%)] p-3.5">
               <span className="text-[10px] text-[hsl(0,0%,50%)] font-medium">{card.label}</span>
-              <p className="text-base font-bold text-[hsl(0,0%,8%)] mt-0.5">{card.value}</p>
+              <p className={`text-base font-bold mt-0.5 ${card.danger ? "text-[hsl(0,70%,45%)]" : card.warn ? "text-[hsl(35,90%,45%)]" : "text-[hsl(0,0%,8%)]"}`}>{card.value}</p>
+              {card.sub && <p className="text-[10px] text-[hsl(0,0%,55%)] mt-0.5">{card.sub}</p>}
             </div>
           ))}
         </div>
