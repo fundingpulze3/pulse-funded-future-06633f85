@@ -642,16 +642,30 @@ const UserPhaseManager = () => {
         </div>
 
         {/* More stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
-            { label: "Win Rate", value: `${Number(winRate).toFixed(1)}%` },
-            { label: "Gain", value: `${Number(gainPercent).toFixed(2)}%` },
-            { label: "Max Drawdown", value: `${Number(maxDD).toFixed(2)}%` },
-            { label: "Profit Factor", value: Number(profitFactor).toFixed(2) },
-          ].map(card => (
+            { label: "Win Rate", value: `${Number(winRate).toFixed(1)}%`, sub: "" },
+            { label: "Gain", value: `${Number(gainPercent).toFixed(2)}%`, sub: "" },
+            {
+              label: "Daily Drawdown",
+              value: `${Number(dailyDD).toFixed(2)}%`,
+              sub: `Limit ${dailyDDLimit}%`,
+              danger: dailyDD >= dailyDDLimit,
+              warn: dailyDD >= dailyDDLimit * 0.8,
+            },
+            {
+              label: "Max Drawdown",
+              value: `${Number(maxDD).toFixed(2)}%`,
+              sub: `Limit ${maxDDLimit}%`,
+              danger: maxDD >= maxDDLimit,
+              warn: maxDD >= maxDDLimit * 0.8,
+            },
+            { label: "Profit Factor", value: Number(profitFactor).toFixed(2), sub: "" },
+          ].map((card: any) => (
             <div key={card.label} className="bg-white rounded-xl border border-[hsl(0,0%,90%)] p-3.5">
               <span className="text-[10px] text-[hsl(0,0%,50%)] font-medium">{card.label}</span>
-              <p className="text-base font-bold text-[hsl(0,0%,8%)] mt-0.5">{card.value}</p>
+              <p className={`text-base font-bold mt-0.5 ${card.danger ? "text-[hsl(0,70%,45%)]" : card.warn ? "text-[hsl(35,90%,45%)]" : "text-[hsl(0,0%,8%)]"}`}>{card.value}</p>
+              {card.sub && <p className="text-[10px] text-[hsl(0,0%,55%)] mt-0.5">{card.sub}</p>}
             </div>
           ))}
         </div>
