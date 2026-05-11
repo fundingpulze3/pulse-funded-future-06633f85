@@ -30,6 +30,8 @@ interface UserAccount {
   credentialId: string | null;
   createdAt: string;
   stats: Record<string, any> | null;
+  dailyDrawdownLimit: string;
+  maxDrawdownLimit: string;
 }
 
 const PHASES = [
