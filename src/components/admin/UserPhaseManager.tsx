@@ -84,7 +84,7 @@ const UserPhaseManager = () => {
       const [purchases, profiles, challenges, creds, certs] = await Promise.all([
         fetchAllRows("challenge_purchases", "*", "created_at"),
         fetchAllRows("profiles", "user_id, display_name, email"),
-        fetchAllRows("challenges", "id, name, account_size, step_type"),
+        fetchAllRows("challenges", "id, name, account_size, step_type, daily_drawdown, max_drawdown"),
         fetchAllRows("trading_credentials", "id, mt5_login, challenge_id, assigned_to, purchase_id, is_assigned"),
         fetchAllRows("user_certificates", "purchase_id, account_number, stats"),
       ]);
@@ -115,6 +115,8 @@ const UserPhaseManager = () => {
           credentialId: cred?.id || null,
           createdAt: p.created_at,
           stats: (cert?.stats as Record<string, any>) || null,
+          dailyDrawdownLimit: challenge?.daily_drawdown || "5",
+          maxDrawdownLimit: challenge?.max_drawdown || "10",
         };
       });
 
