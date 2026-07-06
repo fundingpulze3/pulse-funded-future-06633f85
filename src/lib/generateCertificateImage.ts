@@ -103,35 +103,52 @@ export async function generateCertificateImage(config: CertificateConfig): Promi
   const w = canvas.width;
   const h = canvas.height;
 
-  // Helper to draw text with outline for visibility
-  const drawText = (text: string, x: number, y: number, font: string, fill: string) => {
-    ctx.font = font;
+  // Helper to draw text with outline; auto-shrinks font so text fits within maxWidth.
+  const drawText = (
+    text: string,
+    x: number,
+    y: number,
+    fontSizePx: number,
+    fontFamily: string,
+    weight: string,
+    fill: string,
+    maxWidthPx: number,
+  ) => {
+    let size = fontSizePx;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    // Dark outline for contrast
+    // Shrink until it fits (min 55% of original)
+    const minSize = Math.max(10, Math.round(fontSizePx * 0.55));
+    ctx.font = `${weight} ${size}px ${fontFamily}`;
+    while (ctx.measureText(text).width > maxWidthPx && size > minSize) {
+      size -= 1;
+      ctx.font = `${weight} ${size}px ${fontFamily}`;
+    }
     ctx.strokeStyle = "rgba(0,0,0,0.6)";
     ctx.lineWidth = Math.max(2, Math.round(h * 0.002));
     ctx.lineJoin = "round";
     ctx.strokeText(text, x, y);
-    // Fill
     ctx.fillStyle = fill;
     ctx.fillText(text, x, y);
   };
 
-  // Draw user name
+  const nameFamily = `"Copperplate Gothic", "Copperplate", "Copperplate Gothic Bold", serif`;
+
+  // Draw user name — constrained to the glass box width (~38% of canvas width around the name X)
   const nameSize = Math.round(layout.nameFontSize * h);
-  drawText(userName, w * layout.nameX, h * layout.nameY, `bold ${nameSize}px "Copperplate Gothic", "Copperplate", "Small Caps", serif`, "#ffffff");
+  const nameMaxWidth = w * 0.38;
+  drawText(userName.trim(), w * layout.nameX, h * layout.nameY, nameSize, nameFamily, "bold", "#ffffff", nameMaxWidth);
 
   // Draw date
   if (layout.dateX !== undefined && layout.dateY !== undefined) {
     const dateSize = Math.round((layout.dateFontSize || 0.018) * h);
-    drawText(date, w * layout.dateX, h * layout.dateY, `${dateSize}px "Copperplate Gothic", "Copperplate", serif`, "#c8d8e8");
+    drawText(date, w * layout.dateX, h * layout.dateY, dateSize, nameFamily, "normal", "#c8d8e8", w * 0.30);
   }
 
   // Draw profit share (payout certificates)
   if (profitShare && layout.profitX !== undefined && layout.profitY !== undefined) {
     const profitSize = Math.round((layout.profitFontSize || 0.032) * h);
-    drawText(profitShare, w * layout.profitX, h * layout.profitY, `bold ${profitSize}px "Copperplate Gothic", "Copperplate", serif`, "#ffffff");
+    drawText(profitShare, w * layout.profitX, h * layout.profitY, profitSize, nameFamily, "bold", "#ffffff", w * 0.38);
   }
 
   return new Promise((resolve, reject) => {
