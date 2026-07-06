@@ -52,6 +52,54 @@ const CredentialsManager = () => {
   const [pendingDialogOpen, setPendingDialogOpen] = useState(false);
   const [pendingPurchases, setPendingPurchases] = useState<any[]>([]);
   const [assigning, setAssigning] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingCred, setEditingCred] = useState<Credential | null>(null);
+  const [editForm, setEditForm] = useState({ mt5_login: "", mt5_password: "", mt5_server: "" });
+  const [notifyUser, setNotifyUser] = useState(true);
+
+  const openEditDialog = (c: Credential) => {
+    setEditingCred(c);
+    setEditForm({ mt5_login: c.mt5_login, mt5_password: c.mt5_password, mt5_server: c.mt5_server });
+    setNotifyUser(true);
+    setEditDialogOpen(true);
+  };
+
+  const saveEditCredential = async () => {
+    if (!editingCred) return;
+    setSaving(true);
+    const { error } = await supabase.from("trading_credentials").update({
+      mt5_login: editForm.mt5_login.trim(),
+      mt5_password: editForm.mt5_password.trim(),
+      mt5_server: editForm.mt5_server.trim() || defaultServer,
+    }).eq("id", editingCred.id);
+    if (error) { toast.error(error.message); setSaving(false); return; }
+
+    // Optionally re-send credentials email if assigned
+    if (editingCred.is_assigned && editingCred.assigned_to && notifyUser) {
+      try {
+        const ch = challenges.find(c => c.id === editingCred.challenge_id);
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            type: "credentials",
+            recipientUserId: editingCred.assigned_to,
+            data: {
+              mt5Login: editForm.mt5_login.trim(),
+              mt5Password: editForm.mt5_password.trim(),
+              mt5Server: editForm.mt5_server.trim() || defaultServer,
+              challengeName: ch?.name || "Trading Challenge",
+              accountSize: ch ? `$${(ch.account_size / 1000).toFixed(0)}K` : "",
+            },
+          },
+        });
+      } catch (e) { console.error("Credentials re-send email failed:", e); }
+    }
+
+    toast.success("Credential updated" + (editingCred.is_assigned && notifyUser ? " & user notified" : ""));
+    setEditDialogOpen(false);
+    setEditingCred(null);
+    setSaving(false);
+    fetchData();
+  };
 
   const [form, setForm] = useState({
     challenge_id: "",
