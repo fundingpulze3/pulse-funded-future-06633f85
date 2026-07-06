@@ -618,6 +618,50 @@ const CredentialsManager = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Credential Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="bg-white border-[hsl(0,0%,90%)] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-[hsl(0,0%,5%)]">Edit Credential</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {editingCred?.is_assigned && editingCred.assigned_profile && (
+              <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-800">
+                Assigned to <strong>{editingCred.assigned_profile.display_name || editingCred.assigned_profile.email}</strong>. Changes replace this trader's live MT5 account.
+              </div>
+            )}
+            <div>
+              <Label className="text-xs text-[hsl(0,0%,45%)]">MT5 Login</Label>
+              <Input value={editForm.mt5_login} onChange={e => setEditForm({ ...editForm, mt5_login: e.target.value })}
+                className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg font-mono text-[hsl(0,0%,10%)]" />
+            </div>
+            <div>
+              <Label className="text-xs text-[hsl(0,0%,45%)]">MT5 Password</Label>
+              <Input value={editForm.mt5_password} onChange={e => setEditForm({ ...editForm, mt5_password: e.target.value })}
+                className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg font-mono text-[hsl(0,0%,10%)]" />
+            </div>
+            <div>
+              <Label className="text-xs text-[hsl(0,0%,45%)]">Server</Label>
+              <Input value={editForm.mt5_server} onChange={e => setEditForm({ ...editForm, mt5_server: e.target.value })}
+                className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg text-[hsl(0,0%,10%)]" placeholder={defaultServer} />
+            </div>
+            {editingCred?.is_assigned && (
+              <label className="flex items-center gap-2 text-xs text-[hsl(0,0%,30%)] cursor-pointer">
+                <input type="checkbox" checked={notifyUser} onChange={e => setNotifyUser(e.target.checked)} />
+                Email the updated credentials to the assigned trader
+              </label>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-lg border-[hsl(0,0%,88%)]" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button className="rounded-lg bg-[hsl(0,0%,0%)] text-white hover:bg-[hsl(0,0%,15%)]" onClick={saveEditCredential}
+              disabled={saving || !editForm.mt5_login || !editForm.mt5_password}>
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
