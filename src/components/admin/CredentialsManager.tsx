@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings, RefreshCw, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings, RefreshCw, AlertCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 interface AssignedProfile {
@@ -52,6 +52,54 @@ const CredentialsManager = () => {
   const [pendingDialogOpen, setPendingDialogOpen] = useState(false);
   const [pendingPurchases, setPendingPurchases] = useState<any[]>([]);
   const [assigning, setAssigning] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingCred, setEditingCred] = useState<Credential | null>(null);
+  const [editForm, setEditForm] = useState({ mt5_login: "", mt5_password: "", mt5_server: "" });
+  const [notifyUser, setNotifyUser] = useState(true);
+
+  const openEditDialog = (c: Credential) => {
+    setEditingCred(c);
+    setEditForm({ mt5_login: c.mt5_login, mt5_password: c.mt5_password, mt5_server: c.mt5_server });
+    setNotifyUser(true);
+    setEditDialogOpen(true);
+  };
+
+  const saveEditCredential = async () => {
+    if (!editingCred) return;
+    setSaving(true);
+    const { error } = await supabase.from("trading_credentials").update({
+      mt5_login: editForm.mt5_login.trim(),
+      mt5_password: editForm.mt5_password.trim(),
+      mt5_server: editForm.mt5_server.trim() || defaultServer,
+    }).eq("id", editingCred.id);
+    if (error) { toast.error(error.message); setSaving(false); return; }
+
+    // Optionally re-send credentials email if assigned
+    if (editingCred.is_assigned && editingCred.assigned_to && notifyUser) {
+      try {
+        const ch = challenges.find(c => c.id === editingCred.challenge_id);
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            type: "credentials",
+            recipientUserId: editingCred.assigned_to,
+            data: {
+              mt5Login: editForm.mt5_login.trim(),
+              mt5Password: editForm.mt5_password.trim(),
+              mt5Server: editForm.mt5_server.trim() || defaultServer,
+              challengeName: ch?.name || "Trading Challenge",
+              accountSize: ch ? `$${(ch.account_size / 1000).toFixed(0)}K` : "",
+            },
+          },
+        });
+      } catch (e) { console.error("Credentials re-send email failed:", e); }
+    }
+
+    toast.success("Credential updated" + (editingCred.is_assigned && notifyUser ? " & user notified" : ""));
+    setEditDialogOpen(false);
+    setEditingCred(null);
+    setSaving(false);
+    fetchData();
+  };
 
   const [form, setForm] = useState({
     challenge_id: "",
@@ -408,9 +456,14 @@ const CredentialsManager = () => {
                               )}
                             </td>
                             <td className="px-4 py-2.5">
-                              <button onClick={() => deleteCredential(c.id)} className="text-red-400 hover:text-red-600 transition-colors" title={c.is_assigned ? "Unassign & delete credential" : "Delete credential"}>
-                                <Trash2 size={13} />
-                              </button>
+                              <div className="flex items-center gap-2 justify-end">
+                                <button onClick={() => openEditDialog(c)} className="text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,10%)] transition-colors" title="Edit credential (replace login/password/server)">
+                                  <Pencil size={13} />
+                                </button>
+                                <button onClick={() => deleteCredential(c.id)} className="text-red-400 hover:text-red-600 transition-colors" title={c.is_assigned ? "Unassign & delete credential" : "Delete credential"}>
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -562,6 +615,50 @@ const CredentialsManager = () => {
                 {assigning ? "Assigning..." : `Assign All (${pendingPurchases.length})`}
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Credential Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="bg-white border-[hsl(0,0%,90%)] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-[hsl(0,0%,5%)]">Edit Credential</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {editingCred?.is_assigned && editingCred.assigned_profile && (
+              <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-800">
+                Assigned to <strong>{editingCred.assigned_profile.display_name || editingCred.assigned_profile.email}</strong>. Changes replace this trader's live MT5 account.
+              </div>
+            )}
+            <div>
+              <Label className="text-xs text-[hsl(0,0%,45%)]">MT5 Login</Label>
+              <Input value={editForm.mt5_login} onChange={e => setEditForm({ ...editForm, mt5_login: e.target.value })}
+                className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg font-mono text-[hsl(0,0%,10%)]" />
+            </div>
+            <div>
+              <Label className="text-xs text-[hsl(0,0%,45%)]">MT5 Password</Label>
+              <Input value={editForm.mt5_password} onChange={e => setEditForm({ ...editForm, mt5_password: e.target.value })}
+                className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg font-mono text-[hsl(0,0%,10%)]" />
+            </div>
+            <div>
+              <Label className="text-xs text-[hsl(0,0%,45%)]">Server</Label>
+              <Input value={editForm.mt5_server} onChange={e => setEditForm({ ...editForm, mt5_server: e.target.value })}
+                className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg text-[hsl(0,0%,10%)]" placeholder={defaultServer} />
+            </div>
+            {editingCred?.is_assigned && (
+              <label className="flex items-center gap-2 text-xs text-[hsl(0,0%,30%)] cursor-pointer">
+                <input type="checkbox" checked={notifyUser} onChange={e => setNotifyUser(e.target.checked)} />
+                Email the updated credentials to the assigned trader
+              </label>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-lg border-[hsl(0,0%,88%)]" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button className="rounded-lg bg-[hsl(0,0%,0%)] text-white hover:bg-[hsl(0,0%,15%)]" onClick={saveEditCredential}
+              disabled={saving || !editForm.mt5_login || !editForm.mt5_password}>
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
