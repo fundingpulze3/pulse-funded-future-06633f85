@@ -456,9 +456,14 @@ const CredentialsManager = () => {
                               )}
                             </td>
                             <td className="px-4 py-2.5">
-                              <button onClick={() => deleteCredential(c.id)} className="text-red-400 hover:text-red-600 transition-colors" title={c.is_assigned ? "Unassign & delete credential" : "Delete credential"}>
-                                <Trash2 size={13} />
-                              </button>
+                              <div className="flex items-center gap-2 justify-end">
+                                <button onClick={() => openEditDialog(c)} className="text-[hsl(0,0%,45%)] hover:text-[hsl(0,0%,10%)] transition-colors" title="Edit credential (replace login/password/server)">
+                                  <Pencil size={13} />
+                                </button>
+                                <button onClick={() => deleteCredential(c.id)} className="text-red-400 hover:text-red-600 transition-colors" title={c.is_assigned ? "Unassign & delete credential" : "Delete credential"}>
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
