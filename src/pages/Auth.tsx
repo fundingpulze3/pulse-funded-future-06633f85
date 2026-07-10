@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
+import { lovable } from "@/integrations/lovable";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
