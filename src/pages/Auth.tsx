@@ -9,7 +9,6 @@ import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useUtmTracking, getStoredUtm } from "@/hooks/useUtmTracking";
-import { lovable } from "@/integrations/lovable";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -141,6 +140,30 @@ const Auth = () => {
       toast.error("Something went wrong");
     } finally {
       setForgotLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: getAuthRedirectBaseUrl(),
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) {
+        toast.error(error.message || "Google sign-in failed");
+        setLoading(false);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Google sign-in failed");
+      setLoading(false);
     }
   };
 
@@ -359,18 +382,8 @@ const Auth = () => {
               type="button"
               variant="outline"
               className="w-full h-12 rounded-xl font-medium gap-2"
-              onClick={async () => {
-                try {
-                  const result = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: getAuthRedirectBaseUrl(),
-                  });
-                  if (result.error) {
-                    toast.error(result.error.message || "Google sign-in failed");
-                  }
-                } catch (err: any) {
-                  toast.error(err?.message || "Google sign-in failed");
-                }
-              }}
+              onClick={handleGoogleSignIn}
+              disabled={loading}
             >
               <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
                 <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"/>
