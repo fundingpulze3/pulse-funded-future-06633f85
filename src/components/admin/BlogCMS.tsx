@@ -79,6 +79,14 @@ const BlogCMS = () => {
   const [seoTab, setSeoTab] = useState<"basic" | "og" | "advanced">("basic");
   const [wordCount, setWordCount] = useState(0);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [usage, setUsage] = useState({ count: 0, spent: 0 });
+  const fetchUsage = useCallback(async () => {
+    const day = new Date().toISOString().slice(0, 10);
+    const { data } = await supabase.from("blog_engine_usage").select("cost_usd").eq("day", day).eq("ok", true);
+    const count = data?.length ?? 0;
+    const spent = (data ?? []).reduce((sum: number, r: any) => sum + Number(r.cost_usd || 0), 0);
+    setUsage({ count, spent });
+  }, []);
 
   const generateWithAI = async () => {
     if (!form.title.trim()) { toast.error("Enter a title first"); return; }
@@ -116,6 +124,7 @@ const BlogCMS = () => {
         slug: autoSlug ? (data.seo_metadata?.url_slug || prev.slug) : prev.slug,
       }));
       toast.success("Content generated! Review and edit before publishing.");
+      fetchUsage();
     } catch (err: any) {
       toast.error(err.message || "AI generation failed");
     } finally {
@@ -130,6 +139,7 @@ const BlogCMS = () => {
   }, []);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
+  useEffect(() => { fetchUsage(); }, [fetchUsage]);
 
   useEffect(() => {
     setWordCount(form.content.trim().split(/\s+/).filter(Boolean).length);
@@ -409,15 +419,18 @@ const BlogCMS = () => {
                       <button key={i} onClick={btn.action} title={btn.title} className="p-2 rounded hover:bg-[hsl(0,0%,88%)] text-[hsl(0,0%,35%)] transition-colors">{btn.icon}</button>
                     ))}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={generateWithAI}
-                    disabled={aiGenerating}
-                    className="h-7 text-xs gap-1 mr-1 border-[hsl(45,80%,55%)] text-[hsl(45,70%,35%)] hover:bg-[hsl(45,80%,92%)]"
-                  >
-                    {aiGenerating ? <><Loader2 size={12} className="animate-spin" /> Generating...</> : <><Sparkles size={12} /> AI Write</>}
-                  </Button>
+                  <div className="flex items-center gap-2 mr-1">
+                    <span className="text-[10px] text-[hsl(0,0%,45%)] whitespace-nowrap" title="AI posts generated today / daily cap · spend today">{usage.count}/10 today · ${usage.spent.toFixed(2)}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={generateWithAI}
+                      disabled={aiGenerating}
+                      className="h-7 text-xs gap-1 border-[hsl(45,80%,55%)] text-[hsl(45,70%,35%)] hover:bg-[hsl(45,80%,92%)]"
+                    >
+                      {aiGenerating ? <><Loader2 size={12} className="animate-spin" /> Generating...</> : <><Sparkles size={12} /> AI Write</>}
+                    </Button>
+                  </div>
                 </div>
                 <Textarea
                   id="blog-content"
