@@ -73,8 +73,18 @@ Return ONE JSON object, no markdown fences, with exactly these keys:
   "keyword_strategy": { "primary_keyword": "${primary_keyword}", "secondary_keywords": ["..."], "lsi_keywords": ["10-20 related terms"], "search_intent": "informational|commercial|transactional|navigational" },
   "blog_content": "Full markdown article, ~1500-2200 words. H1 title, hooked intro, H2/H3 sections, lists, examples, actionable insight. Humans first.",
   "featured_snippet": "40-60 word answer that could win a Google featured snippet",
+  "tags": ["8-15 specific tags"],
   "faq_section": [ { "question": "a People-Also-Ask style question", "answer": "concise helpful answer" } ]
-}`;
+}
+
+MUST INCLUDE (this is a conversion asset, not just an article)
+- 2 to 4 CTA callouts spread through the piece (never two in a row), each on its own line in EXACTLY this format:
+  > **CTA:** <one short persuasive sentence> [<button label>](<url>)
+  Only use these real URLs: /checkout (start a challenge), /faq, /about, /blog, /. Never invent a URL.
+- 2 to 3 outbound links to genuinely authoritative sources (Wikipedia, Investopedia, a regulator or exchange page) as normal markdown links, placed where they support a claim.
+- 2 to 3 internal links to the pages listed above, in natural sentences.
+- 8 to 15 specific tags in "tags" (topic, geography, intent — not generic filler).
+`;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

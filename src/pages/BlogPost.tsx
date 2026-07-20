@@ -69,6 +69,10 @@ const renderMarkdown = (md: string) => {
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-sm">$1</code>')
+    .replace(/^> \*\*CTA:\*\*\s*(.+?)\s*\[([^\]]+)\]\(([^)]+)\)\s*$/gm,
+      '<div class="fp-cta my-6 rounded-xl border border-primary/30 bg-primary/5 p-5 flex flex-col sm:flex-row sm:items-center gap-3 justify-between not-prose">' +
+      '<p class="m-0 font-medium text-foreground">$1</p>' +
+      '<a href="$3" data-cta="$2" class="fp-cta-btn shrink-0 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90 transition">$2</a></div>')
     .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-border pl-4 italic text-muted-foreground my-4">$1</blockquote>')
     .replace(/^---$/gm, '<hr class="my-6 border-border" />')
     .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" class="rounded-xl max-w-full my-4" />')
@@ -77,6 +81,14 @@ const renderMarkdown = (md: string) => {
     .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
     .replace(/\n\n/g, '<br/><br/>');
 };
+
+function sessionId() {
+  try {
+    let id = localStorage.getItem("fp_sid");
+    if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("fp_sid", id); }
+    return id;
+  } catch { return "anon"; }
+}
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -92,6 +104,35 @@ const BlogPost = () => {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
+  // read time + CTA clicks
+  useEffect(() => {
+    if (!post?.id) return;
+    const start = Date.now();
+    let sent = false;
+    const flush = () => {
+      if (sent) return;
+      const secs = Math.round((Date.now() - start) / 1000);
+      if (secs < 3) return;
+      sent = true;
+      supabase.from("blog_events").insert({ post_id: post.id, type: "read", seconds: secs, session_id: sessionId() }).then(() => {});
+    };
+    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    const onClick = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement)?.closest("[data-cta]") as HTMLElement | null;
+      if (!el) return;
+      supabase.from("blog_events").insert({ post_id: post.id, type: "cta_click", cta_label: el.getAttribute("data-cta"), session_id: sessionId() }).then(() => {});
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("beforeunload", flush);
+    document.addEventListener("click", onClick);
+    return () => {
+      flush();
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("beforeunload", flush);
+      document.removeEventListener("click", onClick);
+    };
+  }, [post?.id]);
+
   useEffect(() => {
     if (!slug) return;
     const fetchPost = async () => {
@@ -105,6 +146,7 @@ const BlogPost = () => {
       if (data) {
         setPost(data as Post);
         supabase.from("blog_posts").update({ views_count: (data.views_count || 0) + 1 }).eq("id", data.id).then(() => {});
+        supabase.from("blog_events").insert({ post_id: data.id, type: "view", session_id: sessionId() }).then(() => {});
         document.title = data.meta_title || `${data.title} — FP Blog`;
 
         const { data: related } = await supabase

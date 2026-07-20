@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Play, Send, Sparkles, Trash2, Pencil } from "lucide-react";
+import { Loader2, Play, Send, Sparkles, Trash2, Pencil, Eye, Clock, MousePointerClick, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 
 type Usage = { id: string; day: string; topic: string | null; cost_usd: number; words: number; ok: boolean; created_at: string };
 type Topic = { id: string; query: string; category: string | null; country: string | null; source: string; status: string };
 type SlotRun = { slot: string; status: string; note: string | null };
+type Ev = { post_id: string; type: string; seconds: number; cta_label: string | null; session_id: string | null };
+type Post = { id: string; title: string; views_count: number };
 
 const card = "bg-white rounded-lg border border-[hsl(0,0%,88%)] p-4";
 const muted = "text-[hsl(0,0%,45%)]";
@@ -25,6 +27,8 @@ const BlogAutoPilot = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [lastPost, setLastPost] = useState<{ title: string; published_at: string } | null>(null);
   const [preparedCount, setPreparedCount] = useState(0);
+  const [events, setEvents] = useState<Ev[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [nowTick, setNowTick] = useState(Date.now());
   useEffect(() => { const i = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(i); }, []);
 
@@ -43,6 +47,11 @@ const BlogAutoPilot = () => {
     ]);
     setLastPost(lp.data as { title: string; published_at: string } | null);
     setPreparedCount(pc.data?.length ?? 0);
+    const [ev, po] = await Promise.all([
+      supabase.from("blog_events").select("post_id,type,seconds,cta_label,session_id").order("created_at", { ascending: false }).limit(5000),
+      supabase.from("blog_posts").select("id,title,views_count").eq("is_published", true).order("published_at", { ascending: false }).limit(100),
+    ]);
+    setEvents((ev.data as Ev[]) ?? []); setPosts((po.data as Post[]) ?? []);
     setUsage((u.data as Usage[]) ?? []); setQueue((t.data as Topic[]) ?? []); setRuns((r.data as SlotRun[]) ?? []);
     setLoading(false);
   }, []);
@@ -229,6 +238,81 @@ const BlogAutoPilot = () => {
           </div>
         )}
       </div>
+
+      {/* Reader analytics */}
+      {(() => {
+        const views = events.filter((e) => e.type === "view").length;
+        const reads = events.filter((e) => e.type === "read");
+        const clicks = events.filter((e) => e.type === "cta_click");
+        const uniques = new Set(events.map((e) => e.session_id).filter(Boolean)).size;
+        const avgRead = reads.length ? Math.round(reads.reduce((s2, r) => s2 + (r.seconds || 0), 0) / reads.length) : 0;
+        const ctr = views ? (clicks.length / views) * 100 : 0;
+        const byPost = posts.map((p) => {
+          const pe = events.filter((e) => e.post_id === p.id);
+          const pr = pe.filter((e) => e.type === "read");
+          return {
+            title: p.title,
+            views: pe.filter((e) => e.type === "view").length || p.views_count || 0,
+            avg: pr.length ? Math.round(pr.reduce((s2, r) => s2 + (r.seconds || 0), 0) / pr.length) : 0,
+            clicks: pe.filter((e) => e.type === "cta_click").length,
+          };
+        }).sort((a, b) => b.views - a.views).slice(0, 5);
+        const mmss = (sec: number) => `${Math.floor(sec / 60)}m ${sec % 60}s`;
+
+        return (
+          <div className={card}>
+            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2"><BarChart3 size={15} /> Reader analytics</h2>
+            {posts.length === 0 ? (
+              <div className="text-center py-8 px-4 rounded-lg border border-dashed border-[hsl(0,0%,85%)] bg-[hsl(0,0%,98%)]">
+                <BarChart3 size={26} className="mx-auto mb-2 text-[hsl(0,0%,65%)]" />
+                <p className="text-sm font-medium">Analytics start with your first post</p>
+                <p className={`text-xs ${muted} mt-1 max-w-md mx-auto`}>
+                  Once a blog is live we track every view, how long people actually read, and every CTA click —
+                  so you can see which posts bring traders in. Nothing is broken; there's just nothing to measure yet.
+                </p>
+                <div className="flex justify-center gap-6 mt-4 opacity-40">
+                  {["Views", "Read time", "CTA clicks"].map((l) => (
+                    <div key={l} className="text-center"><p className="text-lg font-bold">—</p><p className="text-[10px] uppercase tracking-wide">{l}</p></div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  {[
+                    { icon: <Eye size={14} />, label: "Views", value: views.toLocaleString() },
+                    { icon: <Eye size={14} />, label: "Readers", value: uniques.toLocaleString() },
+                    { icon: <Clock size={14} />, label: "Avg read", value: mmss(avgRead) },
+                    { icon: <MousePointerClick size={14} />, label: "CTA clicks", value: clicks.length.toLocaleString() },
+                    { icon: <MousePointerClick size={14} />, label: "CTR", value: `${ctr.toFixed(1)}%` },
+                  ].map((m) => (
+                    <div key={m.label} className="rounded-lg border border-[hsl(0,0%,90%)] p-3">
+                      <p className={`text-[10px] uppercase tracking-wide flex items-center gap-1 ${muted}`}>{m.icon}{m.label}</p>
+                      <p className="text-xl font-bold mt-1">{m.value}</p>
+                    </div>
+                  ))}
+                </div>
+                {views === 0 && <p className={`text-xs ${muted} mt-3`}>Posts are live — reader stats will appear as people land on them.</p>}
+                {byPost.length > 0 && views > 0 && (
+                  <div className="mt-4">
+                    <p className={`text-[11px] uppercase tracking-wide ${muted} mb-1`}>Top posts</p>
+                    <div className="divide-y divide-[hsl(0,0%,92%)] text-sm">
+                      {byPost.map((b) => (
+                        <div key={b.title} className="flex items-center justify-between gap-3 py-2">
+                          <span className="truncate flex-1">{b.title}</span>
+                          <span className="text-xs tabular-nums">{b.views} views</span>
+                          <span className="text-xs tabular-nums">{mmss(b.avg)}</span>
+                          <span className="text-xs tabular-nums">{b.clicks} clicks</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Recent */}
       <div className={card}>

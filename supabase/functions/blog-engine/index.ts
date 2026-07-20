@@ -80,7 +80,17 @@ Return ONE JSON object, no fences:
  "keyword_strategy":{"primary_keyword":"${pk}","secondary_keywords":["..."],"lsi_keywords":["10-20"],"search_intent":"informational|commercial|transactional|navigational"},
  "blog_content":"markdown, ~1500-2200 words",
  "featured_snippet":"40-60 words",
- "faq_section":[{"question":"...","answer":"..."}]}`;
+ "tags":["8-15 specific tags"],
+ "faq_section":[{"question":"...","answer":"..."}]}
+
+MUST INCLUDE (this is a conversion asset, not just an article)
+- 2 to 4 CTA callouts spread through the piece (never two in a row), each on its own line in EXACTLY this format:
+  > **CTA:** <one short persuasive sentence> [<button label>](<url>)
+  Only use these real URLs: /checkout (start a challenge), /faq, /about, /blog, /. Never invent a URL.
+- 2 to 3 outbound links to genuinely authoritative sources (Wikipedia, Investopedia, a regulator or exchange page) as normal markdown links, placed where they support a claim.
+- 2 to 3 internal links to the pages listed above, in natural sentences.
+- 8 to 15 specific tags in "tags" (topic, geography, intent — not generic filler).
+`;
 
 /** Write one post as a DRAFT and return its id. Pulls from the feed queue first. */
 async function writeDraft() {
@@ -136,6 +146,7 @@ async function writeDraft() {
     author_id: author, is_published: false,
     meta_title: a.seo_metadata?.seo_title || null, meta_description: a.seo_metadata?.meta_description || null,
     focus_keyword: pk, reading_time: Math.max(1, Math.round(words / 200)),
+    meta_keywords: Array.isArray(a.tags) ? a.tags.filter((t: unknown) => typeof t === "string").slice(0, 15) : [],
   }).select("id").single();
 
   await supabase.from("blog_engine_usage").insert({
