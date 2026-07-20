@@ -29,3 +29,7 @@ services:
         value: "0.10"
       - key: AUTO_PUBLISH_CRON
         value: "0 9 * * *"
+      - key: SITE_URL                   # https://fundingpulze.com (used for sitemap.xml)
+        sync: false
+      - key: BLOG_PATH
+        value: "/blog"

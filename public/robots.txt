@@ -2,3 +2,7 @@ User-agent: *
 Allow: /
 
 Sitemap: https://fundingpulze.com/sitemap.xml
+
+# Blog sitemap is served by the blog engine service.
+# Set this to your engine URL (or proxy it on your domain):
+# Sitemap: https://<your-engine>.onrender.com/sitemap.xml

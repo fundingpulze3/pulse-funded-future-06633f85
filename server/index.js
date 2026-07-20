@@ -46,7 +46,18 @@ async function capsBlocked() {
 }
 const maxOut = () => Math.max(2000, Math.min(8000, Math.floor((PER_BLOG_USD_CAP / PRICE_OUT) * 1e6)));
 
-function systemPrompt(brand) {
+function localeBlock(country) {
+  if (!country) return "";
+  return `
+
+WRITE THIS ONE FOR: ${country}
+- Speak to a trader in ${country}: their currency, their typical starting capital, the platforms and payment rails they actually use, and the local search phrasing they'd type.
+- Use local examples and realistic local numbers. Convert money to the local currency where it helps, and keep the USD figure alongside it.
+- Do NOT invent country-specific features, offers or payment methods the brand does not list. If a local method isn't in the brand context, don't claim it.
+- Never imply the brand is only for that country.`;
+}
+
+function systemPrompt(brand, country) {
   return `You are an elite SEO content engine and long-form writer. You produce deeply useful, citation-ready articles that rank on Google and get cited by AI answer engines.
 
 QUALITY BAR
@@ -59,7 +70,7 @@ HUMAN VOICE (must not read like AI)
 - Write as one real, experienced person speaking to one reader. Contractions, varied rhythm, specifics over generalities.
 
 BRAND CONTEXT (obey exactly; never invent facts about the brand)
-${brand || "No brand context set — write brand-neutral, generally useful content and do not name any company."}`;
+${brand || "No brand context set — write brand-neutral, generally useful content and do not name any company."}${localeBlock(country)}`;
 }
 const articlePrompt = (topic, pk, sk) => `Write a complete, SEO-optimized article.
 
@@ -103,13 +114,13 @@ async function requireAdmin(req, res, next) {
 app.post("/api/generate", requireAdmin, async (req, res) => {
   try {
     if (!KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY not set" });
-    const { topic, primary_keyword, secondary_keywords, training_context } = req.body || {};
+    const { topic, primary_keyword, secondary_keywords, training_context, country } = req.body || {};
     if (!topic || !primary_keyword) return res.status(400).json({ error: "Topic and primary keyword are required" });
     const blocked = await capsBlocked();
     if (blocked) return res.status(429).json({ error: blocked });
 
     const brand = training_context?.trim() || (await getBrand()).brand_context;
-    const out = await claude(WRITER, maxOut(), systemPrompt(brand), articlePrompt(topic, primary_keyword, secondary_keywords));
+    const out = await claude(WRITER, maxOut(), systemPrompt(brand, country), articlePrompt(topic, primary_keyword, secondary_keywords));
     const parsed = parseJson(out.text) || { raw_content: out.text, parse_error: true };
     await supabase.from("blog_engine_usage").insert({
       day: utcDay(), model: WRITER, topic, input_tokens: out.inTok, output_tokens: out.outTok,
@@ -135,13 +146,18 @@ async function autoPublish() {
   const { data: recent } = await supabase.from("blog_posts").select("title").order("created_at", { ascending: false }).limit(25);
   const seen = (recent ?? []).map((p) => p.title).join("; ");
 
+  const countries = (settings.target_countries || "").split(",").map((c) => c.trim()).filter(Boolean);
+  const fresh = countries.filter((c) => !seen.toLowerCase().includes(c.toLowerCase()));
+  const pool = fresh.length ? fresh : countries;
+  const country = pool.length ? pool[Math.floor(Math.random() * pool.length)] : "";
+
   const idea = await claude(IDEATE, 400,
     "You suggest one fresh, specific, high-search-intent blog topic. Output strict JSON only.",
-    `Brand/context: ${settings.brand_context || "a general-interest blog"}\nThemes: ${settings.themes || "(any relevant)"}\nDo NOT repeat: ${seen || "(none)"}\n\nReturn JSON: {"topic":"...","primary_keyword":"...","secondary_keywords":"comma,separated"}`);
+    `Brand/context: ${settings.brand_context || "a general-interest blog"}\nThemes: ${settings.themes || "(any relevant)"}${country ? `\nTarget country for this post: ${country}. Pick a topic a trader in ${country} would actually search, and reflect it in the title.` : ""}\nDo NOT repeat: ${seen || "(none)"}\n\nReturn JSON: {"topic":"...","primary_keyword":"...","secondary_keywords":"comma,separated"}`);
   const i = parseJson(idea.text);
   if (!i?.topic || !i?.primary_keyword) return console.log("[auto] ideation failed");
 
-  const art = await claude(WRITER, maxOut(), systemPrompt(settings.brand_context), articlePrompt(i.topic, i.primary_keyword, i.secondary_keywords));
+  const art = await claude(WRITER, maxOut(), systemPrompt(settings.brand_context, country), articlePrompt(i.topic, i.primary_keyword, i.secondary_keywords));
   const a = parseJson(art.text);
   const total = costOf(idea.inTok, idea.outTok) + costOf(art.inTok, art.outTok);
   if (!a?.blog_content) {
@@ -168,8 +184,24 @@ async function autoPublish() {
     day: utcDay(), model: WRITER, topic: i.topic, input_tokens: art.inTok, output_tokens: art.outTok,
     cost_usd: Math.round(total * 10000) / 10000, ok: !error,
   });
-  console.log(error ? "[auto] insert failed: " + error.message : "[auto] published: " + slug);
+  console.log(error ? "[auto] insert failed: " + error.message : `[auto] published: ${slug}${country ? " [" + country + "]" : ""}`);
 }
+
+app.get("/sitemap.xml", async (_req, res) => {
+  try {
+    const site = (process.env.SITE_URL || "").replace(/\/$/, "");
+    const path = process.env.BLOG_PATH || "/blog";
+    const { data } = await supabase.from("blog_posts")
+      .select("slug, updated_at, published_at").eq("is_published", true)
+      .order("published_at", { ascending: false }).limit(5000);
+    const urls = (data ?? []).map((p) => {
+      const d = new Date(p.updated_at || p.published_at || Date.now()).toISOString().slice(0, 10);
+      return `  <url><loc>${site}${path}/${p.slug}</loc><lastmod>${d}</lastmod><changefreq>weekly</changefreq></url>`;
+    }).join("\n");
+    res.set("Content-Type", "application/xml").send(
+      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${site}${path}</loc><changefreq>daily</changefreq></url>\n${urls}\n</urlset>`);
+  } catch (e) { res.status(500).send("sitemap error"); }
+});
 
 app.post("/api/auto-publish", requireAdmin, async (_req, res) => {
   try { await autoPublish(); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); }

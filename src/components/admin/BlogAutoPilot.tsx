@@ -17,6 +17,7 @@ const labelCls = "text-xs font-medium text-[hsl(0,0%,35%)]";
 const BlogAutoPilot = () => {
   const [brand, setBrand] = useState("");
   const [themes, setThemes] = useState("");
+  const [countries, setCountries] = useState("");
   const [auto, setAuto] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -26,7 +27,7 @@ const BlogAutoPilot = () => {
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("blog_settings").select("*").eq("id", 1).maybeSingle();
-    if (data) { setBrand(data.brand_context || ""); setThemes(data.themes || ""); setAuto(!!data.auto_publish); }
+    if (data) { setBrand(data.brand_context || ""); setThemes(data.themes || ""); setCountries(data.target_countries || ""); setAuto(!!data.auto_publish); }
     const day = new Date().toISOString().slice(0, 10);
     const { data: u } = await supabase.from("blog_engine_usage").select("cost_usd").eq("day", day).eq("ok", true);
     setUsage({ count: u?.length ?? 0, spent: (u ?? []).reduce((s: number, r: { cost_usd: number }) => s + Number(r.cost_usd || 0), 0) });
@@ -39,7 +40,7 @@ const BlogAutoPilot = () => {
   const save = async () => {
     setSaving(true);
     const { error } = await supabase.from("blog_settings")
-      .update({ brand_context: brand, themes, auto_publish: auto, updated_at: new Date().toISOString() }).eq("id", 1);
+      .update({ brand_context: brand, themes, target_countries: countries, auto_publish: auto, updated_at: new Date().toISOString() }).eq("id", 1);
     setSaving(false);
     if (error) toast.error(error.message); else toast.success("Settings saved");
   };
@@ -90,6 +91,13 @@ const BlogAutoPilot = () => {
           <Label className={labelCls}>Topic themes</Label>
           <Input value={themes} onChange={(e) => setThemes(e.target.value)} className="mt-1 text-sm"
             placeholder="comma, separated, themes to draw topics from" />
+        </div>
+
+        <div>
+          <Label className={labelCls}>Target countries</Label>
+          <Input value={countries} onChange={(e) => setCountries(e.target.value)} className="mt-1 text-sm"
+            placeholder="India, Nigeria, Pakistan, Philippines, ..." />
+          <p className="text-[11px] text-[hsl(0,0%,45%)] mt-1">Auto-pilot rotates these and writes each post for that country — local currency, local examples, local search phrasing.</p>
         </div>
 
         <div className="flex gap-2">
