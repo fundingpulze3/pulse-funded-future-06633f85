@@ -1,0 +1,31 @@
+# Render Blueprint — Blog Engine service.
+# Render Dashboard -> New -> Blueprint -> connect this repo.
+# Set the three "sync: false" vars when prompted; the rest have working defaults.
+services:
+  - type: web
+    name: blog-engine
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: ANTHROPIC_API_KEY          # your Claude key
+        sync: false
+      - key: SUPABASE_URL               # https://<project-ref>.supabase.co
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY  # Supabase -> Settings -> API -> service_role
+        sync: false
+      - key: CORS_ORIGIN                # your site origin, e.g. https://fundingpulze.com
+        sync: false
+      - key: BLOG_ENGINE_DAILY_CAP
+        value: "10"
+      - key: BLOG_ENGINE_DAILY_USD_CAP
+        value: "0.45"
+      - key: BLOG_ENGINE_PER_BLOG_USD_CAP
+        value: "0.10"
+      - key: AUTO_PUBLISH_CRON
+        value: "0 9 * * *"
