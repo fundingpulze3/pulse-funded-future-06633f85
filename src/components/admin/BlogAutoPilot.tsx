@@ -23,6 +23,10 @@ const BlogAutoPilot = () => {
   const [runs, setRuns] = useState<SlotRun[]>([]);
   const [q, setQ] = useState(""); const [note, setNote] = useState(""); const [cat, setCat] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [lastPost, setLastPost] = useState<{ title: string; published_at: string } | null>(null);
+  const [preparedCount, setPreparedCount] = useState(0);
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => { const i = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(i); }, []);
 
   const load = useCallback(async () => {
     const day = new Date().toISOString().slice(0, 10);
@@ -33,6 +37,12 @@ const BlogAutoPilot = () => {
       supabase.from("blog_slot_runs").select("slot,status,note").eq("day", day),
     ]);
     if (s.data) { setAuto(!!s.data.auto_publish); setSlots(s.data.slots || "09:00,14:00,19:00"); }
+    const [lp, pc] = await Promise.all([
+      supabase.from("blog_posts").select("title,published_at").eq("is_published", true).order("published_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("blog_prepared").select("id").eq("status", "ready"),
+    ]);
+    setLastPost(lp.data as { title: string; published_at: string } | null);
+    setPreparedCount(pc.data?.length ?? 0);
     setUsage((u.data as Usage[]) ?? []); setQueue((t.data as Topic[]) ?? []); setRuns((r.data as SlotRun[]) ?? []);
     setLoading(false);
   }, []);
@@ -71,10 +81,67 @@ const BlogAutoPilot = () => {
     (m[u.day] ||= { blogs: 0, cost: 0 }); m[u.day].blogs++; m[u.day].cost += Number(u.cost_usd || 0); return m;
   }, {})).sort((a, b) => (a[0] < b[0] ? 1 : -1)).slice(0, 7);
 
+  const slotList = slots.split(",").map((x) => x.trim()).filter(Boolean).sort();
+  const nowD = new Date(nowTick);
+  const hhmmNow = nowD.toISOString().slice(11, 16);
+  const upcoming = slotList.find((t) => t > hhmmNow);
+  const target = new Date(nowD);
+  if (upcoming) { const [h, m] = upcoming.split(":").map(Number); target.setUTCHours(h, m, 0, 0); }
+  else if (slotList.length) { const [h, m] = slotList[0].split(":").map(Number); target.setUTCDate(target.getUTCDate() + 1); target.setUTCHours(h, m, 0, 0); }
+  const msLeft = slotList.length ? target.getTime() - nowTick : 0;
+  const secs = Math.max(0, Math.floor(msLeft / 1000));
+  const countdown = `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m ${secs % 60}s`;
+  const nextAt = upcoming || slotList[0] || "—";
+  const ago = (iso: string) => {
+    const m = Math.floor((nowTick - new Date(iso).getTime()) / 60000);
+    if (m < 60) return `${m}m ago`;
+    if (m < 1440) return `${Math.floor(m / 60)}h ago`;
+    return `${Math.floor(m / 1440)}d ago`;
+  };
+
   if (loading) return <div className={`flex items-center gap-2 text-sm ${muted}`}><Loader2 size={16} className="animate-spin" /> Loading…</div>;
 
   return (
     <div className="space-y-4 max-w-4xl">
+      {/* Live status */}
+      <div className={card}>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p className={`text-[11px] uppercase tracking-wide ${muted}`}>Next post</p>
+            {auto ? (
+              <>
+                <p className="text-2xl font-bold tabular-nums">{countdown}</p>
+                <p className={`text-xs ${muted}`}>at {nextAt} UTC{upcoming ? "" : " (tomorrow)"}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-[hsl(0,0%,55%)]">Paused</p>
+                <p className={`text-xs ${muted}`}>auto-posting is off</p>
+              </>
+            )}
+          </div>
+          <div className="text-right">
+            <p className={`text-[11px] uppercase tracking-wide ${muted}`}>Next draft</p>
+            <p className={`text-sm font-semibold ${preparedCount > 0 ? "text-green-600" : "text-amber-600"}`}>
+              {preparedCount > 0 ? "Written & waiting" : "Writes at slot time"}
+            </p>
+            <p className={`text-[11px] ${muted} mt-2`}>
+              {lastPost ? <>Last posted {ago(lastPost.published_at)} — <span className="text-black">{lastPost.title}</span></> : "Nothing posted yet"}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {slotList.map((t) => {
+            const run = runs.find((r) => r.slot === t);
+            const done = run?.status === "posted";
+            return (
+              <span key={t} className={`text-[11px] px-2 py-0.5 rounded border ${done ? "border-green-300 text-green-700 bg-green-50" : run ? "border-amber-300 text-amber-700 bg-amber-50" : t === nextAt && auto ? "border-black/30 text-black bg-[hsl(0,0%,96%)]" : "border-[hsl(0,0%,88%)] " + muted}`}>
+                {t} {done ? "· posted" : run ? `· ${run.status}` : t <= hhmmNow ? "· missed" : "· scheduled"}
+              </span>
+            );
+          })}
+        </div>
+      </div>
       {/* Write / queue a blog */}
       <div className={card}>
         <h2 className="text-sm font-semibold mb-2 flex items-center gap-2"><Sparkles size={15} /> Write a blog</h2>
@@ -107,15 +174,6 @@ const BlogAutoPilot = () => {
             {busy === "slot" ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Run a slot now
           </Button>
         </div>
-        {runs.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {runs.map((r) => (
-              <span key={r.slot} className={`text-[11px] px-2 py-0.5 rounded border ${r.status === "posted" ? "border-green-300 text-green-700 bg-green-50" : r.status === "skipped" ? "border-amber-300 text-amber-700 bg-amber-50" : "border-red-300 text-red-700 bg-red-50"}`}>
-                {r.slot} · {r.status}{r.note ? ` (${r.note})` : ""}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Upcoming queue */}
