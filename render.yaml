@@ -15,12 +15,12 @@ services:
         value: "20"
       - key: ANTHROPIC_API_KEY          # your Claude key
         sync: false
-      - key: SUPABASE_URL               # https://<project-ref>.supabase.co
-        sync: false
+      - key: SUPABASE_URL
+        value: "https://rpshiyvndmnogbhbgmfm.supabase.co"
       - key: SUPABASE_SERVICE_ROLE_KEY  # Supabase -> Settings -> API -> service_role
         sync: false
-      - key: CORS_ORIGIN                # your site origin, e.g. https://fundingpulze.com
-        sync: false
+      - key: CORS_ORIGIN
+        value: "https://fundingpulze.com"
       - key: BLOG_ENGINE_DAILY_CAP
         value: "10"
       - key: BLOG_ENGINE_DAILY_USD_CAP
@@ -29,7 +29,7 @@ services:
         value: "0.10"
       - key: AUTO_PUBLISH_CRON
         value: "0 9 * * *"
-      - key: SITE_URL                   # https://fundingpulze.com (used for sitemap.xml)
-        sync: false
+      - key: SITE_URL
+        value: "https://fundingpulze.com"
       - key: BLOG_PATH
         value: "/blog"

@@ -14,7 +14,44 @@ const PER_BLOG_USD_CAP = num("BLOG_ENGINE_PER_BLOG_USD_CAP", 0.10);
 const AUTO_CRON = process.env.AUTO_PUBLISH_CRON || "0 9 * * *";
 
 const KEY = process.env.ANTHROPIC_API_KEY;
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://rpshiyvndmnogbhbgmfm.supabase.co";
+const SITE_URL = (process.env.SITE_URL || "https://fundingpulze.com").replace(/\/$/, "");
+const supabase = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+// Baked-in defaults so the engine runs with zero setup. If the blog_settings
+// table exists, it wins — edit everything from Admin -> Blog Engine instead.
+const DEFAULT_COUNTRIES = "United States, Canada, United Kingdom, Ireland, Australia, New Zealand, Germany, France, Switzerland, Austria, Netherlands, Belgium, Luxembourg, Denmark, Sweden, Norway, Finland, Iceland, Italy, Spain, Portugal, Singapore, Japan, South Korea, United Arab Emirates, Qatar";
+const DEFAULT_THEMES = "passing prop firm evaluations, drawdown rules explained, risk management for funded accounts, profit split and payout guides, trading psychology, funded trader roadmap, choosing a prop firm, common evaluation mistakes, position sizing, trading plan building";
+const DEFAULT_BRAND = `Funding Pulze is a proprietary trading firm. Positioning: "Get Funded. Trade Big. Keep the Profits."
+
+WHAT WE OFFER
+- Evaluation challenges on account sizes $5K, $10K, $25K, $50K and $100K.
+- 2-Step: Phase 1 profit target 8%, Phase 2 target 5%. 1-Step: 8% in a single phase. No time limit on any phase.
+- Maximum overall drawdown: 10% of the initial account balance.
+- Daily drawdown: 5%, measured from the balance at the start of the trading day (00:00 UTC), resets daily.
+- Minimum 3 active trading days per phase (a day where at least one position is opened and closed).
+- Weekend holding is allowed. Swap-free accounts are available.
+
+PAYOUTS
+- Reward cycles: Weekly (60% profit split), Bi-weekly (80%), On Demand (90%), Monthly (100%).
+- Methods: bank wire, crypto (USDT/BTC/ETH) and PayPal. Processed in 24-48 hours. No minimum withdrawal.
+- First payout after the first cycle completes (7, 14 or 30 days depending on the cycle chosen).
+
+ONBOARDING
+- Login credentials are emailed within minutes of purchase.
+- The trader dashboard shows stats, drawdown status and payout history in real time.
+
+NON-NEGOTIABLES (never break these)
+- Never guarantee profits or income. Never use "risk-free", "guaranteed", "no risk" or similar.
+- Never invent rules, prices, numbers, features or promotions that are not listed above.
+- Be honest that evaluations are demanding and many traders do not pass on the first attempt.
+- No individualized financial advice. Add a short risk note where it is relevant.
+- Never name a competitor as a scam. Describe patterns, not names.
+- Trading involves substantial risk of loss.`;
+
+// In-memory fallback so caps still work even if the usage table isn't there.
+let mem = { day: "", count: 0, spent: 0 };
+function memToday() { const d = utcDay(); if (mem.day !== d) mem = { day: d, count: 0, spent: 0 }; return mem; }
 
 const utcDay = () => new Date().toISOString().slice(0, 10);
 const costOf = (i, o) => (i / 1e6) * PRICE_IN + (o / 1e6) * PRICE_OUT;
@@ -38,11 +75,24 @@ function parseJson(text) {
   try { const m = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text]; return JSON.parse(m[1].trim()); } catch { return null; }
 }
 async function capsBlocked() {
-  const { data } = await supabase.from("blog_engine_usage").select("cost_usd").eq("day", utcDay()).eq("ok", true);
-  const spent = (data ?? []).reduce((s, r) => s + Number(r.cost_usd || 0), 0);
-  if ((data?.length ?? 0) >= DAILY_CAP) return `Daily limit reached (${DAILY_CAP} posts).`;
-  if (spent >= DAILY_USD_CAP) return "Daily AI budget reached.";
+  try {
+    const { data, error } = await supabase.from("blog_engine_usage").select("cost_usd").eq("day", utcDay()).eq("ok", true);
+    if (!error) {
+      const spent = (data ?? []).reduce((s, r) => s + Number(r.cost_usd || 0), 0);
+      if ((data?.length ?? 0) >= DAILY_CAP) return `Daily limit reached (${DAILY_CAP} posts).`;
+      if (spent >= DAILY_USD_CAP) return "Daily AI budget reached.";
+      return null;
+    }
+  } catch { /* fall through to memory */ }
+  const m = memToday();
+  if (m.count >= DAILY_CAP) return `Daily limit reached (${DAILY_CAP} posts).`;
+  if (m.spent >= DAILY_USD_CAP) return "Daily AI budget reached.";
   return null;
+}
+
+async function logUsage(row) {
+  const m = memToday(); m.count += 1; m.spent += Number(row.cost_usd || 0);
+  try { await supabase.from("blog_engine_usage").insert(row); } catch { /* table optional */ }
 }
 const maxOut = () => Math.max(2000, Math.min(8000, Math.floor((PER_BLOG_USD_CAP / PRICE_OUT) * 1e6)));
 
@@ -91,8 +141,19 @@ Return ONE JSON object, no markdown fences, exactly these keys:
 }`;
 
 async function getBrand() {
-  const { data } = await supabase.from("blog_settings").select("*").eq("id", 1).maybeSingle();
-  return data || { brand_context: "", themes: "", auto_publish: false };
+  try {
+    const { data, error } = await supabase.from("blog_settings").select("*").eq("id", 1).maybeSingle();
+    if (!error && data) return {
+      brand_context: data.brand_context || DEFAULT_BRAND,
+      themes: data.themes || DEFAULT_THEMES,
+      target_countries: data.target_countries || DEFAULT_COUNTRIES,
+      auto_publish: data.auto_publish ?? true,
+    };
+  } catch { /* table not created yet — use defaults */ }
+  return {
+    brand_context: DEFAULT_BRAND, themes: DEFAULT_THEMES, target_countries: DEFAULT_COUNTRIES,
+    auto_publish: process.env.AUTO_PUBLISH !== "false",
+  };
 }
 
 // ── API ──────────────────────────────────────────────────────────────────────
@@ -125,7 +186,7 @@ app.post("/api/generate", requireAdmin, async (req, res) => {
     const brand = training_context?.trim() || (await getBrand()).brand_context;
     const out = await claude(WRITER, maxOut(), systemPrompt(brand, country), articlePrompt(topic, primary_keyword, secondary_keywords));
     const parsed = parseJson(out.text) || { raw_content: out.text, parse_error: true };
-    await supabase.from("blog_engine_usage").insert({
+    await logUsage({
       day: utcDay(), model: WRITER, topic, input_tokens: out.inTok, output_tokens: out.outTok,
       cost_usd: Math.round(costOf(out.inTok, out.outTok) * 10000) / 10000, ok: !parsed.parse_error,
     });
@@ -164,7 +225,7 @@ async function autoPublish() {
   const a = parseJson(art.text);
   const total = costOf(idea.inTok, idea.outTok) + costOf(art.inTok, art.outTok);
   if (!a?.blog_content) {
-    await supabase.from("blog_engine_usage").insert({ day: utcDay(), model: WRITER, topic: i.topic, ok: false, cost_usd: Math.round(total * 10000) / 10000 });
+    await logUsage({ day: utcDay(), model: WRITER, topic: i.topic, ok: false, cost_usd: Math.round(total * 10000) / 10000 });
     return console.log("[auto] generation failed");
   }
 
@@ -183,7 +244,7 @@ async function autoPublish() {
     focus_keyword: i.primary_keyword,
     reading_time: Math.max(1, Math.round(content.split(/\s+/).length / 200)),
   });
-  await supabase.from("blog_engine_usage").insert({
+  await logUsage({
     day: utcDay(), model: WRITER, topic: i.topic, input_tokens: art.inTok, output_tokens: art.outTok,
     cost_usd: Math.round(total * 10000) / 10000, ok: !error,
   });
@@ -192,7 +253,7 @@ async function autoPublish() {
 
 app.get("/sitemap.xml", async (_req, res) => {
   try {
-    const site = (process.env.SITE_URL || "").replace(/\/$/, "");
+    const site = SITE_URL;
     const path = process.env.BLOG_PATH || "/blog";
     const { data } = await supabase.from("blog_posts")
       .select("slug, updated_at, published_at").eq("is_published", true)
