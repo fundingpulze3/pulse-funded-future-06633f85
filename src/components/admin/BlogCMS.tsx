@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { generateBlog, runAutoPublishNow } from "@/lib/blogEngine";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,15 +93,11 @@ const BlogCMS = () => {
     if (!form.title.trim()) { toast.error("Enter a title first"); return; }
     setAiGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-seo-blog", {
-        body: {
-          topic: form.title.trim(),
-          primary_keyword: form.focus_keyword || form.title.trim(),
-          secondary_keywords: form.meta_keywords || "",
-        },
+      const data = await generateBlog({
+        topic: form.title.trim(),
+        primary_keyword: form.focus_keyword || form.title.trim(),
+        secondary_keywords: form.meta_keywords || "",
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
       if (data?.parse_error) {
         toast.error("AI returned unparseable content");
         return;

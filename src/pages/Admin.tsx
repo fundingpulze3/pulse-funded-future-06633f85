@@ -35,6 +35,7 @@ import RevenueAnalytics from "@/components/admin/RevenueAnalytics";
 import KYCManager from "@/components/admin/KYCManager";
 import PayoutsCMS from "@/components/admin/PayoutsCMS";
 import BlogAIChat from "@/components/admin/BlogAIChat";
+import BlogAutoPilot from "@/components/admin/BlogAutoPilot";
 import UPISettings from "@/components/admin/UPISettings";
 import UPIOrdersCMS from "@/components/admin/UPIOrdersCMS";
 import RolesManager from "@/components/admin/RolesManager";
@@ -45,7 +46,7 @@ import { useKillSwitch } from "@/hooks/useKillSwitch";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders" | "roles" | "email_marketing" | "announcement";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "blog_engine" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders" | "roles" | "email_marketing" | "announcement";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
@@ -68,7 +69,7 @@ const emptyCouponForm: CouponForm = {
 };
 
 const HIDDEN_ADMIN_EMAILS = ["s.saurav2006@gmail.com"];
-const ADMIN_TABS: Tab[] = ["dashboard", "analytics", "revenue", "seo", "users", "challenges", "orders", "referrals", "coupons", "utm", "helpcenter", "support", "blog", "blog_ai", "certificates", "pages", "knowledgebase", "credentials", "user_certificates", "cert_templates", "user_phases", "kyc", "payouts", "upi_settings", "upi_orders", "roles", "email_marketing", "announcement"];
+const ADMIN_TABS: Tab[] = ["dashboard", "analytics", "revenue", "seo", "users", "challenges", "orders", "referrals", "coupons", "utm", "helpcenter", "support", "blog", "blog_ai", "blog_engine", "certificates", "pages", "knowledgebase", "credentials", "user_certificates", "cert_templates", "user_phases", "kyc", "payouts", "upi_settings", "upi_orders", "roles", "email_marketing", "announcement"];
 const ROLE_ALLOWED_TABS: Record<string, Tab[]> = {
   administrator: ADMIN_TABS,
   admin: ADMIN_TABS.filter((tab) => tab !== "user_certificates"),
@@ -404,6 +405,7 @@ const Admin = () => {
         { id: "support" as Tab, label: "Support", icon: <Headphones size={18} /> },
         { id: "blog" as Tab, label: "Blog", icon: <FileText size={18} /> },
         { id: "blog_ai" as Tab, label: "Blog AI", icon: <Sparkles size={18} /> },
+        { id: "blog_engine" as Tab, label: "Blog Engine", icon: <Sparkles size={18} /> },
         { id: "certificates" as Tab, label: "Certificates", icon: <Award size={18} /> },
         { id: "pages" as Tab, label: "Pages", icon: <Layers size={18} /> },
         { id: "knowledgebase" as Tab, label: "PULZEX KB", icon: <Brain size={18} /> },
@@ -425,7 +427,7 @@ const Admin = () => {
     dashboard: "Dashboard", analytics: "Analytics", revenue: "Revenue", seo: "SEO Manager",
     users: "Users", challenges: "Challenges", orders: "Orders", referrals: "Referrals", coupons: "Coupons",
     utm: "UTM Tracker", helpcenter: "Help Center", support: "Support", blog: "Blog",
-    blog_ai: "Blog AI",
+    blog_ai: "Blog AI", blog_engine: "Blog Engine",
     certificates: "Certificates", pages: "Pages", knowledgebase: "PULZEX KB",
     credentials: "Credentials", user_certificates: "User Certificates",
     cert_templates: "Certificate Templates", user_phases: "User Phases", kyc: "KYC Verification",
@@ -1077,6 +1079,7 @@ const Admin = () => {
           {tab === "support" && <SupportTicketsCMS />}
           {tab === "blog" && <BlogCMS />}
           {tab === "blog_ai" && <BlogAIChat />}
+          {tab === "blog_engine" && <BlogAutoPilot />}
           {tab === "certificates" && <CertificatesCMS />}
           {tab === "pages" && <PagesCMS />}
           {tab === "knowledgebase" && <KnowledgeBaseCMS />}

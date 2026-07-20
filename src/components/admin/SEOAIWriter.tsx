@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { generateBlog } from "@/lib/blogEngine";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,17 +100,12 @@ export default function SEOAIWriter() {
     try {
       const trainingContext = trainingEntries.map(e => `[${e.label}]: ${e.content}`).join("\n\n");
 
-      const { data, error } = await supabase.functions.invoke("generate-seo-blog", {
-        body: {
-          topic: topic.trim(),
-          primary_keyword: primaryKeyword.trim(),
-          secondary_keywords: secondaryKeywords.trim(),
-          training_context: trainingContext || undefined,
-        },
+      const data = await generateBlog({
+        topic: topic.trim(),
+        primary_keyword: primaryKeyword.trim(),
+        secondary_keywords: secondaryKeywords.trim(),
+        training_context: trainingContext || undefined,
       });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
       setResult(data as GeneratedBlog);
       toast.success("Blog article generated!");
