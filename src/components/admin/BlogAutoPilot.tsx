@@ -57,10 +57,28 @@ const BlogAutoPilot = () => {
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  const ENGINE = (import.meta.env.VITE_BLOG_ENGINE_URL || "").replace(/\/$/, "");
   const call = async (action: string, extra: Record<string, unknown> = {}) => {
-    const { data, error } = await supabase.functions.invoke("blog-engine", { body: { action, ...extra } });
-    if (error) throw error;
-    if (data?.error) throw new Error(data.error);
+    if (action === "queue") {
+      const { error } = await supabase.from("blog_topics").insert({
+        query: String(extra.query || "").trim(),
+        research_note: (extra.research_note as string) || null,
+        category: (extra.category as string) || null,
+        source: "feed", priority: (extra.priority as number) ?? 100,
+      });
+      if (error) throw error;
+      return { ok: true };
+    }
+    if (!ENGINE) throw new Error("Set VITE_BLOG_ENGINE_URL to your Render service URL");
+    const { data: { session } } = await supabase.auth.getSession();
+    const path = action === "generate" ? "/api/generate" : "/api/run-slot";
+    const res = await fetch(`${ENGINE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token ?? ""}` },
+      body: JSON.stringify(extra),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data?.error) throw new Error(data?.error || `Engine error (${res.status})`);
     return data;
   };
 
