@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getEngineStatus, saveEngineSettings } from "@/lib/blogEngine";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,32 +30,56 @@ const BlogAutoPilot = () => {
   const [preparedCount, setPreparedCount] = useState(0);
   const [events, setEvents] = useState<Ev[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [engineDown, setEngineDown] = useState(false);
+  const [tablesOk, setTablesOk] = useState(true);
   const [nowTick, setNowTick] = useState(Date.now());
   useEffect(() => { const i = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(i); }, []);
 
   const load = useCallback(async () => {
+    const safe = async <T,>(fn: () => PromiseLike<{ data: T | null }>): Promise<T | null> => {
+      try { const r = await fn(); return (r?.data ?? null) as T | null; } catch { return null; }
+    };
     const day = new Date().toISOString().slice(0, 10);
-    const [s, u, t, r] = await Promise.all([
-      supabase.from("blog_settings").select("*").eq("id", 1).maybeSingle(),
-      supabase.from("blog_engine_usage").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("blog_topics").select("*").eq("status", "queued").order("priority", { ascending: false }).order("created_at").limit(20),
-      supabase.from("blog_slot_runs").select("slot,status,note").eq("day", day),
+
+    // The engine is authoritative — it works whether or not the tables exist.
+    try {
+      const st = await getEngineStatus();
+      setEngineDown(false);
+      setTablesOk(!!st.usingTables);
+      setAuto(!!st.auto);
+      setSlots(st.slots || "09:00,14:00,19:00");
+      setPreparedCount(st.prepared ?? 0);
+      if (st.lastPost) setLastPost(st.lastPost);
+      if (!st.usingTables && st.today) {
+        setUsage(Array.from({ length: st.today.count ?? 0 }, (_, i) => ({
+          id: `mem-${i}`, day, topic: null, cost_usd: (st.today.spent ?? 0) / Math.max(1, st.today.count ?? 1), words: 0, ok: true, created_at: new Date().toISOString(),
+        })) as Usage[]);
+      }
+      setRuns(Object.entries(st.slotRuns || {}).map(([slot, status]) => ({ slot, status: String(status), note: null })));
+    } catch { setEngineDown(true); }
+
+    const settingsRow = await safe(() => supabase.from("blog_settings").select("*").eq("id", 1).maybeSingle());
+    if (settingsRow) { setTablesOk(true); setAuto(!!(settingsRow as { auto_publish: boolean }).auto_publish); setSlots((settingsRow as { slots: string }).slots || "09:00,14:00,19:00"); }
+
+    const [u, t, r, lp, pc, ev, po] = await Promise.all([
+      safe(() => supabase.from("blog_engine_usage").select("*").order("created_at", { ascending: false }).limit(500)),
+      safe(() => supabase.from("blog_topics").select("*").eq("status", "queued").order("priority", { ascending: false }).order("created_at").limit(20)),
+      safe(() => supabase.from("blog_slot_runs").select("slot,status,note").eq("day", day)),
+      safe(() => supabase.from("blog_posts").select("title,published_at").eq("is_published", true).order("published_at", { ascending: false }).limit(1).maybeSingle()),
+      safe(() => supabase.from("blog_prepared").select("id").eq("status", "ready")),
+      safe(() => supabase.from("blog_events").select("post_id,type,seconds,cta_label,session_id").order("created_at", { ascending: false }).limit(5000)),
+      safe(() => supabase.from("blog_posts").select("id,title,views_count").eq("is_published", true).order("published_at", { ascending: false }).limit(100)),
     ]);
-    if (s.data) { setAuto(!!s.data.auto_publish); setSlots(s.data.slots || "09:00,14:00,19:00"); }
-    const [lp, pc] = await Promise.all([
-      supabase.from("blog_posts").select("title,published_at").eq("is_published", true).order("published_at", { ascending: false }).limit(1).maybeSingle(),
-      supabase.from("blog_prepared").select("id").eq("status", "ready"),
-    ]);
-    setLastPost(lp.data as { title: string; published_at: string } | null);
-    setPreparedCount(pc.data?.length ?? 0);
-    const [ev, po] = await Promise.all([
-      supabase.from("blog_events").select("post_id,type,seconds,cta_label,session_id").order("created_at", { ascending: false }).limit(5000),
-      supabase.from("blog_posts").select("id,title,views_count").eq("is_published", true).order("published_at", { ascending: false }).limit(100),
-    ]);
-    setEvents((ev.data as Ev[]) ?? []); setPosts((po.data as Post[]) ?? []);
-    setUsage((u.data as Usage[]) ?? []); setQueue((t.data as Topic[]) ?? []); setRuns((r.data as SlotRun[]) ?? []);
+    if (u) setUsage(u as Usage[]);
+    if (t) setQueue(t as Topic[]);
+    if (r && (r as SlotRun[]).length) setRuns(r as SlotRun[]);
+    if (lp) setLastPost(lp as { title: string; published_at: string });
+    if (pc) setPreparedCount((pc as { id: string }[]).length);
+    setEvents((ev as Ev[]) ?? []);
+    setPosts((po as Post[]) ?? []);
     setLoading(false);
   }, []);
+
   useEffect(() => { load(); }, [load]);
 
   const ENGINE = (import.meta.env.VITE_BLOG_ENGINE_URL || "").replace(/\/$/, "");
@@ -84,8 +109,10 @@ const BlogAutoPilot = () => {
 
   const saveSchedule = async (nextAuto: boolean, nextSlots = slots) => {
     setAuto(nextAuto);
-    const { error } = await supabase.from("blog_settings").update({ auto_publish: nextAuto, slots: nextSlots, updated_at: new Date().toISOString() }).eq("id", 1);
-    if (error) toast.error(error.message); else toast.success(nextAuto ? "Auto-posting on" : "Auto-posting off");
+    try {
+      await saveEngineSettings({ auto: nextAuto, slots: nextSlots });
+      toast.success(nextAuto ? "Auto-posting on" : "Auto-posting off");
+    } catch (e) { toast.error((e as Error).message); }
   };
 
   const act = async (name: string, fn: () => Promise<unknown>, ok: string) => {
@@ -130,6 +157,18 @@ const BlogAutoPilot = () => {
 
   return (
     <div className="space-y-4 max-w-4xl">
+      {engineDown && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 text-amber-900 p-3 text-sm">
+          <b>Engine not reachable.</b> Deploy the <code>server/</code> folder as a Render <b>Web Service</b> and set
+          <code className="mx-1">VITE_BLOG_ENGINE_URL</code> on the site to its URL.
+        </div>
+      )}
+      {!engineDown && !tablesOk && (
+        <div className="rounded-lg border border-blue-300 bg-blue-50 text-blue-900 p-3 text-sm">
+          <b>Running on built-in defaults.</b> Posting works now. The topic queue, slot history and reader analytics
+          switch on once the database migrations in <code>supabase/migrations/</code> are applied.
+        </div>
+      )}
       {/* Live status */}
       <div className={card}>
         <div className="flex items-start justify-between gap-4 flex-wrap">

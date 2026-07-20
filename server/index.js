@@ -36,6 +36,7 @@ const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|
 const maxOut = () => Math.max(2000, Math.min(8000, Math.floor((PER_BLOG_USD_CAP / PRICE_OUT) * 1e6)));
 
 // works with or without the optional engine tables
+let runtime = { auto: process.env.AUTO_PUBLISH !== "false", slots: SLOTS_FALLBACK };
 let mem = { day: "", count: 0, spent: 0, slots: {} };
 const memDay = () => { const d = utcDay(); if (mem.day !== d) mem = { day: d, count: 0, spent: 0, slots: {} }; return mem; };
 
@@ -56,7 +57,7 @@ async function settings() {
     const { data, error } = await supabase.from("blog_settings").select("*").eq("id", 1).maybeSingle();
     if (!error && data) return { ...data, slots: data.slots || SLOTS_FALLBACK, auto_publish: data.auto_publish ?? true };
   } catch { /* table optional */ }
-  return { brand_context: DEFAULT_BRAND, themes: DEFAULT_THEMES, target_countries: DEFAULT_COUNTRIES, slots: SLOTS_FALLBACK, auto_publish: process.env.AUTO_PUBLISH !== "false" };
+  return { brand_context: DEFAULT_BRAND, themes: DEFAULT_THEMES, target_countries: DEFAULT_COUNTRIES, slots: runtime.slots, auto_publish: runtime.auto, _fallback: true };
 }
 async function usageToday() {
   try {
@@ -285,6 +286,30 @@ async function requireAdmin(req, res, next) {
 }
 app.post("/api/run-slot", requireAdmin, async (_req, res) => { try { const w = await writeDraft(); await publishPrepared(); res.json(w); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post("/api/generate", requireAdmin, async (_req, res) => { try { res.json(await writeDraft()); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.get("/api/status", async (_req, res) => {
+  try {
+    const s = await settings();
+    const u = await usageToday();
+    let lastPost = null, prepared = 0, published = 0;
+    try { const { data } = await supabase.from("blog_posts").select("title,published_at").eq("is_published", true).order("published_at", { ascending: false }).limit(1).maybeSingle(); lastPost = data ?? null; } catch {}
+    try { const { data } = await supabase.from("blog_prepared").select("id").eq("status", "ready"); prepared = data?.length ?? 0; } catch {}
+    try { const { count } = await supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("is_published", true); published = count ?? 0; } catch {}
+    res.json({
+      signedIn: await ensureAuth(), auto: s.auto_publish, slots: s.slots,
+      today: u, caps: { daily: DAILY_CAP, usd: DAILY_USD_CAP },
+      lastPost, prepared, published, slotRuns: memDay().slots, usingTables: !s._fallback,
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/settings", requireAdmin, async (req, res) => {
+  const { auto, slots } = req.body || {};
+  if (typeof auto === "boolean") runtime.auto = auto;
+  if (typeof slots === "string" && slots.trim()) runtime.slots = slots.trim();
+  try { await supabase.from("blog_settings").update({ auto_publish: runtime.auto, slots: runtime.slots }).eq("id", 1); } catch {}
+  res.json({ auto: runtime.auto, slots: runtime.slots });
+});
+
 app.post("/api/generate-article", requireAdmin, async (req, res) => {
   try {
     if (!KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY not set" });

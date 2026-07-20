@@ -37,3 +37,15 @@ export async function runAutoPublishNow() {
 }
 
 export const engineConfigured = () => !!BASE;
+
+export async function getEngineStatus() {
+  if (!BASE) throw new Error("engine not configured");
+  const res = await fetch(`${BASE}/api/status`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data?.error) throw new Error(data?.error || "engine unreachable");
+  return data;
+}
+
+export async function saveEngineSettings(body: { auto?: boolean; slots?: string }) {
+  return post("/api/settings", body);
+}
