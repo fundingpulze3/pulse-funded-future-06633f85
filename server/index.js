@@ -51,9 +51,12 @@ function localeBlock(country) {
   return `
 
 WRITE THIS ONE FOR: ${country}
-- Speak to a trader in ${country}: their currency, their typical starting capital, the platforms and payment rails they actually use, and the local search phrasing they'd type.
-- Use local examples and realistic local numbers. Convert money to the local currency where it helps, and keep the USD figure alongside it.
-- Do NOT invent country-specific features, offers or payment methods the brand does not list. If a local method isn't in the brand context, don't claim it.
+- Speak to a trader in ${country}: their currency, their market hours and the sessions they actually trade, the instruments they favour, and the search phrasing they'd type.
+- Show money in the local currency with the USD figure alongside it.
+- These are mature, competitive markets. The reader is comparing several firms, so be specific and technical — real numbers, real trade-offs, no beginner fluff and no hype.
+- Follow local financial-promotion norms: no performance promises, no implied earnings, and include a plain risk warning. In the UK/EU especially, keep claims sober and evidence-based.
+- Never give tax, legal or regulatory advice. You may note that rules differ by country and suggest a qualified local professional.
+- Do NOT invent country-specific features, offers, payment methods or regulatory status the brand does not list.
 - Never imply the brand is only for that country.`;
 }
 

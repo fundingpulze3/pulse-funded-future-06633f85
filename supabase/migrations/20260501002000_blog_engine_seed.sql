@@ -30,5 +30,5 @@ NON-NEGOTIABLES (never break these)
 - Never name a competitor as a scam. Describe patterns, not names.
 - Trading involves substantial risk of loss.$ctx$,
   themes = 'passing prop firm evaluations, drawdown rules explained, risk management for funded accounts, profit split and payout guides, trading psychology, funded trader roadmap, choosing a prop firm, common evaluation mistakes, position sizing, trading plan building',
-  target_countries = 'India, Nigeria, Pakistan, Philippines, Indonesia, Bangladesh, South Africa, Kenya, Egypt, Vietnam'
+  target_countries = 'United States, Canada, United Kingdom, Ireland, Australia, New Zealand, Germany, France, Switzerland, Austria, Netherlands, Belgium, Luxembourg, Denmark, Sweden, Norway, Finland, Iceland, Italy, Spain, Portugal, Singapore, Japan, South Korea, United Arab Emirates, Qatar'
 WHERE id = 1 AND coalesce(brand_context, '') = '';
