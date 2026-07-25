@@ -200,21 +200,28 @@ const BlogCMS = () => {
 
   const save = async () => {
     if (!user) return;
-    if (!form.title.trim()) { toast.error("Title is required"); return; }
-    const slug = form.slug || slugify(form.title);
+    // Efficiency: nothing is mandatory but a scrap of title OR content — the rest auto-fills.
+    let title = form.title.trim();
+    if (!title && form.content.trim()) {
+      title = (form.content.trim().split("\n").find((l) => l.trim()) || "").replace(/^#+\s*/, "").slice(0, 90).trim();
+    }
+    if (!title) { toast.error("Add a title or some content first"); return; }
+    const slug = form.slug || slugify(title);
     const keywords = form.meta_keywords
       ? form.meta_keywords.split(",").map((k) => k.trim()).filter(Boolean)
       : [];
+    const plain = form.content.replace(/[#>*_`~[\]()!]/g, " ").replace(/\s+/g, " ").trim();
+    const autoExcerpt = (form.excerpt || plain.slice(0, 155)).trim();
 
     const payload: any = {
-      title: form.title, slug, content: form.content,
-      excerpt: form.excerpt || null, author_id: user.id,
+      title, slug, content: form.content,
+      excerpt: autoExcerpt || null, author_id: user.id,
       is_published: form.is_published, is_featured: form.is_featured,
       thumbnail_url: form.thumbnail_url || null,
       thumbnail_alt: form.thumbnail_alt || null,
       thumbnail_ratio: form.thumbnail_ratio,
-      meta_title: form.meta_title || null,
-      meta_description: form.meta_description || null,
+      meta_title: form.meta_title || title,
+      meta_description: form.meta_description || autoExcerpt || null,
       meta_keywords: keywords,
       canonical_url: form.canonical_url || null,
       og_title: form.og_title || null,
@@ -222,9 +229,7 @@ const BlogCMS = () => {
       og_image_url: form.og_image_url || null,
       focus_keyword: form.focus_keyword || null,
       reading_time: readingTime,
-      published_at: form.is_published
-        ? (form.published_at ? new Date(form.published_at).toISOString() : new Date().toISOString())
-        : null,
+      published_at: form.is_published ? new Date().toISOString() : null,
     };
 
     if (editingPost) {
@@ -469,17 +474,7 @@ const BlogCMS = () => {
                 <Label className="text-xs">Featured</Label>
                 <Switch checked={form.is_featured} onCheckedChange={(v) => setForm({ ...form, is_featured: v })} />
               </div>
-              {form.is_published && (
-                <div>
-                  <Label className="text-xs text-[hsl(0,0%,45%)]">Publish Date</Label>
-                  <Input
-                    type="datetime-local"
-                    value={form.published_at}
-                    onChange={(e) => setForm({ ...form, published_at: e.target.value })}
-                    className="mt-1 text-xs"
-                  />
-                </div>
-              )}
+              <p className="text-[11px] text-[hsl(0,0%,55%)]">Publishing sets the date to now automatically — nothing to fill.</p>
             </div>
 
             {/* Thumbnail Manager */}
