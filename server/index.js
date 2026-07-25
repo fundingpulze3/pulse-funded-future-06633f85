@@ -10,8 +10,8 @@ const ADMIN_EMAIL = process.env.BLOG_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.BLOG_ADMIN_PASSWORD;
 const KEY = process.env.ANTHROPIC_API_KEY;
 
-const WRITER = process.env.BLOG_ENGINE_MODEL || "claude-3-7-sonnet-20250219";
-const IDEATE = process.env.BLOG_ENGINE_IDEATE_MODEL || "claude-3-5-haiku-20241022";
+const WRITER = process.env.BLOG_ENGINE_MODEL || "claude-sonnet-5";
+const IDEATE = process.env.BLOG_ENGINE_IDEATE_MODEL || "claude-haiku-4-5";
 const PRICE_IN = num("BLOG_ENGINE_PRICE_IN", 3), PRICE_OUT = num("BLOG_ENGINE_PRICE_OUT", 15);
 const DAILY_CAP = num("BLOG_ENGINE_DAILY_CAP", 10), DAILY_USD_CAP = num("BLOG_ENGINE_DAILY_USD_CAP", 0.45);
 const PER_BLOG_USD_CAP = num("BLOG_ENGINE_PER_BLOG_USD_CAP", 0.10);
