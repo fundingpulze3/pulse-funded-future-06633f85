@@ -39,6 +39,7 @@ const maxOut = () => Math.max(2000, Math.min(8000, Math.floor((PER_BLOG_USD_CAP 
 let runtime = { auto: process.env.AUTO_PUBLISH !== "false", slots: SLOTS_FALLBACK };
 let mem = { day: "", count: 0, spent: 0, slots: {} };
 let lastRun = null;
+let lastGen = null;
 const memDay = () => { const d = utcDay(); if (mem.day !== d) mem = { day: d, count: 0, spent: 0, slots: {} }; return mem; };
 
 async function claude(model, maxTokens, system, user) {
@@ -49,9 +50,18 @@ async function claude(model, maxTokens, system, user) {
   });
   if (!r.ok) throw new Error("anthropic: " + (await r.text()).slice(0, 200));
   const d = await r.json();
-  return { text: (d.content ?? []).map((b) => b?.text ?? "").join(""), inTok: d.usage?.input_tokens ?? 0, outTok: d.usage?.output_tokens ?? 0 };
+  return { text: (d.content ?? []).map((b) => b?.text ?? "").join(""), inTok: d.usage?.input_tokens ?? 0, outTok: d.usage?.output_tokens ?? 0, stop: d.stop_reason };
 }
-function parseJson(t) { try { const m = t.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, t]; return JSON.parse(m[1].trim()); } catch { return null; } }
+function parseJson(t) {
+  if (!t) return null;
+  let str = String(t).trim();
+  const fence = str.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) str = fence[1].trim();
+  try { return JSON.parse(str); } catch {}
+  const a = str.indexOf("{"), b = str.lastIndexOf("}");
+  if (a !== -1 && b > a) { try { return JSON.parse(str.slice(a, b + 1)); } catch {} }
+  return null;
+}
 
 async function settings() {
   try {
@@ -185,6 +195,7 @@ async function writeDraft() {
   const a = parseJson(art.text);
   const total = ideaCost + costOf(art.inTok, art.outTok);
   if (!a?.blog_content) {
+    lastGen = { at: new Date().toISOString(), stop: art.stop, len: (art.text || "").length, head: (art.text || "").slice(0, 220) };
     await logUsage({ day: utcDay(), model: WRITER, topic, ok: false, cost_usd: Math.round(total * 1e4) / 1e4 });
     return { skipped: "generation failed" };
   }
@@ -318,7 +329,7 @@ app.get("/api/status", async (_req, res) => {
     res.json({
       signedIn: await ensureAuth(), auto: s.auto_publish, slots: s.slots,
       today: u, caps: { daily: DAILY_CAP, usd: DAILY_USD_CAP },
-      lastPost, prepared, published, slotRuns: memDay().slots, usingTables: !s._fallback, lastRun,
+      lastPost, prepared, published, slotRuns: memDay().slots, usingTables: !s._fallback, lastRun, lastGen,
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
