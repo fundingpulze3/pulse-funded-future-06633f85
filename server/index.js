@@ -150,12 +150,12 @@ NON-NEGOTIABLES
 
 const CTA_RULES = `
 MUST INCLUDE (this is a conversion asset, not just an article)
-- 2 to 4 CTA callouts spread through the piece (never two in a row), each on its own line in EXACTLY this format:
+- 5 to 7 CTA callouts spread through the piece (never two in a row), each on its own line in EXACTLY this format:
   > **CTA:** <one short persuasive sentence> [<button label>](<url>)
-  Only use these real URLs: /checkout (start a challenge), /faq, /about, /blog, /. Never invent a URL.
-- 2 to 3 outbound links to genuinely authoritative sources (Wikipedia, Investopedia, a regulator or exchange page).
-- 2 to 3 internal links to the pages listed above, in natural sentences.
-- 8 to 15 specific tags in "tags".`;
+  Vary these real URLs: /checkout (start a challenge), /faq, /about, /blog, /. ALWAYS end the article with one strong closing CTA to /checkout.
+- 4 to 6 outbound links to genuinely authoritative sources — PREFER Wikipedia where the concept has a page (also Investopedia, a regulator or an exchange). Use real, well-known URLs; never invent one.
+- 3 to 5 internal links to OUR OWN PUBLISHED ARTICLES from the list provided below, woven into natural sentences using their exact /blog/<slug> URLs. Never link an article that is not in that list.
+- 18 to 25 specific, varied "tags" AND 18 to 25 lsi_keywords. Weave rich long-tail and related keywords naturally throughout the body — comprehensive, never stuffed.`;
 
 function systemPrompt(brand, country) {
   const loc = country ? `
@@ -176,18 +176,19 @@ QUALITY BAR
 BRAND CONTEXT (obey exactly; never invent facts)
 ${brand || DEFAULT_BRAND}${loc}`;
 }
-const articlePrompt = (topic, pk, sk, note) => `Write a complete, SEO-optimized article.
+const articlePrompt = (topic, pk, sk, note, internalLinks) => `Write a complete, SEO-optimized article.
 
 Topic: ${topic}
 Primary keyword: ${pk}
 Secondary keywords: ${sk || "none"}
 ${note ? `Source research to build on (use it, don't contradict it):\n${note}\n` : ""}
+${internalLinks ? `OUR PUBLISHED ARTICLES you may internal-link to (pick the 3-5 most relevant; use the exact URL):\n${internalLinks}\n` : ""}
 Return ONE JSON object, no fences:
 {"seo_metadata":{"seo_title":"50-60 chars","meta_description":"150-160 chars","url_slug":"hyphenated"},
- "keyword_strategy":{"primary_keyword":"${pk}","secondary_keywords":["..."],"lsi_keywords":["10-20"],"search_intent":"informational|commercial|transactional|navigational"},
+ "keyword_strategy":{"primary_keyword":"${pk}","secondary_keywords":["8-15"],"lsi_keywords":["18-25"],"search_intent":"informational|commercial|transactional|navigational"},
  "blog_content":"markdown, ~2400-3000 words — deep, specific, genuinely useful; more real knowledge, no padding",
  "featured_snippet":"40-60 words",
- "tags":["8-15 specific tags"],
+ "tags":["18-25 specific tags"],
  "faq_section":[{"question":"...","answer":"..."}]}
 ${CTA_RULES}`;
 
@@ -201,6 +202,10 @@ async function writeDraft() {
 
   const { data: recent } = await supabase.from("blog_posts").select("title").order("created_at", { ascending: false }).limit(25);
   const seen = (recent ?? []).map((p) => p.title).join("; ");
+  // Real published articles we can interlink to (internal links + recommendations block).
+  const { data: linkPool } = await supabase.from("blog_posts").select("title,slug").eq("is_published", true).order("published_at", { ascending: false }).limit(10);
+  const linkCandidates = linkPool ?? [];
+  const internalLinks = linkCandidates.slice(0, 8).map((p) => `- ${p.title} -> /blog/${p.slug}`).join("\n");
 
   let queued = null;
   try {
@@ -225,7 +230,7 @@ async function writeDraft() {
     topic = i.topic; pk = i.primary_keyword || i.topic; sk = i.secondary_keywords || "";
   }
 
-  const art = await claude(WRITER, maxOut(), systemPrompt(s.brand_context, country), articlePrompt(topic, pk, sk, note));
+  const art = await claude(WRITER, maxOut(), systemPrompt(s.brand_context, country), articlePrompt(topic, pk, sk, note, internalLinks));
   const a = parseJson(art.text);
   const total = ideaCost + costOf(art.inTok, art.outTok);
   if (!a?.blog_content) {
@@ -236,7 +241,11 @@ async function writeDraft() {
 
   const faq = Array.isArray(a.faq_section) && a.faq_section.length
     ? "\n\n## Frequently Asked Questions\n\n" + a.faq_section.map((f) => `### ${f.question}\n\n${f.answer}`).join("\n\n") : "";
-  const content = a.blog_content + faq;
+  // Guaranteed recommendations: link the newest real posts even if the model skipped internal links.
+  const related = linkCandidates.slice(0, 4);
+  const relatedMd = related.length
+    ? "\n\n## Related reading\n\n" + related.map((p) => `- [${p.title}](/blog/${p.slug})`).join("\n") : "";
+  const content = a.blog_content + faq + relatedMd;
   const words = content.split(/\s+/).length;
   let slug = slugify(a.seo_metadata?.url_slug || topic);
   const { data: clash } = await supabase.from("blog_posts").select("id").eq("slug", slug).maybeSingle();
@@ -246,7 +255,7 @@ async function writeDraft() {
     title: a.seo_metadata?.seo_title || topic, slug, content, excerpt: a.featured_snippet || null,
     author_id: author, is_published: false,
     meta_title: a.seo_metadata?.seo_title || null, meta_description: a.seo_metadata?.meta_description || null,
-    meta_keywords: Array.isArray(a.tags) ? a.tags.filter((t) => typeof t === "string").slice(0, 15) : [],
+    meta_keywords: Array.from(new Set([...(Array.isArray(a.tags) ? a.tags : []), ...(Array.isArray(a.keyword_strategy?.lsi_keywords) ? a.keyword_strategy.lsi_keywords : [])].filter((t) => typeof t === "string"))).slice(0, 25),
     focus_keyword: pk, reading_time: Math.max(1, Math.round(words / 200)),
   }).select("id").single();
 
@@ -408,7 +417,7 @@ app.post("/api/generate-article", requireAdmin, async (req, res) => {
     const blocked = await capBlocked();
     if (blocked) return res.status(429).json({ error: `Limit reached: ${blocked}` });
     const s2 = await settings();
-    const out = await claude(WRITER, maxOut(), systemPrompt(training_context?.trim() || s2.brand_context), articlePrompt(topic, primary_keyword, secondary_keywords, ""));
+    const out = await claude(WRITER, maxOut(), systemPrompt(training_context?.trim() || s2.brand_context), articlePrompt(topic, primary_keyword, secondary_keywords, "", ""));
     const parsed = parseJson(out.text) || { raw_content: out.text, parse_error: true };
     await logUsage({ day: utcDay(), model: WRITER, topic, input_tokens: out.inTok, output_tokens: out.outTok, cost_usd: Math.round(costOf(out.inTok, out.outTok) * 1e4) / 1e4, words: (parsed.blog_content || "").split(/\s+/).length, ok: !parsed.parse_error });
     res.json(parsed);
