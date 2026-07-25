@@ -17,8 +17,8 @@ const KEY = process.env.ANTHROPIC_API_KEY;
 const WRITER = process.env.BLOG_ENGINE_MODEL || "claude-sonnet-5";
 const IDEATE = process.env.BLOG_ENGINE_IDEATE_MODEL || "claude-haiku-4-5";
 const PRICE_IN = num("BLOG_ENGINE_PRICE_IN", 3), PRICE_OUT = num("BLOG_ENGINE_PRICE_OUT", 15);
-const DAILY_CAP = num("BLOG_ENGINE_DAILY_CAP", 10), DAILY_USD_CAP = num("BLOG_ENGINE_DAILY_USD_CAP", 0.45);
-const PER_BLOG_USD_CAP = num("BLOG_ENGINE_PER_BLOG_USD_CAP", 0.10);
+const DAILY_CAP = num("BLOG_ENGINE_DAILY_CAP", 10), DAILY_USD_CAP = num("BLOG_ENGINE_DAILY_USD_CAP", 0.60);
+const PER_BLOG_USD_CAP = num("BLOG_ENGINE_PER_BLOG_USD_CAP", 0.15);
 const SITE_URL = (process.env.SITE_URL || "https://fundingpulze.com").replace(/\/$/, "");
 const SLOTS_FALLBACK = process.env.SLOTS || "09:00,14:00,19:00";
 
@@ -185,7 +185,7 @@ ${note ? `Source research to build on (use it, don't contradict it):\n${note}\n`
 Return ONE JSON object, no fences:
 {"seo_metadata":{"seo_title":"50-60 chars","meta_description":"150-160 chars","url_slug":"hyphenated"},
  "keyword_strategy":{"primary_keyword":"${pk}","secondary_keywords":["..."],"lsi_keywords":["10-20"],"search_intent":"informational|commercial|transactional|navigational"},
- "blog_content":"markdown, ~1500-2200 words",
+ "blog_content":"markdown, ~2400-3000 words — deep, specific, genuinely useful; more real knowledge, no padding",
  "featured_snippet":"40-60 words",
  "tags":["8-15 specific tags"],
  "faq_section":[{"question":"...","answer":"..."}]}

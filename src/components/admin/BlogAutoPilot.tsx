@@ -35,6 +35,14 @@ const BlogAutoPilot = () => {
   const [tablesOk, setTablesOk] = useState(true);
   const [nowTick, setNowTick] = useState(Date.now());
   useEffect(() => { const i = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(i); }, []);
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const active = busy === "gen" || busy === "slot";
+    if (!active) { setElapsed(0); return; }
+    const started = Date.now();
+    const iv = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 250);
+    return () => clearInterval(iv);
+  }, [busy]);
 
   const load = useCallback(async () => {
     const safe = async <T,>(fn: () => PromiseLike<{ data: T | null }>): Promise<T | null> => {
@@ -156,10 +164,30 @@ const BlogAutoPilot = () => {
     return `${Math.floor(m / 1440)}d ago`;
   };
 
+  const genStage = (sec) =>
+    sec < 8 ? "Researching the topic…" :
+    sec < 22 ? "Outlining the structure…" :
+    sec < 48 ? "Writing the full article…" :
+    sec < 72 ? "Adding SEO, links & FAQ…" :
+    "Publishing — almost done…";
+
   if (loading) return <div className={`flex items-center gap-2 text-sm ${muted}`}><Loader2 size={16} className="animate-spin" /> Loading…</div>;
 
   return (
     <div className="space-y-4 max-w-4xl">
+      {(busy === "gen" || busy === "slot") && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-[340px] rounded-2xl border border-[hsl(0,0%,88%)] bg-white p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-4 h-10 w-10 rounded-full border-2 border-black/15 border-t-black animate-spin" />
+            <p className="text-sm font-semibold text-[hsl(0,0%,5%)]">{busy === "slot" ? "Posting…" : "Writing your blog…"}</p>
+            <p className="text-xs text-[hsl(0,0%,45%)] mt-1">{genStage(elapsed)}</p>
+            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[hsl(0,0%,92%)]">
+              <div className="h-full bg-black transition-all duration-500" style={{ width: `${Math.min(96, (elapsed / 80) * 100)}%` }} />
+            </div>
+            <p className="mt-2 text-[11px] text-[hsl(0,0%,55%)]">{elapsed}s · a full blog usually takes 60–100s</p>
+          </div>
+        </div>
+      )}
       {engineDown && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 text-amber-900 p-3 text-sm">
           <b>Engine not reachable.</b> Deploy the <code>server/</code> folder as a Render <b>Web Service</b> and set

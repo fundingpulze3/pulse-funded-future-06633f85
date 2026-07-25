@@ -23,6 +23,6 @@ services:
       - key: BLOG_ENGINE_DAILY_CAP
         value: "10"
       - key: BLOG_ENGINE_DAILY_USD_CAP
-        value: "0.45"
+        value: "0.60"
       - key: BLOG_ENGINE_PER_BLOG_USD_CAP
-        value: "0.10"
+        value: "0.15"
