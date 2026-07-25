@@ -31,7 +31,22 @@ async function ensureAuth() {
   const { error } = await supabase.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
   if (error) { console.error("[auth]", error.message); return false; }
   authed = true; console.log("[auth] signed in as", ADMIN_EMAIL);
+  await ensureAdminRole();          // self-grant 'admin' so blog RLS passes (no Supabase access needed)
   return true;
+}
+
+// The blog tables' RLS require role 'admin', but signup only grants 'administrator'.
+// Our user_roles policy lets an 'administrator' manage roles — so the engine can
+// grant ITSELF the 'admin' role on boot. Runs once; duplicate inserts are ignored.
+async function ensureAdminRole() {
+  if (USE_SERVICE) return;           // service role bypasses RLS entirely
+  try {
+    const uid = await me();
+    if (!uid) return;
+    const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: "admin" });
+    if (error && error.code !== "23505") console.error("[role] self-grant failed:", error.message);
+    else console.log("[role] admin role ensured for engine user");
+  } catch (e) { console.error("[role]", e.message); }
 }
 let cachedAuthorId = null;
 async function me() {
