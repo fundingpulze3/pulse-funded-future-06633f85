@@ -240,7 +240,14 @@ async function tick() {
     let claimed = false;
     try {
       const { error } = await supabase.from("blog_slot_runs").insert({ day: utcDay(), slot, status: "running" });
-      claimed = !error;
+      if (!error) {
+        claimed = true;                       // claimed in DB
+      } else if (error.code === "23505") {
+        claimed = false;                      // already ran this slot today -> skip
+      } else {
+        // table missing / other DB error -> fall back to in-memory claim so posting still works
+        const m = memDay(); if (!m.slots[slot]) { m.slots[slot] = "running"; claimed = true; }
+      }
     } catch { const m = memDay(); if (!m.slots[slot]) { m.slots[slot] = "running"; claimed = true; } }
     if (!claimed) continue;
 
