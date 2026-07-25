@@ -257,6 +257,27 @@ async function writeDraft() {
   return { postId: post.id, title: a.seo_metadata?.seo_title || topic, country };
 }
 
+// Durable per-slot guard that works even without the blog_slot_runs table:
+// has a post already been published today within THIS slot's time window?
+// Stops the free-tier sleep/restart cycle from double-posting or re-skipping a slot.
+async function slotAlreadyPosted(day, slot, slots) {
+  try {
+    const idx = slots.indexOf(slot);
+    const next = slots[idx + 1];
+    const start = new Date(`${day}T${slot}:00Z`).toISOString();
+    const end = next ? new Date(`${day}T${next}:00Z`).toISOString() : new Date(`${day}T23:59:59Z`).toISOString();
+    const { data } = await supabase
+      .from("blog_posts")
+      .select("id")
+      .eq("is_published", true)
+      .gte("published_at", start)
+      .lt("published_at", end)
+      .limit(1)
+      .maybeSingle();
+    return !!data;
+  } catch { return false; }
+}
+
 async function publishPrepared() {
   let prep = null;
   try {
@@ -283,6 +304,9 @@ async function tick() {
   const results = [];
 
   for (const slot of slots.filter((t) => t <= hhmm)) {
+    // Durable guard first — if this slot already produced a post today, skip it
+    // regardless of in-memory state (survives free-tier restarts and pings).
+    if (await slotAlreadyPosted(utcDay(), slot, slots)) { memDay().slots[slot] = "posted"; continue; }
     let claimed = false;
     try {
       const { error } = await supabase.from("blog_slot_runs").insert({ day: utcDay(), slot, status: "running" });

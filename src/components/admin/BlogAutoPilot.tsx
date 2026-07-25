@@ -30,6 +30,7 @@ const BlogAutoPilot = () => {
   const [preparedCount, setPreparedCount] = useState(0);
   const [events, setEvents] = useState<Ev[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [recentPosts, setRecentPosts] = useState<{ id: string; title: string; slug: string; created_at: string; is_published: boolean }[]>([]);
   const [engineDown, setEngineDown] = useState(false);
   const [tablesOk, setTablesOk] = useState(true);
   const [nowTick, setNowTick] = useState(Date.now());
@@ -61,7 +62,7 @@ const BlogAutoPilot = () => {
     const settingsRow = await safe(() => supabase.from("blog_settings").select("*").eq("id", 1).maybeSingle());
     if (settingsRow) { setTablesOk(true); setAuto(!!(settingsRow as { auto_publish: boolean }).auto_publish); setSlots((settingsRow as { slots: string }).slots || "09:00,14:00,19:00"); }
 
-    const [u, t, r, lp, pc, ev, po] = await Promise.all([
+    const [u, t, r, lp, pc, ev, po, rp] = await Promise.all([
       safe(() => supabase.from("blog_engine_usage").select("*").order("created_at", { ascending: false }).limit(500)),
       safe(() => supabase.from("blog_topics").select("*").eq("status", "queued").order("priority", { ascending: false }).order("created_at").limit(20)),
       safe(() => supabase.from("blog_slot_runs").select("slot,status,note").eq("day", day)),
@@ -69,6 +70,7 @@ const BlogAutoPilot = () => {
       safe(() => supabase.from("blog_prepared").select("id").eq("status", "ready")),
       safe(() => supabase.from("blog_events").select("post_id,type,seconds,cta_label,session_id").order("created_at", { ascending: false }).limit(5000)),
       safe(() => supabase.from("blog_posts").select("id,title,views_count").eq("is_published", true).order("published_at", { ascending: false }).limit(100)),
+      safe(() => supabase.from("blog_posts").select("id,title,slug,created_at,is_published").order("created_at", { ascending: false }).limit(12)),
     ]);
     if (u) setUsage(u as Usage[]);
     if (t) setQueue(t as Topic[]);
@@ -77,6 +79,7 @@ const BlogAutoPilot = () => {
     if (pc) setPreparedCount((pc as { id: string }[]).length);
     setEvents((ev as Ev[]) ?? []);
     setPosts((po as Post[]) ?? []);
+    setRecentPosts((rp as { id: string; title: string; slug: string; created_at: string; is_published: boolean }[]) ?? []);
     setLoading(false);
   }, []);
 
@@ -374,7 +377,7 @@ const BlogAutoPilot = () => {
       {/* Recent */}
       <div className={card}>
         <h2 className="text-sm font-semibold mb-2">Recent generations</h2>
-        {usage.length === 0 ? <p className={`text-sm ${muted}`}>Nothing yet.</p> : (
+        {usage.length > 0 ? (
           <div className="divide-y divide-[hsl(0,0%,92%)] text-sm">
             {usage.slice(0, 10).map((u) => (
               <div key={u.id} className="flex items-center justify-between gap-3 py-2">
@@ -386,7 +389,17 @@ const BlogAutoPilot = () => {
               </div>
             ))}
           </div>
-        )}
+        ) : recentPosts.length > 0 ? (
+          <div className="divide-y divide-[hsl(0,0%,92%)] text-sm">
+            {recentPosts.slice(0, 10).map((p) => (
+              <a key={p.id} href={`/blog/${p.slug}`} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 py-2 hover:bg-[hsl(0,0%,98%)] rounded px-1 -mx-1">
+                <span className="truncate flex-1">{p.title}</span>
+                <span className={`text-xs ${muted} whitespace-nowrap`}>{new Date(p.created_at).toLocaleString()}</span>
+                <span className={`text-xs ${p.is_published ? "text-green-600" : muted}`}>{p.is_published ? "published" : "draft"}</span>
+              </a>
+            ))}
+          </div>
+        ) : <p className={`text-sm ${muted}`}>Nothing yet.</p>}
       </div>
     </div>
   );

@@ -1079,7 +1079,12 @@ const Admin = () => {
           {tab === "support" && <SupportTicketsCMS />}
           {tab === "blog" && <BlogCMS />}
           {tab === "blog_ai" && <BlogAIChat />}
-          {tab === "blog_engine" && <BlogAutoPilot />}
+          {tab === "blog_engine" && (
+            <div className="space-y-8">
+              <BlogAutoPilot />
+              <BlogCMS />
+            </div>
+          )}
           {tab === "certificates" && <CertificatesCMS />}
           {tab === "pages" && <PagesCMS />}
           {tab === "knowledgebase" && <KnowledgeBaseCMS />}
