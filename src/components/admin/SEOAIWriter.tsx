@@ -100,7 +100,7 @@ export default function SEOAIWriter() {
     try {
       const trainingContext = trainingEntries.map(e => `[${e.label}]: ${e.content}`).join("\n\n");
 
-      const data = await generateBlog({
+      const data = await generateBlogApi({
         topic: topic.trim(),
         primary_keyword: primaryKeyword.trim(),
         secondary_keywords: secondaryKeywords.trim(),
