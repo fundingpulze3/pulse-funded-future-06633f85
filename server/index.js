@@ -6,6 +6,10 @@ import { createClient } from "@supabase/supabase-js";
 const num = (k, d) => Number(process.env[k] ?? d);
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://rpshiyvndmnogbhbgmfm.supabase.co";
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwc2hpeXZuZG1ub2diaGJnbWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzYyOTIsImV4cCI6MjA4ODM1MjI5Mn0.6D_cf0IWQF_OFXOA01w26IRhXIbIai-anpWT2F1o_uY";
+// Preferred: a service-role key bypasses RLS entirely (correct for a trusted
+// server-side writer). If unset, we fall back to admin email/password login.
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const USE_SERVICE = !!SERVICE_KEY;
 const ADMIN_EMAIL = process.env.BLOG_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.BLOG_ADMIN_PASSWORD;
 const KEY = process.env.ANTHROPIC_API_KEY;
@@ -18,9 +22,10 @@ const PER_BLOG_USD_CAP = num("BLOG_ENGINE_PER_BLOG_USD_CAP", 0.10);
 const SITE_URL = (process.env.SITE_URL || "https://fundingpulze.com").replace(/\/$/, "");
 const SLOTS_FALLBACK = process.env.SLOTS || "09:00,14:00,19:00";
 
-const supabase = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false, autoRefreshToken: true } });
+const supabase = createClient(SUPABASE_URL, USE_SERVICE ? SERVICE_KEY : ANON_KEY, { auth: { persistSession: false, autoRefreshToken: !USE_SERVICE } });
 let authed = false;
 async function ensureAuth() {
+  if (USE_SERVICE) return true;              // service role bypasses RLS; no user login needed
   if (authed) return true;
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD) return false;
   const { error } = await supabase.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
@@ -28,7 +33,21 @@ async function ensureAuth() {
   authed = true; console.log("[auth] signed in as", ADMIN_EMAIL);
   return true;
 }
-async function me() { const { data } = await supabase.auth.getUser(); return data?.user?.id ?? null; }
+let cachedAuthorId = null;
+async function me() {
+  if (USE_SERVICE) {
+    if (cachedAuthorId) return cachedAuthorId;
+    if (process.env.BLOG_AUTHOR_ID) return (cachedAuthorId = process.env.BLOG_AUTHOR_ID);
+    try {
+      const { data } = await supabase.auth.admin.listUsers();
+      const u = (data?.users || []).find((x) => (x.email || "").toLowerCase() === (ADMIN_EMAIL || "").toLowerCase());
+      cachedAuthorId = u?.id ?? null;
+    } catch (e) { console.error("[me] admin lookup failed:", e.message); cachedAuthorId = null; }
+    return cachedAuthorId;
+  }
+  const { data } = await supabase.auth.getUser();
+  return data?.user?.id ?? null;
+}
 
 const utcDay = () => new Date().toISOString().slice(0, 10);
 const costOf = (i, o) => (i / 1e6) * PRICE_IN + (o / 1e6) * PRICE_OUT;
