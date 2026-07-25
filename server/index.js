@@ -38,6 +38,7 @@ const maxOut = () => Math.max(2000, Math.min(8000, Math.floor((PER_BLOG_USD_CAP 
 // works with or without the optional engine tables
 let runtime = { auto: process.env.AUTO_PUBLISH !== "false", slots: SLOTS_FALLBACK };
 let mem = { day: "", count: 0, spent: 0, slots: {} };
+let lastRun = null;
 const memDay = () => { const d = utcDay(); if (mem.day !== d) mem = { day: d, count: 0, spent: 0, slots: {} }; return mem; };
 
 async function claude(model, maxTokens, system, user) {
@@ -254,8 +255,15 @@ async function tick() {
     const blocked = await capBlocked();
     if (blocked) { try { await supabase.from("blog_slot_runs").update({ status: "skipped", note: blocked }).eq("day", utcDay()).eq("slot", slot); } catch {} memDay().slots[slot] = "skipped"; continue; }
 
-    let prep = await publishPrepared();
-    if (!prep) { const w = await writeDraft(); if (w.postId) prep = await publishPrepared(); }
+    let prep = null;
+    try {
+      prep = await publishPrepared();
+      if (!prep) {
+        const w = await writeDraft();
+        if (w?.postId) prep = await publishPrepared();
+        else lastRun = { at: new Date().toISOString(), slot, reason: w?.skipped || "no draft to publish" };
+      }
+    } catch (e) { lastRun = { at: new Date().toISOString(), slot, reason: "error: " + e.message }; }
     try { await supabase.from("blog_slot_runs").update({ status: prep ? "posted" : "failed", post_id: prep?.post_id ?? null }).eq("day", utcDay()).eq("slot", slot); } catch {}
     memDay().slots[slot] = prep ? "posted" : "failed";
     results.push(`${slot}:${prep ? "posted" : "failed"}`);
@@ -263,7 +271,13 @@ async function tick() {
 
   let ready = 0;
   try { const { data } = await supabase.from("blog_prepared").select("id").eq("status", "ready"); ready = data?.length ?? 0; } catch {}
-  if (!ready && !(await capBlocked())) { const w = await writeDraft(); results.push(`prepared:${w.postId ? "ok" : w.skipped}`); }
+  if (!ready && !(await capBlocked())) {
+    try {
+      const w = await writeDraft();
+      results.push(`prepared:${w?.postId ? "ok" : w?.skipped}`);
+      if (!w?.postId) lastRun = { at: new Date().toISOString(), slot: "prepare", reason: w?.skipped || "unknown" };
+    } catch (e) { lastRun = { at: new Date().toISOString(), slot: "prepare", reason: "error: " + e.message }; }
+  }
   return { ran: results };
 }
 
@@ -304,7 +318,7 @@ app.get("/api/status", async (_req, res) => {
     res.json({
       signedIn: await ensureAuth(), auto: s.auto_publish, slots: s.slots,
       today: u, caps: { daily: DAILY_CAP, usd: DAILY_USD_CAP },
-      lastPost, prepared, published, slotRuns: memDay().slots, usingTables: !s._fallback,
+      lastPost, prepared, published, slotRuns: memDay().slots, usingTables: !s._fallback, lastRun,
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
