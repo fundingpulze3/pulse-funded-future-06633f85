@@ -327,5 +327,17 @@ app.post("/api/generate-article", requireAdmin, async (req, res) => {
 
 app.post("/api/tick", async (_req, res) => { try { res.json(await tick()); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-cron.schedule("*/5 * * * *", () => tick().then((r) => r?.ran?.length && console.log("[tick]", r.ran)).catch((e) => console.error("[tick]", e.message)), { timezone: "UTC" });
-app.listen(process.env.PORT || 4000, async () => { await ensureAuth(); console.log("blog engine up on", process.env.PORT || 4000); });
+import { pathToFileURL } from "url";
+
+export function startCron() {
+  cron.schedule("*/5 * * * *", () => tick().then((r) => r?.ran?.length && console.log("[tick]", r.ran)).catch((e) => console.error("[tick]", e.message)), { timezone: "UTC" });
+}
+
+export { app, tick, ensureAuth };
+
+// Run as a standalone service only when this file is executed directly.
+// When imported (combined single-service mode) the parent starts the server.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  startCron();
+  app.listen(process.env.PORT || 4000, async () => { await ensureAuth(); console.log("blog engine up on", process.env.PORT || 4000); });
+}
