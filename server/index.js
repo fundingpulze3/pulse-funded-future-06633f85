@@ -111,7 +111,26 @@ async function usageToday() {
   } catch { /* fall back */ }
   const m = memDay(); return { count: m.count, spent: m.spent };
 }
+// Durable counters based on blog_posts (the one table that always exists), so
+// caps survive free-tier restarts instead of resetting an in-memory counter.
+async function postsCreatedToday() {
+  try {
+    const start = new Date(); start.setUTCHours(0, 0, 0, 0);
+    const { count } = await supabase.from("blog_posts").select("id", { count: "exact", head: true }).gte("created_at", start.toISOString());
+    return count ?? 0;
+  } catch { return 0; }
+}
+async function hasPendingDraft() {
+  try {
+    const { data } = await supabase.from("blog_posts").select("id").eq("is_published", false).limit(1).maybeSingle();
+    return !!data;
+  } catch { return false; }
+}
+
 async function capBlocked() {
+  // Durable primary guard: how many posts were actually created today (survives restarts).
+  const made = await postsCreatedToday();
+  if (made >= DAILY_CAP) return `daily cap (${DAILY_CAP})`;
   const u = await usageToday();
   if (u.count >= DAILY_CAP) return `daily cap (${DAILY_CAP})`;
   if (u.spent >= DAILY_USD_CAP) return "daily budget";
@@ -186,7 +205,7 @@ ${internalLinks ? `OUR PUBLISHED ARTICLES you may internal-link to (pick the 3-5
 Return ONE JSON object, no fences:
 {"seo_metadata":{"seo_title":"50-60 chars","meta_description":"150-160 chars","url_slug":"hyphenated"},
  "keyword_strategy":{"primary_keyword":"${pk}","secondary_keywords":["8-15"],"lsi_keywords":["18-25"],"search_intent":"informational|commercial|transactional|navigational"},
- "blog_content":"markdown, ~2400-3000 words — deep, specific, genuinely useful; more real knowledge, no padding",
+ "blog_content":"markdown, ~1600-2200 words — deep, specific, genuinely useful; no padding. Keep the JSON well under the token limit so it is never truncated.",
  "featured_snippet":"40-60 words",
  "tags":["18-25 specific tags"],
  "faq_section":[{"question":"...","answer":"..."}]}
@@ -347,9 +366,11 @@ async function tick() {
     results.push(`${slot}:${prep ? "posted" : "failed"}`);
   }
 
-  let ready = 0;
-  try { const { data } = await supabase.from("blog_prepared").select("id").eq("status", "ready"); ready = data?.length ?? 0; } catch {}
-  if (!ready && !(await capBlocked())) {
+  // Only pre-write ONE draft ahead, and only when none is already pending. This uses
+  // blog_posts (durable) instead of blog_prepared (which may not exist) — without it
+  // the engine regenerates every tick and burns credits in a loop.
+  const pending = await hasPendingDraft();
+  if (!pending && !(await capBlocked())) {
     try {
       const w = await writeDraft();
       results.push(`prepared:${w?.postId ? "ok" : w?.skipped}`);
