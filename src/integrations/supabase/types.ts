@@ -244,6 +244,75 @@ export type Database = {
           },
         ]
       }
+      blog_engine_usage: {
+        Row: {
+          cost_usd: number
+          created_at: string
+          day: string
+          id: string
+          input_tokens: number
+          model: string | null
+          ok: boolean
+          output_tokens: number
+          topic: string | null
+          words: number
+        }
+        Insert: {
+          cost_usd?: number
+          created_at?: string
+          day: string
+          id?: string
+          input_tokens?: number
+          model?: string | null
+          ok?: boolean
+          output_tokens?: number
+          topic?: string | null
+          words?: number
+        }
+        Update: {
+          cost_usd?: number
+          created_at?: string
+          day?: string
+          id?: string
+          input_tokens?: number
+          model?: string | null
+          ok?: boolean
+          output_tokens?: number
+          topic?: string | null
+          words?: number
+        }
+        Relationships: []
+      }
+      blog_events: {
+        Row: {
+          created_at: string
+          cta_label: string | null
+          id: string
+          post_id: string
+          seconds: number
+          session_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string | null
+          id?: string
+          post_id: string
+          seconds?: number
+          session_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string | null
+          id?: string
+          post_id?: string
+          seconds?: number
+          session_id?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_id: string
@@ -325,6 +394,141 @@ export type Database = {
           title?: string
           updated_at?: string
           views_count?: number
+        }
+        Relationships: []
+      }
+      blog_prepared: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          query: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          query?: string | null
+          source?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          query?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      blog_settings: {
+        Row: {
+          auto_publish: boolean
+          brand_context: string
+          cron_key: string
+          id: number
+          slots: string
+          target_countries: string
+          themes: string
+          updated_at: string
+        }
+        Insert: {
+          auto_publish?: boolean
+          brand_context?: string
+          cron_key?: string
+          id?: number
+          slots?: string
+          target_countries?: string
+          themes?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_publish?: boolean
+          brand_context?: string
+          cron_key?: string
+          id?: number
+          slots?: string
+          target_countries?: string
+          themes?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      blog_slot_runs: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          note: string | null
+          post_id: string | null
+          slot: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          note?: string | null
+          post_id?: string | null
+          slot: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          note?: string | null
+          post_id?: string | null
+          slot?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      blog_topics: {
+        Row: {
+          category: string | null
+          country: string | null
+          created_at: string
+          error: string | null
+          id: string
+          post_id: string | null
+          priority: number
+          query: string
+          research_note: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          country?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          post_id?: string | null
+          priority?: number
+          query: string
+          research_note?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          country?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          post_id?: string | null
+          priority?: number
+          query?: string
+          research_note?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

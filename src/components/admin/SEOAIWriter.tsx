@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { generateBlog } from "@/lib/blogEngine";
+import { generateBlog as generateBlogApi } from "@/lib/blogEngine";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,7 +100,7 @@ export default function SEOAIWriter() {
     try {
       const trainingContext = trainingEntries.map(e => `[${e.label}]: ${e.content}`).join("\n\n");
 
-      const data = await generateBlog({
+      const data = await generateBlogApi({
         topic: topic.trim(),
         primary_keyword: primaryKeyword.trim(),
         secondary_keywords: secondaryKeywords.trim(),
