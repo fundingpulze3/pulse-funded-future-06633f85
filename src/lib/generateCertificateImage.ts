@@ -22,32 +22,32 @@ const LAYOUT: Record<string, {
   profitX?: number; profitY?: number; profitFontSize?: number;
 }> = {
   phase1_passed: {
-    nameX: 0.654, nameY: 0.515, nameFontSize: 0.052,
-    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
+    nameX: 0.647, nameY: 0.528, nameFontSize: 0.052,
+    dateX: 0.191, dateY: 0.87, dateFontSize: 0.020,
   },
   phase2_passed: {
-    nameX: 0.654, nameY: 0.515, nameFontSize: 0.052,
-    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
+    nameX: 0.647, nameY: 0.528, nameFontSize: 0.052,
+    dateX: 0.191, dateY: 0.87, dateFontSize: 0.020,
   },
   // Payout cert has TWO slots: profit share (top) + name (bottom)
   payout: {
-    profitX: 0.654, profitY: 0.46, profitFontSize: 0.052,
-    nameX: 0.654, nameY: 0.665, nameFontSize: 0.044,
-    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
+    profitX: 0.647, profitY: 0.46, profitFontSize: 0.052,
+    nameX: 0.647, nameY: 0.665, nameFontSize: 0.044,
+    dateX: 0.191, dateY: 0.87, dateFontSize: 0.020,
   },
   funded: {
-    nameX: 0.654, nameY: 0.515, nameFontSize: 0.052,
-    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
+    nameX: 0.647, nameY: 0.528, nameFontSize: 0.052,
+    dateX: 0.191, dateY: 0.87, dateFontSize: 0.020,
   },
   max_allocation: {
-    nameX: 0.654, nameY: 0.515, nameFontSize: 0.052,
-    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
+    nameX: 0.647, nameY: 0.528, nameFontSize: 0.052,
+    dateX: 0.191, dateY: 0.87, dateFontSize: 0.020,
   },
 };
 
 const DEFAULT_LAYOUT: typeof LAYOUT[string] = {
-  nameX: 0.654, nameY: 0.515, nameFontSize: 0.050,
-  dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
+  nameX: 0.647, nameY: 0.528, nameFontSize: 0.050,
+  dateX: 0.191, dateY: 0.87, dateFontSize: 0.020,
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
