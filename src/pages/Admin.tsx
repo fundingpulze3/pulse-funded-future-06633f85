@@ -72,7 +72,7 @@ const HIDDEN_ADMIN_EMAILS = ["s.saurav2006@gmail.com"];
 const ADMIN_TABS: Tab[] = ["dashboard", "analytics", "revenue", "seo", "users", "challenges", "orders", "referrals", "coupons", "utm", "helpcenter", "support", "blog", "blog_ai", "blog_engine", "certificates", "pages", "knowledgebase", "credentials", "user_certificates", "cert_templates", "user_phases", "kyc", "payouts", "upi_settings", "upi_orders", "roles", "email_marketing", "announcement"];
 const ROLE_ALLOWED_TABS: Record<string, Tab[]> = {
   administrator: ADMIN_TABS,
-  admin: ADMIN_TABS.filter((tab) => tab !== "user_certificates"),
+  admin: ADMIN_TABS,
   employee: ["support"],
   moderator: [],
   user: [],
@@ -358,7 +358,7 @@ const Admin = () => {
       items: [
         { id: "user_certificates" as Tab, label: "PDF / Certs", icon: <FileText size={18} /> },
       ],
-      roles: ["administrator"],
+      roles: ["administrator", "admin"],
     },
     {
       label: "Certificates",
