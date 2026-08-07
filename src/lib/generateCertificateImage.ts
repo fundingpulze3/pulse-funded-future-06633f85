@@ -124,12 +124,12 @@ export async function generateCertificateImage(config: CertificateConfig): Promi
       size -= 1;
       ctx.font = `${weight} ${size}px ${fontFamily}`;
     }
-    ctx.strokeStyle = "rgba(0,0,0,0.6)";
-    ctx.lineWidth = Math.max(2, Math.round(h * 0.002));
-    ctx.lineJoin = "round";
-    ctx.strokeText(text, x, y);
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.55)";
+    ctx.shadowBlur = Math.max(4, Math.round(h * 0.006));
     ctx.fillStyle = fill;
     ctx.fillText(text, x, y);
+    ctx.restore();
   };
 
   const nameFamily = `"Copperplate Gothic", "Copperplate", "Copperplate Gothic Bold", serif`;
