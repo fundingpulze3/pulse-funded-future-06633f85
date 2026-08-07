@@ -22,32 +22,32 @@ const LAYOUT: Record<string, {
   profitX?: number; profitY?: number; profitFontSize?: number;
 }> = {
   phase1_passed: {
-    nameX: 0.71, nameY: 0.51, nameFontSize: 0.052,
-    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
+    nameX: 0.654, nameY: 0.515, nameFontSize: 0.052,
+    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
   },
   phase2_passed: {
-    nameX: 0.71, nameY: 0.51, nameFontSize: 0.052,
-    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
+    nameX: 0.654, nameY: 0.515, nameFontSize: 0.052,
+    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
   },
   // Payout cert has TWO slots: profit share (top) + name (bottom)
   payout: {
-    profitX: 0.77, profitY: 0.46, profitFontSize: 0.052,
-    nameX: 0.77, nameY: 0.665, nameFontSize: 0.044,
-    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
+    profitX: 0.654, profitY: 0.46, profitFontSize: 0.052,
+    nameX: 0.654, nameY: 0.665, nameFontSize: 0.044,
+    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
   },
   funded: {
-    nameX: 0.71, nameY: 0.51, nameFontSize: 0.052,
-    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
+    nameX: 0.654, nameY: 0.515, nameFontSize: 0.052,
+    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
   },
   max_allocation: {
-    nameX: 0.71, nameY: 0.51, nameFontSize: 0.052,
-    dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
+    nameX: 0.654, nameY: 0.515, nameFontSize: 0.052,
+    dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
   },
 };
 
 const DEFAULT_LAYOUT: typeof LAYOUT[string] = {
-  nameX: 0.71, nameY: 0.51, nameFontSize: 0.050,
-  dateX: 0.26, dateY: 0.87, dateFontSize: 0.020,
+  nameX: 0.654, nameY: 0.515, nameFontSize: 0.050,
+  dateX: 0.176, dateY: 0.87, dateFontSize: 0.020,
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -124,12 +124,12 @@ export async function generateCertificateImage(config: CertificateConfig): Promi
       size -= 1;
       ctx.font = `${weight} ${size}px ${fontFamily}`;
     }
-    ctx.strokeStyle = "rgba(0,0,0,0.6)";
-    ctx.lineWidth = Math.max(2, Math.round(h * 0.002));
-    ctx.lineJoin = "round";
-    ctx.strokeText(text, x, y);
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.55)";
+    ctx.shadowBlur = Math.max(4, Math.round(h * 0.006));
     ctx.fillStyle = fill;
     ctx.fillText(text, x, y);
+    ctx.restore();
   };
 
   const nameFamily = `"Copperplate Gothic", "Copperplate", "Copperplate Gothic Bold", serif`;
