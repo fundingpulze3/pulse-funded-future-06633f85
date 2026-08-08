@@ -209,15 +209,46 @@ async function scrapeOne(browser, target) {
   });
   const page = await context.newPage();
 
+  // Spotware's app boots by resolving a proxy list from *.ctradercloud.com. When
+  // that infrastructure is unreachable the page sits on its spinner forever, so we
+  // record those failures explicitly instead of reporting a meaningless empty page.
+  const blockedHosts = new Set();
+  page.on("requestfailed", (req) => {
+    try {
+      const host = new URL(req.url()).hostname;
+      if (/ctradercloud\.com$/.test(host)) blockedHosts.add(host);
+    } catch {}
+  });
+
   try {
-    const url = `https://ct.spotware.com/investor/${encodeURIComponent(target.token)}`;
+    const url = `https://ct.spotware.com/investor/${encodeURIComponent(target.token)}?lang=en&theme=dark`;
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: PAGE_TIMEOUT_MS });
 
-    // Let the app authenticate the link and stream its numbers in.
-    await page.waitForTimeout(SETTLE_MS);
+    // The numbers arrive over a socket after the link authenticates, so poll for
+    // real content rather than betting on one fixed sleep. One reload is attempted
+    // if the first boot stalls on the loading spinner.
+    let bodyText = "";
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const deadline = Date.now() + SETTLE_MS;
+      while (Date.now() < deadline) {
+        await page.waitForTimeout(2000);
+        bodyText = (await page.innerText("body").catch(() => "")).trim();
+        // Two or more numeric values on screen means the account data has landed.
+        if (bodyText && (bodyText.match(/\d[\d.,]*/g) || []).length >= 2) break;
+      }
+      if (bodyText) break;
+      if (attempt === 0) {
+        log(`  ${target.account_label || target.credential_id}: still loading, retrying once`);
+        await page.reload({ waitUntil: "domcontentloaded", timeout: PAGE_TIMEOUT_MS }).catch(() => {});
+      }
+    }
 
-    const bodyText = (await page.innerText("body").catch(() => "")).trim();
     if (!bodyText) {
+      if (blockedHosts.size) {
+        throw new Error(
+          `cTrader backend unreachable from this host (${[...blockedHosts].join(", ")}) — the investor page never finished loading`,
+        );
+      }
       throw new Error("investor page rendered empty — link is invalid, expired or revoked");
     }
     if (/not found|no longer available|invalid|expired|revoked/i.test(bodyText.slice(0, 400))) {
@@ -227,6 +258,7 @@ async function scrapeOne(browser, target) {
     const pairs = await extractPairs(page);
     const { metrics, raw } = mapPairs(pairs);
     raw.body_excerpt = bodyText.slice(0, 1500);
+    if (blockedHosts.size) raw.blocked_hosts = [...blockedHosts];
 
     const accountName = (bodyText.match(/^(.{3,60})$/m) || [])[1];
     if (accountName && !metrics.account_name) metrics.account_name = accountName.trim();
