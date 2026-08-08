@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings, RefreshCw, AlertCircle, Pencil } from "lucide-react";
+import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings, RefreshCw, AlertCircle, Pencil, ExternalLink } from "lucide-react";
+import { parseCTraderToken, isValidCTraderToken, ctraderInvestorUrl } from "@/lib/ctrader";
 import { toast } from "sonner";
 
 interface AssignedProfile {
@@ -20,6 +21,9 @@ interface Credential {
   mt5_login: string;
   mt5_password: string;
   mt5_server: string;
+  platform: string;
+  ctrader_token: string | null;
+  ctrader_is_active: boolean;
   is_assigned: boolean;
   assigned_to: string | null;
   purchase_id: string | null;
@@ -54,12 +58,24 @@ const CredentialsManager = () => {
   const [assigning, setAssigning] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingCred, setEditingCred] = useState<Credential | null>(null);
-  const [editForm, setEditForm] = useState({ mt5_login: "", mt5_password: "", mt5_server: "" });
+  const [editForm, setEditForm] = useState({ mt5_login: "", mt5_password: "", mt5_server: "", platform: "mt5", ctrader_token: "", ctrader_is_active: true });
+  const [editTokenExtracted, setEditTokenExtracted] = useState(false);
+  const [tokenExtracted, setTokenExtracted] = useState(false);
+
+  const onTokenInput = (raw: string, setter: (t: string) => void, flag: (b: boolean) => void) => {
+    const { token, extracted } = parseCTraderToken(raw);
+    setter(token);
+    flag(extracted);
+  };
   const [notifyUser, setNotifyUser] = useState(true);
 
   const openEditDialog = (c: Credential) => {
     setEditingCred(c);
-    setEditForm({ mt5_login: c.mt5_login, mt5_password: c.mt5_password, mt5_server: c.mt5_server });
+    setEditForm({
+      mt5_login: c.mt5_login, mt5_password: c.mt5_password, mt5_server: c.mt5_server,
+      platform: c.platform || "mt5", ctrader_token: c.ctrader_token || "", ctrader_is_active: c.ctrader_is_active ?? true,
+    });
+    setEditTokenExtracted(false);
     setNotifyUser(true);
     setEditDialogOpen(true);
   };
@@ -67,10 +83,18 @@ const CredentialsManager = () => {
   const saveEditCredential = async () => {
     if (!editingCred) return;
     setSaving(true);
+    const editToken = editForm.ctrader_token.trim();
+    if (editToken && !isValidCTraderToken(editToken)) {
+      toast.error("Invalid cTrader investor token"); setSaving(false); return;
+    }
     const { error } = await supabase.from("trading_credentials").update({
       mt5_login: editForm.mt5_login.trim(),
       mt5_password: editForm.mt5_password.trim(),
       mt5_server: editForm.mt5_server.trim() || defaultServer,
+      platform: editForm.platform,
+      ctrader_token: editToken || null,
+      ctrader_is_active: editForm.ctrader_is_active,
+      ctrader_linked_at: editToken && !editingCred.ctrader_token ? new Date().toISOString() : undefined,
     }).eq("id", editingCred.id);
     if (error) { toast.error(error.message); setSaving(false); return; }
 
@@ -106,6 +130,9 @@ const CredentialsManager = () => {
     mt5_login: "",
     mt5_password: "",
     mt5_server: "",
+    platform: "mt5",
+    ctrader_token: "",
+    ctrader_is_active: true,
   });
 
   useEffect(() => { fetchData(); }, []);
@@ -164,18 +191,27 @@ const CredentialsManager = () => {
   };
 
   const saveCredential = async () => {
+    const newToken = form.ctrader_token.trim();
+    if (newToken && !isValidCTraderToken(newToken)) {
+      toast.error("Invalid cTrader investor token"); return;
+    }
     setSaving(true);
     const { error } = await supabase.from("trading_credentials").insert({
       challenge_id: form.challenge_id,
       mt5_login: form.mt5_login.trim(),
       mt5_password: form.mt5_password.trim(),
       mt5_server: (form.mt5_server.trim() || defaultServer),
+      platform: form.platform,
+      ctrader_token: newToken || null,
+      ctrader_is_active: form.ctrader_is_active,
+      ctrader_linked_at: newToken ? new Date().toISOString() : null,
     });
     if (error) { toast.error(error.message); setSaving(false); return; }
     toast.success("Credential added!");
     setDialogOpen(false);
     setSaving(false);
-    setForm(f => ({ ...f, mt5_login: "", mt5_password: "", mt5_server: "" }));
+    setForm(f => ({ ...f, mt5_login: "", mt5_password: "", mt5_server: "", ctrader_token: "" }));
+    setTokenExtracted(false);
     fetchData();
   };
 
@@ -510,6 +546,36 @@ const CredentialsManager = () => {
               <Input value={form.mt5_server} onChange={e => setForm({ ...form, mt5_server: e.target.value })}
                 className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg text-[hsl(0,0%,10%)] placeholder:text-[hsl(0,0%,60%)]" placeholder={defaultServer} />
             </div>
+            <div className="pt-2 border-t border-[hsl(0,0%,92%)]">
+              <Label className="text-xs text-[hsl(0,0%,45%)]">Platform</Label>
+              <select value={form.platform} onChange={e => setForm({ ...form, platform: e.target.value })}
+                className="mt-1 w-full rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,88%)] px-3 py-2 text-sm text-[hsl(0,0%,10%)]">
+                <option value="mt5">MetaTrader 5</option>
+                <option value="ctrader">cTrader</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs text-[hsl(0,0%,45%)]">cTrader Investor Token</Label>
+              <div className="flex gap-2 mt-1">
+                <Input value={form.ctrader_token}
+                  onChange={e => onTokenInput(e.target.value, t => setForm(f => ({ ...f, ctrader_token: t })), setTokenExtracted)}
+                  className="bg-white border-[hsl(0,0%,88%)] rounded-lg font-mono text-[hsl(0,0%,10%)] placeholder:text-[hsl(0,0%,60%)]" placeholder="5A2HGWc" />
+                <Button type="button" variant="outline" className="rounded-lg border-[hsl(0,0%,88%)] shrink-0"
+                  disabled={!isValidCTraderToken(form.ctrader_token.trim())}
+                  onClick={() => window.open(ctraderInvestorUrl(form.ctrader_token.trim(), false), "_blank", "noopener")}>
+                  <ExternalLink size={14} className="mr-1" /> Preview
+                </Button>
+              </div>
+              <p className="text-[10px] text-[hsl(0,0%,60%)] mt-1">Open the trader's Investor Access link and copy only the code after /investor/ — not the whole URL.</p>
+              {tokenExtracted && <p className="text-[10px] text-green-600 mt-0.5">Extracted token from URL.</p>}
+              {form.ctrader_token.trim() && !isValidCTraderToken(form.ctrader_token.trim()) && (
+                <p className="text-[10px] text-red-600 mt-0.5">Token must be 5-20 letters or numbers.</p>
+              )}
+              <label className="flex items-center gap-2 text-xs text-[hsl(0,0%,30%)] cursor-pointer mt-2">
+                <input type="checkbox" checked={form.ctrader_is_active} onChange={e => setForm({ ...form, ctrader_is_active: e.target.checked })} />
+                Stats link active
+              </label>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" className="rounded-lg border-[hsl(0,0%,88%)]" onClick={() => setDialogOpen(false)}>Cancel</Button>
@@ -645,6 +711,36 @@ const CredentialsManager = () => {
               <Label className="text-xs text-[hsl(0,0%,45%)]">Server</Label>
               <Input value={editForm.mt5_server} onChange={e => setEditForm({ ...editForm, mt5_server: e.target.value })}
                 className="mt-1 bg-white border-[hsl(0,0%,88%)] rounded-lg text-[hsl(0,0%,10%)]" placeholder={defaultServer} />
+            </div>
+            <div className="pt-2 border-t border-[hsl(0,0%,92%)]">
+              <Label className="text-xs text-[hsl(0,0%,45%)]">Platform</Label>
+              <select value={editForm.platform} onChange={e => setEditForm({ ...editForm, platform: e.target.value })}
+                className="mt-1 w-full rounded-lg bg-[hsl(0,0%,97%)] border border-[hsl(0,0%,88%)] px-3 py-2 text-sm text-[hsl(0,0%,10%)]">
+                <option value="mt5">MetaTrader 5</option>
+                <option value="ctrader">cTrader</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs text-[hsl(0,0%,45%)]">cTrader Investor Token</Label>
+              <div className="flex gap-2 mt-1">
+                <Input value={editForm.ctrader_token}
+                  onChange={e => onTokenInput(e.target.value, t => setEditForm(f => ({ ...f, ctrader_token: t })), setEditTokenExtracted)}
+                  className="bg-white border-[hsl(0,0%,88%)] rounded-lg font-mono text-[hsl(0,0%,10%)] placeholder:text-[hsl(0,0%,60%)]" placeholder="5A2HGWc" />
+                <Button type="button" variant="outline" className="rounded-lg border-[hsl(0,0%,88%)] shrink-0"
+                  disabled={!isValidCTraderToken(editForm.ctrader_token.trim())}
+                  onClick={() => window.open(ctraderInvestorUrl(editForm.ctrader_token.trim(), false), "_blank", "noopener")}>
+                  <ExternalLink size={14} className="mr-1" /> Preview
+                </Button>
+              </div>
+              <p className="text-[10px] text-[hsl(0,0%,60%)] mt-1">Paste the full Investor Access link — we'll pull out the token automatically.</p>
+              {editTokenExtracted && <p className="text-[10px] text-green-600 mt-0.5">Extracted token from URL.</p>}
+              {editForm.ctrader_token.trim() && !isValidCTraderToken(editForm.ctrader_token.trim()) && (
+                <p className="text-[10px] text-red-600 mt-0.5">Token must be 5-20 letters or numbers.</p>
+              )}
+              <label className="flex items-center gap-2 text-xs text-[hsl(0,0%,30%)] cursor-pointer mt-2">
+                <input type="checkbox" checked={editForm.ctrader_is_active} onChange={e => setEditForm({ ...editForm, ctrader_is_active: e.target.checked })} />
+                Stats link active
+              </label>
             </div>
             {editingCred?.is_assigned && (
               <label className="flex items-center gap-2 text-xs text-[hsl(0,0%,30%)] cursor-pointer">

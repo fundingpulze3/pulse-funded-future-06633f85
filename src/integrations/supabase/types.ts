@@ -602,6 +602,7 @@ export type Database = {
           last_payout_at: string | null
           payment_method: string | null
           payment_status: string
+          platform: string
           reward_cycle: string | null
           status: string
           swap_free: boolean
@@ -624,6 +625,7 @@ export type Database = {
           last_payout_at?: string | null
           payment_method?: string | null
           payment_status?: string
+          platform?: string
           reward_cycle?: string | null
           status?: string
           swap_free?: boolean
@@ -646,6 +648,7 @@ export type Database = {
           last_payout_at?: string | null
           payment_method?: string | null
           payment_status?: string
+          platform?: string
           reward_cycle?: string | null
           status?: string
           swap_free?: boolean
@@ -749,6 +752,97 @@ export type Database = {
           max_uses?: number | null
         }
         Relationships: []
+      }
+      ctrader_credentials: {
+        Row: {
+          access_token: string
+          created_at: string
+          credential_id: string
+          ctid_trader_account_id: number | null
+          id: string
+          is_live: boolean
+          refresh_token: string
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          credential_id: string
+          ctid_trader_account_id?: number | null
+          id?: string
+          is_live?: boolean
+          refresh_token: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          credential_id?: string
+          ctid_trader_account_id?: number | null
+          id?: string
+          is_live?: boolean
+          refresh_token?: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ctrader_credentials_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: true
+            referencedRelation: "trading_credentials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ctrader_snapshots: {
+        Row: {
+          balance: number | null
+          captured_at: string
+          created_at: string
+          credential_id: string
+          equity: number | null
+          id: string
+          margin_used: number | null
+          open_positions_count: number | null
+          raw: Json | null
+          roi_percent: number | null
+        }
+        Insert: {
+          balance?: number | null
+          captured_at?: string
+          created_at?: string
+          credential_id: string
+          equity?: number | null
+          id?: string
+          margin_used?: number | null
+          open_positions_count?: number | null
+          raw?: Json | null
+          roi_percent?: number | null
+        }
+        Update: {
+          balance?: number | null
+          captured_at?: string
+          created_at?: string
+          credential_id?: string
+          equity?: number | null
+          id?: string
+          margin_used?: number | null
+          open_positions_count?: number | null
+          raw?: Json | null
+          roi_percent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ctrader_snapshots_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: false
+            referencedRelation: "trading_credentials"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_campaign_events: {
         Row: {
@@ -1606,11 +1700,15 @@ export type Database = {
           assigned_to: string | null
           challenge_id: string
           created_at: string
+          ctrader_is_active: boolean
+          ctrader_linked_at: string | null
+          ctrader_token: string | null
           id: string
           is_assigned: boolean
           mt5_login: string
           mt5_password: string
           mt5_server: string
+          platform: string
           purchase_id: string | null
           updated_at: string
         }
@@ -1619,11 +1717,15 @@ export type Database = {
           assigned_to?: string | null
           challenge_id: string
           created_at?: string
+          ctrader_is_active?: boolean
+          ctrader_linked_at?: string | null
+          ctrader_token?: string | null
           id?: string
           is_assigned?: boolean
           mt5_login: string
           mt5_password: string
           mt5_server?: string
+          platform?: string
           purchase_id?: string | null
           updated_at?: string
         }
@@ -1632,11 +1734,15 @@ export type Database = {
           assigned_to?: string | null
           challenge_id?: string
           created_at?: string
+          ctrader_is_active?: boolean
+          ctrader_linked_at?: string | null
+          ctrader_token?: string | null
           id?: string
           is_assigned?: boolean
           mt5_login?: string
           mt5_password?: string
           mt5_server?: string
+          platform?: string
           purchase_id?: string | null
           updated_at?: string
         }
