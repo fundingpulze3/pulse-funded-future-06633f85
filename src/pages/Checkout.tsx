@@ -447,6 +447,37 @@ const Checkout = () => {
                 ))}
               </div>
             </div>
+            {/* Trading Platform Selector */}
+            <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+              <h2 className="text-lg font-bold mb-1">Trading Platform</h2>
+              <p className="text-sm text-muted-foreground mb-4">Choose where you want your account issued</p>
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  { id: "mt5" as const, name: "MetaTrader 5", sub: "Classic MT5 terminal" },
+                  { id: "ctrader" as const, name: "cTrader", sub: "Live stats in dashboard" },
+                ]).map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setPlatform(p.id)}
+                    className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${
+                      platform === p.id
+                        ? `border-[hsl(${BLUE})] bg-[hsl(${BLUE})/0.08]`
+                        : "border-border bg-background hover:border-muted-foreground/30"
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                      platform === p.id ? `border-[hsl(${BLUE})]` : "border-muted-foreground/30"
+                    }`}>
+                      {platform === p.id && <div className={`w-2 h-2 rounded-full bg-[hsl(${BLUE})]`} />}
+                    </div>
+                    <div className="text-left">
+                      <span className="text-sm font-semibold block">{p.name}</span>
+                      <span className="text-xs text-muted-foreground">{p.sub}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Account Size */}
             <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
