@@ -27,6 +27,8 @@ import {
   ResponsiveContainer, BarChart, Bar, Cell
 } from "recharts";
 import TradingObjectives from "@/components/dashboard/TradingObjectives";
+import CTraderStats from "@/components/CTraderStats";
+import CTraderLiveStats from "@/components/dashboard/CTraderLiveStats";
 import TradingCalendar from "@/components/dashboard/TradingCalendar";
 import SymbolsPieChart from "@/components/dashboard/SymbolsPieChart";
 
@@ -75,6 +77,9 @@ interface TradingCredential {
   mt5_server: string;
   challenge_id: string;
   purchase_id: string | null;
+  platform?: string | null;
+  ctrader_token?: string | null;
+  ctrader_is_active?: boolean | null;
 }
 
 const REFERRAL_DOMAIN = "https://fundingpulze.com";
@@ -153,7 +158,7 @@ const Dashboard = () => {
           supabase.from("affiliate_referrals").select("*").eq("referrer_id", user.id),
           supabase.from("challenge_purchases").select("*, challenges(name, account_size, profit_target, daily_drawdown, max_drawdown, step_type)").eq("user_id", user.id).in("payment_status", ["paid", "confirmed", "completed"]).order("created_at", { ascending: false }),
           supabase.from("user_certificates").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-          supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id, purchase_id").eq("assigned_to", user.id),
+          supabase.from("trading_credentials").select("id, mt5_login, mt5_password, mt5_server, challenge_id, purchase_id, platform, ctrader_token, ctrader_is_active").eq("assigned_to", user.id),
           supabase.from("certificate_templates").select("certificate_type, background_image_url"),
         ])
       );
@@ -920,6 +925,17 @@ const Dashboard = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {activeAccountStats.view.credential?.platform === "ctrader" && (
+                    <div className="space-y-3">
+                      <h3 className="font-display font-bold text-sm">cTrader Account Stats</h3>
+                      <CTraderLiveStats credentialId={activeAccountStats.view.credential.id} />
+                      <CTraderStats
+                        token={activeAccountStats.view.credential.ctrader_token}
+                        isActive={activeAccountStats.view.credential.ctrader_is_active ?? true}
+                      />
                     </div>
                   )}
 
