@@ -1,0 +1,12 @@
+{
+  "name": "ctrader-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "once": "SYNC_ONCE=1 node index.js"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}
