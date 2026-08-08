@@ -27,3 +27,5 @@ project_id = "rpshiyvndmnogbhbgmfm"
     verify_jwt = false
   [functions.sync-to-external-supabase]
     verify_jwt = false
+  [functions.ctrader-ingest]
+    verify_jwt = false
