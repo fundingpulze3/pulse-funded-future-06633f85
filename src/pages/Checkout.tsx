@@ -80,7 +80,10 @@ const Checkout = () => {
 
   const [stepType, setStepType] = useState(initialStep);
   const [selectedSize, setSelectedSize] = useState(initialSize);
+  const [platform, setPlatform] = useState<"mt5" | "ctrader">("mt5");
   const [agreedTerms, setAgreedTerms] = useState(false);
+  const platformRef = useRef<"mt5" | "ctrader">("mt5");
+  useEffect(() => { platformRef.current = platform; }, [platform]);
 
   // Billing details
   const [billingOpen, setBillingOpen] = useState(true);
