@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings, RefreshCw, AlertCircle, Pencil } from "lucide-react";
+import { Plus, Trash2, Key, CheckCircle2, FolderOpen, ChevronDown, ChevronRight, Search, Settings, RefreshCw, AlertCircle, Pencil, ExternalLink } from "lucide-react";
+import { parseCTraderToken, isValidCTraderToken, ctraderInvestorUrl } from "@/lib/ctrader";
 import { toast } from "sonner";
 
 interface AssignedProfile {
@@ -20,6 +21,9 @@ interface Credential {
   mt5_login: string;
   mt5_password: string;
   mt5_server: string;
+  platform: string;
+  ctrader_token: string | null;
+  ctrader_is_active: boolean;
   is_assigned: boolean;
   assigned_to: string | null;
   purchase_id: string | null;
@@ -54,12 +58,24 @@ const CredentialsManager = () => {
   const [assigning, setAssigning] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingCred, setEditingCred] = useState<Credential | null>(null);
-  const [editForm, setEditForm] = useState({ mt5_login: "", mt5_password: "", mt5_server: "" });
+  const [editForm, setEditForm] = useState({ mt5_login: "", mt5_password: "", mt5_server: "", platform: "mt5", ctrader_token: "", ctrader_is_active: true });
+  const [editTokenExtracted, setEditTokenExtracted] = useState(false);
+  const [tokenExtracted, setTokenExtracted] = useState(false);
+
+  const onTokenInput = (raw: string, setter: (t: string) => void, flag: (b: boolean) => void) => {
+    const { token, extracted } = parseCTraderToken(raw);
+    setter(token);
+    flag(extracted);
+  };
   const [notifyUser, setNotifyUser] = useState(true);
 
   const openEditDialog = (c: Credential) => {
     setEditingCred(c);
-    setEditForm({ mt5_login: c.mt5_login, mt5_password: c.mt5_password, mt5_server: c.mt5_server });
+    setEditForm({
+      mt5_login: c.mt5_login, mt5_password: c.mt5_password, mt5_server: c.mt5_server,
+      platform: c.platform || "mt5", ctrader_token: c.ctrader_token || "", ctrader_is_active: c.ctrader_is_active ?? true,
+    });
+    setEditTokenExtracted(false);
     setNotifyUser(true);
     setEditDialogOpen(true);
   };
@@ -67,10 +83,18 @@ const CredentialsManager = () => {
   const saveEditCredential = async () => {
     if (!editingCred) return;
     setSaving(true);
+    const editToken = editForm.ctrader_token.trim();
+    if (editToken && !isValidCTraderToken(editToken)) {
+      toast.error("Invalid cTrader investor token"); setSaving(false); return;
+    }
     const { error } = await supabase.from("trading_credentials").update({
       mt5_login: editForm.mt5_login.trim(),
       mt5_password: editForm.mt5_password.trim(),
       mt5_server: editForm.mt5_server.trim() || defaultServer,
+      platform: editForm.platform,
+      ctrader_token: editToken || null,
+      ctrader_is_active: editForm.ctrader_is_active,
+      ctrader_linked_at: editToken && !editingCred.ctrader_token ? new Date().toISOString() : undefined,
     }).eq("id", editingCred.id);
     if (error) { toast.error(error.message); setSaving(false); return; }
 
@@ -106,6 +130,9 @@ const CredentialsManager = () => {
     mt5_login: "",
     mt5_password: "",
     mt5_server: "",
+    platform: "mt5",
+    ctrader_token: "",
+    ctrader_is_active: true,
   });
 
   useEffect(() => { fetchData(); }, []);
@@ -164,18 +191,27 @@ const CredentialsManager = () => {
   };
 
   const saveCredential = async () => {
+    const newToken = form.ctrader_token.trim();
+    if (newToken && !isValidCTraderToken(newToken)) {
+      toast.error("Invalid cTrader investor token"); return;
+    }
     setSaving(true);
     const { error } = await supabase.from("trading_credentials").insert({
       challenge_id: form.challenge_id,
       mt5_login: form.mt5_login.trim(),
       mt5_password: form.mt5_password.trim(),
       mt5_server: (form.mt5_server.trim() || defaultServer),
+      platform: form.platform,
+      ctrader_token: newToken || null,
+      ctrader_is_active: form.ctrader_is_active,
+      ctrader_linked_at: newToken ? new Date().toISOString() : null,
     });
     if (error) { toast.error(error.message); setSaving(false); return; }
     toast.success("Credential added!");
     setDialogOpen(false);
     setSaving(false);
-    setForm(f => ({ ...f, mt5_login: "", mt5_password: "", mt5_server: "" }));
+    setForm(f => ({ ...f, mt5_login: "", mt5_password: "", mt5_server: "", ctrader_token: "" }));
+    setTokenExtracted(false);
     fetchData();
   };
 
