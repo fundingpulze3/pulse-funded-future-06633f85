@@ -799,46 +799,135 @@ export type Database = {
       }
       ctrader_snapshots: {
         Row: {
+          account_name: string | null
+          avg_loss: number | null
+          avg_win: number | null
           balance: number | null
+          best_trade: number | null
           captured_at: string
           created_at: string
           credential_id: string
+          currency: string | null
+          deposits: number | null
           equity: number | null
           id: string
+          losing_trades: number | null
           margin_used: number | null
+          max_drawdown_percent: number | null
           open_positions_count: number | null
+          period: string | null
+          profit: number | null
+          profit_factor: number | null
           raw: Json | null
           roi_percent: number | null
+          total_trades: number | null
+          win_rate: number | null
+          winning_trades: number | null
+          worst_trade: number | null
         }
         Insert: {
+          account_name?: string | null
+          avg_loss?: number | null
+          avg_win?: number | null
           balance?: number | null
+          best_trade?: number | null
           captured_at?: string
           created_at?: string
           credential_id: string
+          currency?: string | null
+          deposits?: number | null
           equity?: number | null
           id?: string
+          losing_trades?: number | null
           margin_used?: number | null
+          max_drawdown_percent?: number | null
           open_positions_count?: number | null
+          period?: string | null
+          profit?: number | null
+          profit_factor?: number | null
           raw?: Json | null
           roi_percent?: number | null
+          total_trades?: number | null
+          win_rate?: number | null
+          winning_trades?: number | null
+          worst_trade?: number | null
         }
         Update: {
+          account_name?: string | null
+          avg_loss?: number | null
+          avg_win?: number | null
           balance?: number | null
+          best_trade?: number | null
           captured_at?: string
           created_at?: string
           credential_id?: string
+          currency?: string | null
+          deposits?: number | null
           equity?: number | null
           id?: string
+          losing_trades?: number | null
           margin_used?: number | null
+          max_drawdown_percent?: number | null
           open_positions_count?: number | null
+          period?: string | null
+          profit?: number | null
+          profit_factor?: number | null
           raw?: Json | null
           roi_percent?: number | null
+          total_trades?: number | null
+          win_rate?: number | null
+          winning_trades?: number | null
+          worst_trade?: number | null
         }
         Relationships: [
           {
             foreignKeyName: "ctrader_snapshots_credential_id_fkey"
             columns: ["credential_id"]
             isOneToOne: false
+            referencedRelation: "trading_credentials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ctrader_sync_state: {
+        Row: {
+          consecutive_failures: number
+          created_at: string
+          credential_id: string
+          id: string
+          last_error: string | null
+          last_status: string
+          last_success_at: string | null
+          last_sync_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          consecutive_failures?: number
+          created_at?: string
+          credential_id: string
+          id?: string
+          last_error?: string | null
+          last_status?: string
+          last_success_at?: string | null
+          last_sync_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          consecutive_failures?: number
+          created_at?: string
+          credential_id?: string
+          id?: string
+          last_error?: string | null
+          last_status?: string
+          last_success_at?: string | null
+          last_sync_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ctrader_sync_state_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: true
             referencedRelation: "trading_credentials"
             referencedColumns: ["id"]
           },
