@@ -60,27 +60,29 @@ async function callIngest(payload) {
 }
 
 /* ------------------------------------------------------------------ *
- * Label mapping. The investor page words things slightly differently
- * per broker/locale, so match on a normalised, lowercased label.
+ * Label mapping — calibrated against the live cTrader investor page
+ * (Summary + Performance stats + bottom account bar).
  * ------------------------------------------------------------------ */
 const LABEL_MAP = [
-  [/^(balance)$/, "balance"],
-  [/^(equity|net asset value|nav)$/, "equity"],
-  [/(margin used|used margin|^margin$)/, "margin_used"],
-  [/(^roi$|return on investment|^gain$|^growth$|^return$)/, "roi_percent"],
-  [/(open positions|positions open|^positions$)/, "open_positions_count"],
-  [/(^profit$|net profit|total profit|absolute gain|^p\/l$|^pnl$)/, "profit"],
-  [/(deposit|funds added)/, "deposits"],
-  [/(win rate|winning rate|% profitable|profitable trades %)/, "win_rate"],
-  [/(total trades|^trades$|closed trades|number of trades)/, "total_trades"],
-  [/(winning trades|^won$|profitable trades)/, "winning_trades"],
-  [/(losing trades|^lost$|loss trades)/, "losing_trades"],
-  [/(profit factor)/, "profit_factor"],
-  [/(max(imum)? drawdown|^drawdown$|relative drawdown)/, "max_drawdown_percent"],
-  [/(average win|avg\.? win|average profit)/, "avg_win"],
-  [/(average loss|avg\.? loss)/, "avg_loss"],
-  [/(best trade|largest win|max win)/, "best_trade"],
-  [/(worst trade|largest loss|max loss)/, "worst_trade"],
+  [/^net profit$/, "profit"],
+  [/^profit factor$/, "profit_factor"],
+  [/^profitability percentage$/, "win_rate"],
+  [/^max balance drawdown$/, "max_drawdown_percent"],
+  [/^(current balance|balance)$/, "balance"],
+  [/^equity$/, "equity"],
+  [/^deposits?$/, "deposits"],
+  [/^(used margin|margin)$/, "margin_used"],
+  [/^total deals$/, "total_trades"],
+  [/^winning deals$/, "winning_trades"],
+  [/^losing deals$/, "losing_trades"],
+  [/^positions$/, "open_positions_count"],
+  // generic fallbacks kept for other brokers' wording
+  [/^(roi|return|gain|growth)$/, "roi_percent"],
+  [/^(win rate|% profitable)$/, "win_rate"],
+  [/^(average win|avg\.? win)$/, "avg_win"],
+  [/^(average loss|avg\.? loss)$/, "avg_loss"],
+  [/^(best trade|largest win)$/, "best_trade"],
+  [/^(worst trade|largest loss)$/, "worst_trade"],
 ];
 
 const PERCENT_FIELDS = new Set(["roi_percent", "win_rate", "max_drawdown_percent"]);
@@ -90,14 +92,17 @@ function parseNumber(raw) {
   let s = raw.trim();
   if (!s) return null;
 
-  const negative = /^\(.*\)$/.test(s) || s.includes("−") || /^-/.test(s);
-  // strip currency symbols, spaces, parentheses, unicode minus, letters
-  s = s.replace(/[()\s]/g, "").replace(/−/g, "-");
-  const currency = (s.match(/[A-Za-z]{3}|[$€£¥₹]/) || [])[0] || null;
-  s = s.replace(/[^0-9.,\-]/g, "");
+  // "0 (0.00%)" -> take the leading count, drop the bracketed share
+  s = s.replace(/\(([^)]*)\)\s*$/, (m, inner) => (/%/.test(inner) ? "" : m)).trim();
+
+  const negative = /^[-−(]/.test(s);
+  const currency = (s.match(/\b[A-Z]{3}\b|[$€£¥₹]/) || [])[0] || null;
+  s = s.replace(/[()]/g, "").replace(/−/g, "-");
+  s = s.replace(/[^0-9.,\-\s]/g, "");
+  // cTrader uses a space as the thousands separator: "EUR 1 000.00"
+  s = s.replace(/(?<=\d)[\s ](?=\d)/g, "").replace(/\s/g, "");
   if (!s || !/[0-9]/.test(s)) return null;
 
-  // 1.234,56 (EU) vs 1,234.56 (US)
   const lastComma = s.lastIndexOf(",");
   const lastDot = s.lastIndexOf(".");
   if (lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
@@ -108,52 +113,35 @@ function parseNumber(raw) {
   return { value: negative && n > 0 ? -n : n, currency };
 }
 
+const normCurrency = (c) => {
+  if (!c) return null;
+  if (/^[A-Z]{3}$/.test(c)) return c;
+  return { $: "USD", "€": "EUR", "£": "GBP", "₹": "INR", "¥": "JPY" }[c] || null;
+};
+
 /**
- * Pull every "label -> value" pair the rendered page exposes.
- * Strategy is deliberately structure-agnostic: look at every small element,
- * take its text, and pair it with the nearest numeric sibling/child text.
+ * The investor page renders each stat as "Label" on one line and its value on
+ * the next, so pairing consecutive lines of the rendered text is both simpler
+ * and far more reliable than walking the DOM.
  */
-async function extractPairs(page) {
-  return page.evaluate(() => {
-    const out = [];
-    const seen = new Set();
-    const numeric = /[0-9]/;
+function extractPairs(bodyText) {
+  const lines = bodyText
+    .split("\n")
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
 
-    const nodes = Array.from(document.querySelectorAll("body *"));
-    for (const el of nodes) {
-      if (el.children.length > 3) continue;
-      const text = (el.textContent || "").replace(/\s+/g, " ").trim();
-      if (!text || text.length > 90) continue;
-
-      // Case A: element holds "Label 1,234.56" together
-      const inline = text.match(/^([A-Za-z%\/.\s]{3,40}?)[:\s]\s*([-−(]?[$€£¥₹]?\s?[0-9][0-9.,\s]*%?\)?)$/);
-      if (inline && numeric.test(inline[2])) {
-        const key = inline[1].trim() + "|" + inline[2].trim();
-        if (!seen.has(key)) {
-          seen.add(key);
-          out.push({ label: inline[1].trim(), value: inline[2].trim() });
-        }
-        continue;
-      }
-
-      // Case B: label element with a numeric sibling
-      if (!numeric.test(text) && text.length >= 3) {
-        const sib = el.nextElementSibling;
-        const sibText = sib ? (sib.textContent || "").replace(/\s+/g, " ").trim() : "";
-        if (sibText && sibText.length <= 30 && numeric.test(sibText)) {
-          const key = text + "|" + sibText;
-          if (!seen.has(key)) {
-            seen.add(key);
-            out.push({ label: text, value: sibText });
-          }
-        }
-      }
-    }
-    return out;
-  });
+  const pairs = [];
+  for (let i = 0; i < lines.length - 1; i += 1) {
+    const label = lines[i];
+    const value = lines[i + 1];
+    if (label.length > 40 || /\d/.test(label)) continue;
+    if (value.length > 30 || !/\d/.test(value)) continue;
+    pairs.push({ label: label.replace(/[:*]/g, "").trim(), value });
+  }
+  return pairs;
 }
 
-function mapPairs(pairs) {
+function mapPairs(pairs, bodyText) {
   const metrics = {};
   const raw = { pairs: pairs.slice(0, 120), scraped_at: new Date().toISOString() };
 
@@ -167,39 +155,38 @@ function mapPairs(pairs) {
     const parsed = parseNumber(value);
     if (!parsed) continue;
 
-    // A value written as a percentage only belongs in percentage fields.
-    const isPct = value.includes("%");
-    if (PERCENT_FIELDS.has(field) === false && isPct) continue;
+    // "4 (8.89%)" is a count with its share in brackets — only a bare
+    // percentage disqualifies a non-percentage field.
+    const isPct = value.replace(/\([^)]*\)\s*$/, "").includes("%");
+    if (!PERCENT_FIELDS.has(field) && isPct) continue;
+
 
     metrics[field] = parsed.value;
-    if (parsed.currency && !metrics.currency && !/^[0-9]/.test(parsed.currency)) {
-      if (/^[A-Z]{3}$/.test(parsed.currency)) metrics.currency = parsed.currency;
-      else if (parsed.currency === "$") metrics.currency = "USD";
-      else if (parsed.currency === "€") metrics.currency = "EUR";
-      else if (parsed.currency === "£") metrics.currency = "GBP";
-      else if (parsed.currency === "₹") metrics.currency = "INR";
-    }
+    const ccy = normCurrency(parsed.currency);
+    if (ccy && !metrics.currency) metrics.currency = ccy;
   }
 
-  // Derive whatever the page did not spell out.
+  // Account header: "Demo - 5776607 - Hedging - EUR - 1:100"
+  const acct = bodyText.match(/Account:\s*\n?\s*(.{3,80})/);
+  if (acct) metrics.account_name = acct[1].trim();
+  if (!metrics.currency) {
+    const ccy = (bodyText.match(/\b(USD|EUR|GBP|INR|JPY|AUD|CAD|CHF)\b/) || [])[1];
+    if (ccy) metrics.currency = ccy;
+  }
+
+  // Derive whatever the page does not spell out.
   if (metrics.equity == null && metrics.balance != null) metrics.equity = metrics.balance;
-  if (
-    metrics.win_rate == null &&
-    metrics.winning_trades != null &&
-    metrics.total_trades > 0
-  ) {
+  if (metrics.win_rate == null && metrics.winning_trades != null && metrics.total_trades > 0) {
     metrics.win_rate = Number(((metrics.winning_trades / metrics.total_trades) * 100).toFixed(2));
   }
-  if (
-    metrics.roi_percent == null &&
-    metrics.profit != null &&
-    metrics.deposits > 0
-  ) {
+  if (metrics.roi_percent == null && metrics.profit != null && metrics.deposits > 0) {
     metrics.roi_percent = Number(((metrics.profit / metrics.deposits) * 100).toFixed(2));
   }
+  metrics.period = "all";
 
   return { metrics, raw };
 }
+
 
 async function scrapeOne(browser, target) {
   const context = await browser.newContext({
@@ -225,18 +212,17 @@ async function scrapeOne(browser, target) {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: PAGE_TIMEOUT_MS });
 
     // The numbers arrive over a socket after the link authenticates, so poll for
-    // real content rather than betting on one fixed sleep. One reload is attempted
-    // if the first boot stalls on the loading spinner.
+    // the Summary panel rather than betting on one fixed sleep. One reload is
+    // attempted if the first boot stalls on the loading spinner.
     let bodyText = "";
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const deadline = Date.now() + SETTLE_MS;
+      const deadline = Date.now() + Math.max(SETTLE_MS, 40000);
       while (Date.now() < deadline) {
         await page.waitForTimeout(2000);
         bodyText = (await page.innerText("body").catch(() => "")).trim();
-        // Two or more numeric values on screen means the account data has landed.
-        if (bodyText && (bodyText.match(/\d[\d.,]*/g) || []).length >= 2) break;
+        if (/Profit factor/i.test(bodyText)) break;
       }
-      if (bodyText) break;
+      if (/Profit factor/i.test(bodyText)) break;
       if (attempt === 0) {
         log(`  ${target.account_label || target.credential_id}: still loading, retrying once`);
         await page.reload({ waitUntil: "domcontentloaded", timeout: PAGE_TIMEOUT_MS }).catch(() => {});
@@ -255,13 +241,20 @@ async function scrapeOne(browser, target) {
       throw new Error(`investor page reports: ${bodyText.slice(0, 160)}`);
     }
 
-    const pairs = await extractPairs(page);
-    const { metrics, raw } = mapPairs(pairs);
-    raw.body_excerpt = bodyText.slice(0, 1500);
+    // The Summary panel follows the ROI period tabs — switch to "All" so the
+    // stored snapshot always reflects the whole account history.
+    try {
+      const all = page.getByText("All", { exact: true }).first();
+      await all.click({ timeout: 5000 });
+      await page.waitForTimeout(4000);
+      bodyText = (await page.innerText("body").catch(() => bodyText)).trim();
+    } catch {}
+
+    const pairs = extractPairs(bodyText);
+    const { metrics, raw } = mapPairs(pairs, bodyText);
+    raw.body_excerpt = bodyText.slice(0, 2000);
     if (blockedHosts.size) raw.blocked_hosts = [...blockedHosts];
 
-    const accountName = (bodyText.match(/^(.{3,60})$/m) || [])[1];
-    if (accountName && !metrics.account_name) metrics.account_name = accountName.trim();
 
     const found = Object.keys(metrics).filter((k) => metrics[k] !== null).length;
     log(`  ${target.account_label || target.credential_id}: ${found} metrics`);
