@@ -155,8 +155,11 @@ function mapPairs(pairs, bodyText) {
     const parsed = parseNumber(value);
     if (!parsed) continue;
 
-    const isPct = value.includes("%");
+    // "4 (8.89%)" is a count with its share in brackets — only a bare
+    // percentage disqualifies a non-percentage field.
+    const isPct = value.replace(/\([^)]*\)\s*$/, "").includes("%");
     if (!PERCENT_FIELDS.has(field) && isPct) continue;
+
 
     metrics[field] = parsed.value;
     const ccy = normCurrency(parsed.currency);
