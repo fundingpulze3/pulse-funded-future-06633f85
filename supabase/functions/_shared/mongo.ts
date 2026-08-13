@@ -100,6 +100,8 @@ const POLICIES: Record<string, Policy> = {
 
   // Trading competitions — public leaderboard, users manage their own entry
   competitions: { publicRead: true },
+  // Funded account leaderboard — everyone reads, only admins write
+  funded_leaderboard: { publicRead: true },
   competition_participants: {
     publicRead: true,
     owner: "user_id",
