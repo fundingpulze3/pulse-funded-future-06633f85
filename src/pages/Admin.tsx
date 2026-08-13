@@ -555,7 +555,7 @@ const Admin = () => {
       )}
 
       {/* ===== Desktop Sidebar ===== */}
-      <div className={`${sidebarCollapsed ? "w-16" : "w-56"} bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] hidden md:flex flex-col shrink-0 transition-all duration-200`}>
+      <div className={`${sidebarCollapsed ? "w-16" : "w-56"} admin-glass-sidebar hidden md:flex flex-col shrink-0 transition-all duration-200`}>
         {/* Brand */}
         <div className="h-14 flex items-center gap-2 px-4 border-b border-[hsl(0,0%,90%)] cursor-pointer" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
           <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg shrink-0" />
