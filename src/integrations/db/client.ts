@@ -10,27 +10,64 @@ import { QueryBuilder, type DbResult, type QueryOp } from "./query-builder";
 const GATEWAY = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mongo-api`;
 const ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+const MAX_ATTEMPTS = 3;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function execute(op: QueryOp): Promise<DbResult> {
-  try {
-    const { data: { session } } = await backend.auth.getSession();
-    const res = await fetch(GATEWAY, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: ANON,
-        Authorization: `Bearer ${session?.access_token ?? ANON}`,
-      },
-      body: JSON.stringify({ op }),
-    });
-    const body = await res.json().catch(() => null);
-    if (!res.ok) {
-      return { data: null, error: { message: body?.error?.message ?? `Request failed (${res.status})` }, count: null };
+  let lastMessage = "Request failed";
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const { data: { session } } = await backend.auth.getSession();
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30000);
+      let res: Response;
+      try {
+        res = await fetch(GATEWAY, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: ANON,
+            Authorization: `Bearer ${session?.access_token ?? ANON}`,
+          },
+          body: JSON.stringify({ op }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+
+      // transient gateway/cold-start failures — retry
+      if (res.status >= 500 || res.status === 429) {
+        lastMessage = `Server busy (${res.status})`;
+        if (attempt < MAX_ATTEMPTS) { await sleep(400 * attempt); continue; }
+      }
+
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        return {
+          data: null,
+          error: { message: body?.error?.message ?? `Request failed (${res.status})` },
+          count: null,
+        };
+      }
+      return { data: body?.data ?? null, error: body?.error ?? null, count: body?.count ?? null };
+    } catch (e) {
+      // network error / abort — "Failed to fetch" lands here
+      lastMessage =
+        (e as Error).name === "AbortError"
+          ? "The database took too long to respond. Please try again."
+          : "Could not reach the database. Check your connection and try again.";
+      if (attempt < MAX_ATTEMPTS) {
+        await sleep(400 * attempt);
+        continue;
+      }
     }
-    return { data: body?.data ?? null, error: body?.error ?? null, count: body?.count ?? null };
-  } catch (e) {
-    return { data: null, error: { message: (e as Error).message }, count: null };
   }
+
+  return { data: null, error: { message: lastMessage }, count: null };
 }
+
 
 async function rpc(name: string, args: Record<string, any> = {}): Promise<DbResult> {
   if (name === "get_user_role" || name === "has_role") {
