@@ -5,7 +5,7 @@ import rankStudentImg from "@/assets/rank-student.png";
 import rankPractitionerImg from "@/assets/rank-practitioner.png";
 import rankMasterImg from "@/assets/rank-master.png";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

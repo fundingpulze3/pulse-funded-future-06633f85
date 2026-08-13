@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { attachMongo } from "../_shared/mongo.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +37,7 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+    attachMongo(adminClient);
     const { data: roleData } = await adminClient.rpc("get_user_role", { _user_id: user.id });
     if (!roleData || !["administrator", "admin"].includes(roleData)) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts'
+import { attachMongo } from "../_shared/mongo.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -380,6 +381,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
+    attachMongo(supabase);
     const internalKey = req.headers.get('x-internal-campaign-key')
     const isInternalRequest = internalKey === supabaseKey
 

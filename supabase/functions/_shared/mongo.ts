@@ -362,3 +362,13 @@ export function mongoFrom(collection: string, ctx: Ctx = { userId: null, isAdmin
   builder.filter = (c: string, o: string, v: any) => { op.filters.push({ op: o as any, col: c, val: v }); return builder; };
   return builder;
 }
+
+/**
+ * Redirects `client.from(...)` on an existing service-role Supabase client to
+ * MongoDB, leaving auth / storage / functions untouched.
+ */
+export function attachMongo<T extends { from: (t: string) => any }>(client: T): T {
+  (client as any).from = (collection: string) =>
+    mongoFrom(collection, { userId: null, isAdmin: true, serviceRole: true });
+  return client;
+}

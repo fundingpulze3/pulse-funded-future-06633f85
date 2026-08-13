@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Clock, Search, IndianRupee, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";

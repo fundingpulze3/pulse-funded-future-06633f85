@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import { Button } from "@/components/ui/button";
 import { Copy, Users, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";

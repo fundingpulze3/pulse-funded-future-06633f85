@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
@@ -70,24 +70,14 @@ const CTraderLiveStats = ({ credentialId }: { credentialId: string }) => {
     };
     load();
 
-    const channel = supabase
-      .channel(`ctrader_live_${credentialId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "ctrader_snapshots", filter: `credential_id=eq.${credentialId}` },
-        (payload) => setSnapshots((prev) => [...prev, payload.new as unknown as Snapshot])
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "ctrader_sync_state", filter: `credential_id=eq.${credentialId}` },
-        (payload) => setSync(payload.new as unknown as SyncState)
-      )
-      .subscribe();
+    // MongoDB has no browser realtime channel — poll for fresh snapshots.
+    const interval = setInterval(load, 60_000);
 
     return () => {
       mounted = false;
-      supabase.removeChannel(channel);
+      clearInterval(interval);
     };
+
   }, [credentialId]);
 
   const latest = snapshots[snapshots.length - 1];

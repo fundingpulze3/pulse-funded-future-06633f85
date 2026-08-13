@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.98.0'
 import nodemailer from 'npm:nodemailer@6.9.16'
+import { attachMongo } from "../_shared/mongo.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +37,7 @@ Deno.serve(async (req) => {
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
+    attachMongo(supabaseAdmin);
 
     // Verify user is admin
     const token = authHeader.replace('Bearer ', '')

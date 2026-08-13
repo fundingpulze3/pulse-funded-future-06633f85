@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 
 const BASE = (import.meta.env.VITE_BLOG_ENGINE_URL || "").replace(/\/$/, "");
 

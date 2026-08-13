@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { attachMongo } from "../_shared/mongo.ts";
 
 // 1x1 transparent GIF
 const TRACKING_PIXEL = new Uint8Array([
@@ -26,6 +27,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
+    attachMongo(supabase);
 
     const userAgent = req.headers.get('user-agent') || ''
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || ''

@@ -12,14 +12,31 @@ const TABLES = [
   "affiliate_referrals",
   "ai_conversations",
   "ai_messages",
+  "announcement_bar",
   "blog_ai_conversations",
   "blog_ai_messages",
+  "blog_engine_usage",
+  "blog_events",
   "blog_posts",
+  "blog_prepared",
+  "blog_settings",
+  "blog_slot_runs",
+  "blog_topics",
   "certificate_templates",
   "certificates",
   "challenge_purchases",
   "challenges",
   "coupons",
+  "ctrader_credentials",
+  "ctrader_snapshots",
+  "ctrader_sync_state",
+  "email_campaign_events",
+  "email_campaigns",
+  "email_group_contacts",
+  "email_groups",
+  "email_send_log",
+  "email_send_state",
+  "email_unsubscribe_tokens",
   "help_article_feedback",
   "help_articles",
   "help_collections",
@@ -31,11 +48,34 @@ const TABLES = [
   "payout_requests",
   "processed_gmail_ids",
   "profiles",
+  "saved_email_templates",
   "support_ticket_messages",
+  "suppressed_emails",
   "trading_credentials",
   "user_certificates",
   "user_roles",
 ];
+
+// Indexes created after the copy so the app queries stay fast.
+const INDEXES: Record<string, string[]> = {
+  profiles: ["user_id", "email"],
+  challenge_purchases: ["user_id", "challenge_id", "payment_status"],
+  trading_credentials: ["assigned_to", "challenge_id", "purchase_id"],
+  user_roles: ["user_id"],
+  ai_messages: ["conversation_id"],
+  blog_ai_messages: ["conversation_id"],
+  support_ticket_messages: ["ticket_id"],
+  ctrader_snapshots: ["credential_id", "captured_at"],
+  ctrader_sync_state: ["credential_id"],
+  blog_posts: ["slug", "is_published"],
+  help_articles: ["slug", "is_published", "collection_id"],
+  page_content: ["page_key"],
+  kyc_submissions: ["user_id"],
+  payout_requests: ["user_id"],
+  user_certificates: ["user_id"],
+  account_status_history: ["user_id"],
+};
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -83,10 +123,14 @@ serve(async (req) => {
           from += pageSize;
         }
 
+        const collection = db.collection(table);
         if (allRows.length > 0) {
-          const collection = db.collection(table);
           await collection.deleteMany({}); // clear existing
-          await collection.insertMany(allRows);
+          // Keep the Postgres primary key as the Mongo _id so relations survive.
+          await collection.insertMany(allRows.map((r) => ({ ...r, _id: r.id ?? undefined })));
+        }
+        for (const field of INDEXES[table] ?? []) {
+          try { await collection.createIndex({ [field]: 1 }); } catch { /* ignore */ }
         }
 
         results[table] = { count: allRows.length, status: "ok" };
