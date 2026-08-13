@@ -26,6 +26,22 @@ interface BlogPost {
   focus_keyword: string | null;
 }
 
+// Highlight the post's focus keyword inside excerpt copy (FTMO-style blue accent)
+const Highlighted = ({ text, keyword }: { text: string; keyword?: string | null }) => {
+  if (!keyword || keyword.trim().length < 3) return <>{text}</>;
+  const esc = keyword.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${esc})`, "i"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === keyword.trim().toLowerCase()
+          ? <span key={i} className="fp-hl">{part}</span>
+          : <span key={i}>{part}</span>,
+      )}
+    </>
+  );
+};
+
 const Blog = () => {
   const [isDark, setIsDark] = useState(true);
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -185,7 +201,7 @@ const Blog = () => {
                       </h2>
                       {featuredPost.excerpt && (
                         <p className="mt-3 text-white/70 text-sm md:text-base line-clamp-3">
-                          {featuredPost.excerpt}
+                          <Highlighted text={featuredPost.excerpt} keyword={featuredPost.focus_keyword} />
                         </p>
                       )}
                       <div className="mt-4 flex items-center gap-4 text-white/50 text-xs">
@@ -229,7 +245,7 @@ const Blog = () => {
                       </h3>
                       {post.excerpt && (
                         <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
-                          {post.excerpt}
+                          <Highlighted text={post.excerpt} keyword={post.focus_keyword} />
                         </p>
                       )}
                       <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
@@ -324,7 +340,7 @@ const Blog = () => {
                               {post.title}
                             </h3>
                             {post.excerpt && (
-                              <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{post.excerpt}</p>
+                              <p className="mt-2 text-sm text-muted-foreground line-clamp-2"><Highlighted text={post.excerpt} keyword={post.focus_keyword} /></p>
                             )}
                             <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
                               {post.reading_time > 0 && (
