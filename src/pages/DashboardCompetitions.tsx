@@ -389,7 +389,7 @@ const DashboardCompetitions = () => {
                     </Button>
                     {availableAccounts.length === 0 && (
                       <p className="text-[11px] text-[hsl(220,15%,50%)] w-full">
-                        Only funded accounts can compete.{" "}
+                        You need a trading account to enter — it's free to join with any account.{" "}
                         <button className={`text-[hsl(${BLUE})] underline`} onClick={() => navigate("/#challenges")}>Get one</button>
                       </p>
                     )}
