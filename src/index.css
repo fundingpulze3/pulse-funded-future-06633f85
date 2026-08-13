@@ -219,3 +219,113 @@
 .animate-particle-float {
   animation: particle-float 8s ease-in-out infinite;
 }
+
+/* ============================================================
+   ADMIN PANEL — Glassmorphism + Neumorphism design layer
+   Scoped to .admin-shell so the public site is untouched.
+   ============================================================ */
+
+.admin-shell {
+  --adm-bg: 222 30% 94%;
+  --adm-glass: 0 0% 100%;
+  --adm-line: 220 25% 88%;
+  --adm-accent: 214 90% 56%;
+  background:
+    radial-gradient(1000px 600px at 8% -10%, hsl(214 95% 88% / 0.75), transparent 60%),
+    radial-gradient(900px 620px at 100% 0%, hsl(268 90% 90% / 0.6), transparent 60%),
+    radial-gradient(800px 700px at 60% 110%, hsl(180 80% 88% / 0.5), transparent 60%),
+    hsl(var(--adm-bg)) !important;
+}
+
+/* soft neumorphic double shadow */
+.admin-shell .neo,
+.admin-shell [class*="bg-[hsl(0,0%,100%)]"],
+.admin-shell [class*="bg-white"] {
+  background: hsl(0 0% 100% / 0.62) !important;
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-color: hsl(0 0% 100% / 0.75) !important;
+  box-shadow:
+    0 10px 30px -12px hsl(220 40% 40% / 0.22),
+    0 2px 6px -2px hsl(220 40% 40% / 0.10),
+    inset 0 1px 0 hsl(0 0% 100% / 0.9);
+}
+
+/* table rows / inner cells should stay flat inside a glass card */
+.admin-shell table [class*="bg-[hsl(0,0%,100%)]"],
+.admin-shell td[class*="bg-white"],
+.admin-shell th[class*="bg-white"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+}
+
+/* light grey surfaces become frosted */
+.admin-shell [class*="bg-[hsl(0,0%,96%)]"],
+.admin-shell [class*="bg-[hsl(0,0%,98%)]"],
+.admin-shell [class*="bg-[hsl(0,0%,95%)]"] {
+  background: hsl(0 0% 100% / 0.45) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* inputs & selects: inset neumorphic wells */
+.admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.admin-shell select,
+.admin-shell textarea {
+  background: hsl(220 30% 97% / 0.8) !important;
+  border-color: hsl(0 0% 100% / 0.8) !important;
+  box-shadow:
+    inset 2px 2px 5px hsl(220 35% 60% / 0.18),
+    inset -2px -2px 5px hsl(0 0% 100% / 0.9);
+  transition: box-shadow .2s ease, background .2s ease;
+}
+.admin-shell input:focus,
+.admin-shell select:focus,
+.admin-shell textarea:focus {
+  outline: none !important;
+  box-shadow:
+    inset 2px 2px 6px hsl(220 35% 60% / 0.2),
+    inset -2px -2px 6px hsl(0 0% 100% / 0.95),
+    0 0 0 3px hsl(var(--adm-accent) / 0.18);
+}
+
+/* raised buttons */
+.admin-shell button:not(.neo-flat) {
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+}
+.admin-shell button[class*="bg-[hsl(0,0%,0%)]"],
+.admin-shell button[class*="bg-[hsl(0,0%,5%)]"],
+.admin-shell button[class*="bg-black"] {
+  background: linear-gradient(145deg, hsl(220 18% 18%), hsl(220 20% 8%)) !important;
+  box-shadow:
+    0 8px 18px -8px hsl(220 40% 20% / 0.6),
+    inset 0 1px 0 hsl(0 0% 100% / 0.16);
+  border: none;
+}
+.admin-shell button:not(.neo-flat):hover { transform: translateY(-1px); }
+.admin-shell button:not(.neo-flat):active { transform: translateY(0); }
+
+/* shell chrome */
+.admin-glass-sidebar {
+  background: hsl(0 0% 100% / 0.55) !important;
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border-right: 1px solid hsl(0 0% 100% / 0.7) !important;
+  box-shadow: 8px 0 30px -18px hsl(220 40% 40% / 0.4);
+}
+.admin-glass-topbar {
+  background: hsl(0 0% 100% / 0.5) !important;
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border-bottom: 1px solid hsl(0 0% 100% / 0.7) !important;
+}
+.admin-canvas { background: transparent !important; }
+
+/* nav pills */
+.admin-shell nav button[class*="bg-[hsl(0,0%,0%)]"],
+.admin-shell nav button[aria-current="page"] {
+  border-radius: 0.75rem;
+}
+.admin-shell nav button:hover {
+  box-shadow: 0 6px 14px -10px hsl(220 40% 40% / 0.5);
+}
