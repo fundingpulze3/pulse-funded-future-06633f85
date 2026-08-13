@@ -119,7 +119,10 @@ const DashboardCompetitions = () => {
       const rich = (s: any) => s && typeof s === "object" &&
         (typeof s.balance === "number" || typeof s.equity === "number" || typeof s.profit === "number");
 
-      const accounts: MyAccount[] = ((purchRes.data as any[]) ?? []).map((p: any) => {
+      // Only FUNDED accounts are eligible for competitions
+      const accounts: MyAccount[] = ((purchRes.data as any[]) ?? [])
+        .filter((p: any) => String(p.status || "").toLowerCase() === "funded")
+        .map((p: any) => {
         const size = Number(p.challenges?.account_size || 0);
         const cert = certs.find(c => c.purchase_id === p.id && rich(c.stats));
         const s = cert?.stats || {};
@@ -386,7 +389,7 @@ const DashboardCompetitions = () => {
                     </Button>
                     {availableAccounts.length === 0 && (
                       <p className="text-[11px] text-[hsl(220,15%,50%)] w-full">
-                        You need a funded/challenge account to compete.{" "}
+                        Only funded accounts can compete.{" "}
                         <button className={`text-[hsl(${BLUE})] underline`} onClick={() => navigate("/#challenges")}>Get one</button>
                       </p>
                     )}
