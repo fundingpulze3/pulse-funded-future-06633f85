@@ -123,10 +123,14 @@ serve(async (req) => {
           from += pageSize;
         }
 
+        const collection = db.collection(table);
         if (allRows.length > 0) {
-          const collection = db.collection(table);
           await collection.deleteMany({}); // clear existing
-          await collection.insertMany(allRows);
+          // Keep the Postgres primary key as the Mongo _id so relations survive.
+          await collection.insertMany(allRows.map((r) => ({ ...r, _id: r.id ?? undefined })));
+        }
+        for (const field of INDEXES[table] ?? []) {
+          try { await collection.createIndex({ [field]: 1 }); } catch { /* ignore */ }
         }
 
         results[table] = { count: allRows.length, status: "ok" };
