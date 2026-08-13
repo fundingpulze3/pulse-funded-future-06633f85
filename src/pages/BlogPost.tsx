@@ -51,22 +51,55 @@ const extractToc = (md: string): TocItem[] => {
   return items;
 };
 
+// Highlight focus keyword / meta keywords inside body copy (FTMO-style blue accents),
+// skipping anything already inside an HTML tag.
+const highlightKeywords = (html: string, keywords: string[]) => {
+  const uniq = Array.from(new Set(keywords.map(k => k.trim()).filter(k => k.length > 2)))
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 8);
+  let out = html;
+  for (const kw of uniq) {
+    const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(?![^<]*>)\\b(${esc})\\b`, "gi");
+    let count = 0;
+    out = out.replace(re, (m) => {
+      count += 1;
+      if (count > 2) return m; // avoid spamming the page
+      return `<span class="fp-hl">${m}</span>`;
+    });
+  }
+  return out;
+};
+
+const relativeTime = (dateStr: string | null) => {
+  if (!dateStr) return "recently";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const day = 86400000;
+  if (diff < day) return "today";
+  const d = Math.floor(diff / day);
+  if (d < 30) return `${d} day${d === 1 ? "" : "s"} ago`;
+  const m = Math.floor(d / 30);
+  if (m < 12) return `${m} month${m === 1 ? "" : "s"} ago`;
+  const y = Math.floor(m / 12);
+  return `${y} year${y === 1 ? "" : "s"} ago`;
+};
+
 const renderMarkdown = (md: string) => {
   return md
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/^### (.+)$/gm, (_m, t) => {
       const id = t.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      return `<h3 id="${id}" class="text-lg font-semibold mt-6 mb-3 font-display scroll-mt-24">${t}</h3>`;
+      return `<h3 id="${id}" class="text-xl md:text-2xl font-bold mt-8 mb-3 font-display scroll-mt-24 tracking-tight">${t}</h3>`;
     })
     .replace(/^## (.+)$/gm, (_m: string, t: string) => {
       const id = t.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      return `<h2 id="${id}" class="text-xl font-semibold mt-8 mb-3 font-display scroll-mt-24">${t}</h2>`;
+      return `<h2 id="${id}" class="text-2xl md:text-3xl font-bold mt-12 mb-4 font-display scroll-mt-24 tracking-tight">${t}</h2>`;
     })
     .replace(/^# (.+)$/gm, (_m: string, t: string) => {
       const id = t.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      return `<h1 id="${id}" class="text-2xl font-bold mt-8 mb-4 font-display scroll-mt-24">${t}</h1>`;
+      return `<h1 id="${id}" class="text-3xl md:text-4xl font-bold mt-12 mb-5 font-display scroll-mt-24 tracking-tight">${t}</h1>`;
     })
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="fp-hl font-bold">$1</strong>')
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-sm">$1</code>')
     .replace(/^> \*\*CTA:\*\*\s*(.+?)\s*\[([^\]]+)\]\(([^)]+)\)\s*$/gm,
@@ -76,7 +109,7 @@ const renderMarkdown = (md: string) => {
     .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-border pl-4 italic text-muted-foreground my-4">$1</blockquote>')
     .replace(/^---$/gm, '<hr class="my-6 border-border" />')
     .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" class="rounded-xl max-w-full my-4" />')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="text-foreground underline hover:no-underline">$1</a>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="fp-hl font-semibold underline decoration-primary/40 underline-offset-4 hover:decoration-primary">$1</a>')
     .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
     .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
     .replace(/\n\n/g, '<br/><br/>');
@@ -250,18 +283,7 @@ const BlogPost = () => {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       )}
 
-      {/* Hero Image */}
-      {post.thumbnail_url && (
-        <div className="w-full max-h-[480px] overflow-hidden">
-          <img
-            src={post.thumbnail_url}
-            alt={post.thumbnail_alt || post.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-6 pt-12 pb-20 flex gap-10">
+      <div className="max-w-7xl mx-auto px-6 pt-10 pb-20 flex gap-10">
         {/* ── Table of Contents — Desktop Sidebar ── */}
         {toc.length > 2 && (
           <aside className="hidden xl:block w-56 shrink-0">
@@ -304,19 +326,41 @@ const BlogPost = () => {
 
         {/* ── Main Article Content ── */}
         <article className="max-w-3xl w-full mx-auto min-w-0">
-          {/* Back */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-6 text-muted-foreground hover:text-foreground"
+          {/* Back — pill */}
+          <button
             onClick={() => navigate("/blog")}
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-muted transition-colors"
           >
-            <ArrowLeft size={16} className="mr-1" /> Back to Blog
-          </Button>
+            <ArrowLeft size={16} /> All posts
+          </button>
 
           {/* Meta */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+            <p className="text-base text-muted-foreground mb-3">
+              Published {relativeTime(post.published_at || post.created_at)}
+              {post.focus_keyword && (
+                <> in <span className="fp-hl font-semibold">{post.focus_keyword}</span></>
+              )}
+            </p>
+
+            <h1 className="font-display text-4xl md:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.06] tracking-tight">
+              {post.title}
+            </h1>
+
+            {post.thumbnail_url && (
+              <img
+                src={post.thumbnail_url}
+                alt={post.thumbnail_alt || post.title}
+                className="mt-8 w-full rounded-2xl object-cover max-h-[520px]"
+                loading="eager"
+              />
+            )}
+
+            {post.excerpt && (
+              <p className="mt-8 text-xl text-muted-foreground leading-relaxed">{post.excerpt}</p>
+            )}
+
+            <div className="mt-6 flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
                 {formatDate(post.published_at || post.created_at)}
@@ -332,12 +376,6 @@ const BlogPost = () => {
                 {post.views_count} views
               </span>
             </div>
-
-            <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
-
-            {post.excerpt && (
-              <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{post.excerpt}</p>
-            )}
 
             {post.meta_keywords && post.meta_keywords.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
@@ -408,8 +446,13 @@ const BlogPost = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="mt-8 prose prose-neutral dark:prose-invert max-w-none leading-relaxed text-foreground"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+            className="mt-8 prose prose-lg prose-neutral dark:prose-invert max-w-none text-[1.075rem] md:text-[1.15rem] leading-[1.75] text-foreground"
+            dangerouslySetInnerHTML={{
+              __html: highlightKeywords(
+                renderMarkdown(post.content),
+                [post.focus_keyword || "", ...(post.meta_keywords || [])].filter(Boolean) as string[],
+              ),
+            }}
           />
 
           {/* ── Glassmorphic CTA → /challenges ── */}
