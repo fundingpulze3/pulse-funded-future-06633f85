@@ -478,13 +478,13 @@ const Admin = () => {
   });
 
   return (
-    <div className="h-screen bg-[hsl(0,0%,100%)] text-[hsl(0,0%,10%)] flex light overflow-hidden" data-theme="light" style={{"--background":"0 0% 98%","--foreground":"0 0% 5%","--card":"0 0% 100%","--card-foreground":"0 0% 5%","--popover":"0 0% 100%","--popover-foreground":"0 0% 5%","--primary":"0 0% 5%","--primary-foreground":"0 0% 100%","--secondary":"0 0% 94%","--secondary-foreground":"0 0% 10%","--muted":"0 0% 94%","--muted-foreground":"0 0% 40%","--accent":"0 0% 90%","--accent-foreground":"0 0% 5%","--destructive":"0 84% 60%","--destructive-foreground":"0 0% 100%","--border":"0 0% 88%","--input":"0 0% 88%","--ring":"0 0% 20%"} as React.CSSProperties}>
+    <div className="admin-shell h-screen text-[hsl(0,0%,10%)] flex light overflow-hidden" data-theme="light" style={{"--background":"0 0% 98%","--foreground":"0 0% 5%","--card":"0 0% 100%","--card-foreground":"0 0% 5%","--popover":"0 0% 100%","--popover-foreground":"0 0% 5%","--primary":"0 0% 5%","--primary-foreground":"0 0% 100%","--secondary":"0 0% 94%","--secondary-foreground":"0 0% 10%","--muted":"0 0% 94%","--muted-foreground":"0 0% 40%","--accent":"0 0% 90%","--accent-foreground":"0 0% 5%","--destructive":"0 84% 60%","--destructive-foreground":"0 0% 100%","--border":"0 0% 88%","--input":"0 0% 88%","--ring":"0 0% 20%"} as React.CSSProperties}>
 
       {/* ===== Mobile Sidebar Overlay ===== */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSidebarOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-64 bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] flex flex-col animate-in slide-in-from-left duration-200">
+          <div className="admin-glass-sidebar absolute inset-y-0 left-0 w-64 flex flex-col animate-in slide-in-from-left duration-200">
             {/* Brand */}
             <div className="h-14 flex items-center justify-between px-4 border-b border-[hsl(0,0%,90%)]">
               <div className="flex items-center gap-2">
@@ -555,7 +555,7 @@ const Admin = () => {
       )}
 
       {/* ===== Desktop Sidebar ===== */}
-      <div className={`${sidebarCollapsed ? "w-16" : "w-56"} bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] hidden md:flex flex-col shrink-0 transition-all duration-200`}>
+      <div className={`${sidebarCollapsed ? "w-16" : "w-56"} admin-glass-sidebar hidden md:flex flex-col shrink-0 transition-all duration-200`}>
         {/* Brand */}
         <div className="h-14 flex items-center gap-2 px-4 border-b border-[hsl(0,0%,90%)] cursor-pointer" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
           <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg shrink-0" />
@@ -629,7 +629,7 @@ const Admin = () => {
       {/* ===== Main Content ===== */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <div className="h-14 border-b border-[hsl(0,0%,90%)] flex items-center justify-between px-3 md:px-6 shrink-0 bg-[hsl(0,0%,100%)]">
+        <div className="admin-glass-topbar h-14 flex items-center justify-between px-3 md:px-6 shrink-0">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileSidebarOpen(true)} className="md:hidden p-1.5 rounded-lg hover:bg-[hsl(0,0%,93%)]">
               <Menu size={20} className="text-[hsl(0,0%,30%)]" />
@@ -655,7 +655,7 @@ const Admin = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-3 md:p-6 bg-[hsl(0,0%,96%)]">
+        <div className="admin-canvas flex-1 overflow-auto p-3 md:p-6">
 
           {/* ===== Dashboard Tab ===== */}
           {tab === "dashboard" && (
