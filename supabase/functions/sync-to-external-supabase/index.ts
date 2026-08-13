@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { attachMongo } from "../_shared/mongo.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -64,6 +65,7 @@ Deno.serve(async (req) => {
     if (!extUrl || !extKey) throw new Error("External Supabase credentials missing");
 
     const source = createClient(sourceUrl, sourceKey);
+    attachMongo(source);
     const target = createClient(extUrl, extKey);
 
     const results: { table: string; rows: number; status: string }[] = [];
