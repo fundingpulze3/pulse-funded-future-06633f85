@@ -344,10 +344,10 @@ const UserPhaseManager = () => {
   // ── Open the manual-credential dialog when admin clicks "Push to next phase" ──
   // We NO LONGER auto-pull from the pool. Admin must enter the new MT5 login/password/server
   // for this trader, which guarantees credentials are never reused across users.
-  const openPushDialog = (account: UserAccount) => {
-    const targetStatus = account.status === "phase1_passed"
+  const openPushDialog = (account: UserAccount, forcedStatus?: string) => {
+    const targetStatus = forcedStatus || (account.status === "phase1_passed"
       ? (account.stepType?.toLowerCase().includes("one") ? "funded" : "phase2")
-      : "funded";
+      : "funded");
     setCredForm({ mt5Login: "", mt5Password: "", mt5Server: "MEXAtlantic-Demo" });
     setPushDialog({ open: true, account, targetStatus });
   };
