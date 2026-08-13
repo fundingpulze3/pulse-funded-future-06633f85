@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X, Receipt, Sparkles, ShieldCheck, Trophy } from "lucide-react";
+import { Home, Users, Award, Wallet, Plus, Zap, HelpCircle, Settings, LogOut, Menu, X, Receipt, Sparkles, ShieldCheck, Trophy, BadgeDollarSign } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -11,6 +11,7 @@ const navItems = [
   { key: "kyc", label: "KYC", route: "/dashboard/kyc", icon: ShieldCheck },
   { key: "affiliate", label: "Affiliate", route: "/dashboard?view=affiliate", icon: Users },
   { key: "competitions", label: "Contests", route: "/dashboard/competitions", icon: Trophy },
+  { key: "leaderboard", label: "Leaderboard", route: "/dashboard/leaderboard", icon: BadgeDollarSign },
   { key: "certificates", label: "Certificates", route: "/dashboard/certificates", icon: Award },
   { key: "payouts", label: "Payouts", route: "/dashboard/payouts", icon: Wallet },
   { key: "billing", label: "Billing", route: "/dashboard/billing", icon: Receipt },
