@@ -629,7 +629,7 @@ const Admin = () => {
       {/* ===== Main Content ===== */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <div className="h-14 border-b border-[hsl(0,0%,90%)] flex items-center justify-between px-3 md:px-6 shrink-0 bg-[hsl(0,0%,100%)]">
+        <div className="admin-glass-topbar h-14 flex items-center justify-between px-3 md:px-6 shrink-0">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileSidebarOpen(true)} className="md:hidden p-1.5 rounded-lg hover:bg-[hsl(0,0%,93%)]">
               <Menu size={20} className="text-[hsl(0,0%,30%)]" />
