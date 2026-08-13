@@ -71,6 +71,19 @@ const highlightKeywords = (html: string, keywords: string[]) => {
   return out;
 };
 
+const relativeTime = (dateStr: string | null) => {
+  if (!dateStr) return "recently";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const day = 86400000;
+  if (diff < day) return "today";
+  const d = Math.floor(diff / day);
+  if (d < 30) return `${d} day${d === 1 ? "" : "s"} ago`;
+  const m = Math.floor(d / 30);
+  if (m < 12) return `${m} month${m === 1 ? "" : "s"} ago`;
+  const y = Math.floor(m / 12);
+  return `${y} year${y === 1 ? "" : "s"} ago`;
+};
+
 const renderMarkdown = (md: string) => {
   return md
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -433,8 +446,13 @@ const BlogPost = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="mt-8 prose prose-neutral dark:prose-invert max-w-none leading-relaxed text-foreground"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+            className="mt-8 prose prose-lg prose-neutral dark:prose-invert max-w-none text-[1.075rem] md:text-[1.15rem] leading-[1.75] text-foreground"
+            dangerouslySetInnerHTML={{
+              __html: highlightKeywords(
+                renderMarkdown(post.content),
+                [post.focus_keyword || "", ...(post.meta_keywords || [])].filter(Boolean) as string[],
+              ),
+            }}
           />
 
           {/* ── Glassmorphic CTA → /challenges ── */}
