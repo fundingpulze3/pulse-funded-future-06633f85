@@ -278,10 +278,68 @@ const UserPhaseManager = () => {
       toast.success(`Certificate "${certTitle}" issued`);
     }
 
+    if (newStatus === "funded") await autoEnrollInCompetitions(account);
+
     toast.success(`Status → ${newStatus}`);
     setUpdating(null);
     fetchAccounts();
   };
+
+  // ── Auto-enter a newly funded account into every live (active) competition ──
+  const autoEnrollInCompetitions = async (account: UserAccount) => {
+    try {
+      const { data: comps } = await supabase
+        .from("competitions")
+        .select("id, name, status")
+        .eq("status", "active");
+      const active = (comps as any[]) || [];
+      if (!active.length) return;
+
+      const { data: existing } = await supabase
+        .from("competition_participants")
+        .select("id, competition_id, purchase_id")
+        .eq("user_id", account.userId);
+      const already = ((existing as any[]) || []);
+
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("user_id", account.userId)
+        .maybeSingle();
+
+      const s = account.stats || {};
+      const size = Number(account.accountSize || 0);
+      const balance = Number(s.equity ?? s.balance ?? size);
+      const profit = Number(s.profit ?? (balance - size));
+      const gain = size > 0 ? (profit / size) * 100 : 0;
+
+      let joined = 0;
+      for (const comp of active) {
+        if (already.some(p => p.competition_id === comp.id && p.purchase_id === account.purchaseId)) continue;
+        const { error } = await supabase.from("competition_participants").insert({
+          competition_id: comp.id,
+          user_id: account.userId,
+          display_name: (prof as any)?.display_name || account.userName,
+          avatar_url: (prof as any)?.avatar_url || null,
+          purchase_id: account.purchaseId,
+          account_label: `${account.challengeName} · $${size.toLocaleString()}`,
+          account_size: size,
+          gain_percentage: Number.isFinite(gain) ? gain : 0,
+          profit: Number.isFinite(profit) ? profit : 0,
+          total_trades: Number(s.totalTrades ?? 0),
+          win_rate: Number(s.winRate ?? 0),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        if (!error) joined++;
+      }
+      if (joined) toast.success(`Auto-entered into ${joined} live competition${joined > 1 ? "s" : ""}`);
+    } catch (e) {
+      console.error("auto competition enroll failed", e);
+    }
+  };
+
+
 
   // ── Open the manual-credential dialog when admin clicks "Push to next phase" ──
   // We NO LONGER auto-pull from the pool. Admin must enter the new MT5 login/password/server
@@ -372,6 +430,8 @@ const UserPhaseManager = () => {
           },
         });
       } catch (e) { console.error("credentials email failed", e); }
+
+      if (targetStatus === "funded") await autoEnrollInCompetitions(account);
 
       toast.success(`Pushed to ${targetStatus}. Credential FP ${created.mt5_login} assigned & emailed.`);
       setPushDialog({ open: false, account: null, targetStatus: "" });
