@@ -76,17 +76,17 @@ const renderMarkdown = (md: string) => {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/^### (.+)$/gm, (_m, t) => {
       const id = t.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      return `<h3 id="${id}" class="text-lg font-semibold mt-6 mb-3 font-display scroll-mt-24">${t}</h3>`;
+      return `<h3 id="${id}" class="text-xl md:text-2xl font-bold mt-8 mb-3 font-display scroll-mt-24 tracking-tight">${t}</h3>`;
     })
     .replace(/^## (.+)$/gm, (_m: string, t: string) => {
       const id = t.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      return `<h2 id="${id}" class="text-xl font-semibold mt-8 mb-3 font-display scroll-mt-24">${t}</h2>`;
+      return `<h2 id="${id}" class="text-2xl md:text-3xl font-bold mt-12 mb-4 font-display scroll-mt-24 tracking-tight">${t}</h2>`;
     })
     .replace(/^# (.+)$/gm, (_m: string, t: string) => {
       const id = t.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      return `<h1 id="${id}" class="text-2xl font-bold mt-8 mb-4 font-display scroll-mt-24">${t}</h1>`;
+      return `<h1 id="${id}" class="text-3xl md:text-4xl font-bold mt-12 mb-5 font-display scroll-mt-24 tracking-tight">${t}</h1>`;
     })
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="fp-hl font-bold">$1</strong>')
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-sm">$1</code>')
     .replace(/^> \*\*CTA:\*\*\s*(.+?)\s*\[([^\]]+)\]\(([^)]+)\)\s*$/gm,
@@ -96,7 +96,7 @@ const renderMarkdown = (md: string) => {
     .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-border pl-4 italic text-muted-foreground my-4">$1</blockquote>')
     .replace(/^---$/gm, '<hr class="my-6 border-border" />')
     .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" class="rounded-xl max-w-full my-4" />')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="text-foreground underline hover:no-underline">$1</a>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="fp-hl font-semibold underline decoration-primary/40 underline-offset-4 hover:decoration-primary">$1</a>')
     .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
     .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
     .replace(/\n\n/g, '<br/><br/>');
