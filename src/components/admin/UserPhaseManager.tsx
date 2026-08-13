@@ -431,6 +431,8 @@ const UserPhaseManager = () => {
         });
       } catch (e) { console.error("credentials email failed", e); }
 
+      if (targetStatus === "funded") await autoEnrollInCompetitions(account);
+
       toast.success(`Pushed to ${targetStatus}. Credential FP ${created.mt5_login} assigned & emailed.`);
       setPushDialog({ open: false, account: null, targetStatus: "" });
     } catch (err: any) {
