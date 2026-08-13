@@ -624,23 +624,24 @@ const UserPhaseManager = () => {
         )}
 
         {/* Always-available shortcut: issue funded credentials from any status */}
-        {selectedAccount.status !== "funded" && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-green-900 uppercase tracking-wider mb-1">Fund this account</p>
-            <p className="text-xs text-green-800 mb-3">
-              Enter the NEW funded MT5 credentials — the account flips to Funded, credentials are assigned & emailed, and the trader is auto-entered into live competitions.
-            </p>
-            <Button
-              size="sm"
-              disabled={updating === selectedAccount.purchaseId}
-              onClick={() => openPushDialog(selectedAccount, "funded")}
-              className="bg-green-600 hover:bg-green-700 text-white text-xs h-8"
-            >
-              {updating === selectedAccount.purchaseId ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <Shield size={14} className="mr-1.5" />}
-              Send Funded Credentials
-            </Button>
-          </div>
-        )}
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+          <p className="text-xs font-semibold text-green-900 uppercase tracking-wider mb-1">
+            {selectedAccount.status === "funded" ? "Issue funded credentials" : "Fund this account"}
+          </p>
+          <p className="text-xs text-green-800 mb-3">
+            Enter the NEW funded MT5 credentials — the account is set to Funded, credentials are assigned &amp; emailed, and the trader is auto-entered into live competitions. Never reuse an old login.
+          </p>
+          <Button
+            size="sm"
+            disabled={updating === selectedAccount.purchaseId}
+            onClick={() => openPushDialog(selectedAccount, "funded")}
+            className="bg-green-600 hover:bg-green-700 text-white text-xs h-8"
+          >
+            {updating === selectedAccount.purchaseId ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <Shield size={14} className="mr-1.5" />}
+            Send Funded Credentials
+          </Button>
+        </div>
+
 
 
 
