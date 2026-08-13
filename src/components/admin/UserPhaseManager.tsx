@@ -278,6 +278,8 @@ const UserPhaseManager = () => {
       toast.success(`Certificate "${certTitle}" issued`);
     }
 
+    if (newStatus === "funded") await autoEnrollInCompetitions(account);
+
     toast.success(`Status → ${newStatus}`);
     setUpdating(null);
     fetchAccounts();
