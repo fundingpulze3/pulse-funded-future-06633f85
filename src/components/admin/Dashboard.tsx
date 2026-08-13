@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import {
   DollarSign, Users, ShoppingCart, TrendingUp, BarChart3, Percent,
   Trophy, Clock, MessageSquare, ArrowUpRight, ArrowDownRight, Activity,

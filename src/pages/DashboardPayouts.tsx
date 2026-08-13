@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import { useNavigate } from "react-router-dom";
 import {
   Wallet, Trophy, ArrowUpRight, Clock, CheckCircle2, XCircle,

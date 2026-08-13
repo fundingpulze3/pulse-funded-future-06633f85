@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import { toast } from "sonner";
 import {
   ShieldCheck, CheckCircle2, XCircle, Clock, Eye, ChevronDown,

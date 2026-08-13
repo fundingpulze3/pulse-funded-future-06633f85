@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 
 const UTM_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"] as const;
 const UTM_STORAGE_KEY = "fp_utm_params";

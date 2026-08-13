@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import {
   Search, CheckCircle2, AlertTriangle, XCircle, Pencil, Save, FileText, Image,
 } from "lucide-react";

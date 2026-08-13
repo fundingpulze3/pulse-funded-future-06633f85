@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import {
   Search, ChevronRight, ArrowLeft, ThumbsUp, ThumbsDown, Star, Clock, Eye,
   FolderOpen, FileText, HelpCircle, TrendingUp, BookOpen, Settings, Shield,

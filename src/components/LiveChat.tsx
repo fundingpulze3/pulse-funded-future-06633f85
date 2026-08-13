@@ -7,7 +7,7 @@ import {
   Clock, Eye, Loader2, Home, MessagesSquare, Headphones, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/integrations/db/client";
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import pulzexLogo from "@/assets/pulzex-logo.png";
