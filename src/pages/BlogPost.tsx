@@ -313,19 +313,41 @@ const BlogPost = () => {
 
         {/* ── Main Article Content ── */}
         <article className="max-w-3xl w-full mx-auto min-w-0">
-          {/* Back */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-6 text-muted-foreground hover:text-foreground"
+          {/* Back — pill */}
+          <button
             onClick={() => navigate("/blog")}
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-muted transition-colors"
           >
-            <ArrowLeft size={16} className="mr-1" /> Back to Blog
-          </Button>
+            <ArrowLeft size={16} /> All posts
+          </button>
 
           {/* Meta */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+            <p className="text-base text-muted-foreground mb-3">
+              Published {relativeTime(post.published_at || post.created_at)}
+              {post.focus_keyword && (
+                <> in <span className="fp-hl font-semibold">{post.focus_keyword}</span></>
+              )}
+            </p>
+
+            <h1 className="font-display text-4xl md:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.06] tracking-tight">
+              {post.title}
+            </h1>
+
+            {post.thumbnail_url && (
+              <img
+                src={post.thumbnail_url}
+                alt={post.thumbnail_alt || post.title}
+                className="mt-8 w-full rounded-2xl object-cover max-h-[520px]"
+                loading="eager"
+              />
+            )}
+
+            {post.excerpt && (
+              <p className="mt-8 text-xl text-muted-foreground leading-relaxed">{post.excerpt}</p>
+            )}
+
+            <div className="mt-6 flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
                 {formatDate(post.published_at || post.created_at)}
@@ -341,12 +363,6 @@ const BlogPost = () => {
                 {post.views_count} views
               </span>
             </div>
-
-            <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">{post.title}</h1>
-
-            {post.excerpt && (
-              <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{post.excerpt}</p>
-            )}
 
             {post.meta_keywords && post.meta_keywords.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
