@@ -119,9 +119,9 @@ const DashboardCompetitions = () => {
       const rich = (s: any) => s && typeof s === "object" &&
         (typeof s.balance === "number" || typeof s.equity === "number" || typeof s.profit === "number");
 
-      // Only FUNDED accounts are eligible for competitions
+      // Open to everyone — any paid account can enter (pending orders excluded)
       const accounts: MyAccount[] = ((purchRes.data as any[]) ?? [])
-        .filter((p: any) => String(p.status || "").toLowerCase() === "funded")
+        .filter((p: any) => String(p.status || "").toLowerCase() !== "pending")
         .map((p: any) => {
         const size = Number(p.challenges?.account_size || 0);
         const cert = certs.find(c => c.purchase_id === p.id && rich(c.stats));
