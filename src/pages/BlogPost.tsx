@@ -51,6 +51,26 @@ const extractToc = (md: string): TocItem[] => {
   return items;
 };
 
+// Highlight focus keyword / meta keywords inside body copy (FTMO-style blue accents),
+// skipping anything already inside an HTML tag.
+const highlightKeywords = (html: string, keywords: string[]) => {
+  const uniq = Array.from(new Set(keywords.map(k => k.trim()).filter(k => k.length > 2)))
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 8);
+  let out = html;
+  for (const kw of uniq) {
+    const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(?![^<]*>)\\b(${esc})\\b`, "gi");
+    let count = 0;
+    out = out.replace(re, (m) => {
+      count += 1;
+      if (count > 2) return m; // avoid spamming the page
+      return `<span class="fp-hl">${m}</span>`;
+    });
+  }
+  return out;
+};
+
 const renderMarkdown = (md: string) => {
   return md
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
