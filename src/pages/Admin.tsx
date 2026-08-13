@@ -484,7 +484,7 @@ const Admin = () => {
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSidebarOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-64 bg-[hsl(0,0%,98%)] border-r border-[hsl(0,0%,90%)] flex flex-col animate-in slide-in-from-left duration-200">
+          <div className="admin-glass-sidebar absolute inset-y-0 left-0 w-64 flex flex-col animate-in slide-in-from-left duration-200">
             {/* Brand */}
             <div className="h-14 flex items-center justify-between px-4 border-b border-[hsl(0,0%,90%)]">
               <div className="flex items-center gap-2">
