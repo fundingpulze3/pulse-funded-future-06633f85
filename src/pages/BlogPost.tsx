@@ -270,18 +270,7 @@ const BlogPost = () => {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       )}
 
-      {/* Hero Image */}
-      {post.thumbnail_url && (
-        <div className="w-full max-h-[480px] overflow-hidden">
-          <img
-            src={post.thumbnail_url}
-            alt={post.thumbnail_alt || post.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-6 pt-12 pb-20 flex gap-10">
+      <div className="max-w-7xl mx-auto px-6 pt-10 pb-20 flex gap-10">
         {/* ── Table of Contents — Desktop Sidebar ── */}
         {toc.length > 2 && (
           <aside className="hidden xl:block w-56 shrink-0">
