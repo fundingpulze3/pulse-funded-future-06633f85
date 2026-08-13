@@ -344,10 +344,10 @@ const UserPhaseManager = () => {
   // ── Open the manual-credential dialog when admin clicks "Push to next phase" ──
   // We NO LONGER auto-pull from the pool. Admin must enter the new MT5 login/password/server
   // for this trader, which guarantees credentials are never reused across users.
-  const openPushDialog = (account: UserAccount) => {
-    const targetStatus = account.status === "phase1_passed"
+  const openPushDialog = (account: UserAccount, forcedStatus?: string) => {
+    const targetStatus = forcedStatus || (account.status === "phase1_passed"
       ? (account.stepType?.toLowerCase().includes("one") ? "funded" : "phase2")
-      : "funded";
+      : "funded");
     setCredForm({ mt5Login: "", mt5Password: "", mt5Server: "MEXAtlantic-Demo" });
     setPushDialog({ open: true, account, targetStatus });
   };
@@ -622,6 +622,27 @@ const UserPhaseManager = () => {
             </Button>
           </div>
         )}
+
+        {/* Always-available shortcut: issue funded credentials from any status */}
+        {selectedAccount.status !== "funded" && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+            <p className="text-xs font-semibold text-green-900 uppercase tracking-wider mb-1">Fund this account</p>
+            <p className="text-xs text-green-800 mb-3">
+              Enter the NEW funded MT5 credentials — the account flips to Funded, credentials are assigned & emailed, and the trader is auto-entered into live competitions.
+            </p>
+            <Button
+              size="sm"
+              disabled={updating === selectedAccount.purchaseId}
+              onClick={() => openPushDialog(selectedAccount, "funded")}
+              className="bg-green-600 hover:bg-green-700 text-white text-xs h-8"
+            >
+              {updating === selectedAccount.purchaseId ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <Shield size={14} className="mr-1.5" />}
+              Send Funded Credentials
+            </Button>
+          </div>
+        )}
+
+
 
         {/* Phase Selector */}
         <div className="bg-white rounded-xl border border-[hsl(0,0%,90%)] p-4">
