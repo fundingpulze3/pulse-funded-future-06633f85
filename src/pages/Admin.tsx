@@ -24,6 +24,7 @@ import SupportTicketsCMS from "@/components/admin/SupportTicketsCMS";
 import KnowledgeBaseCMS from "@/components/admin/KnowledgeBaseCMS";
 import Dashboard from "@/components/admin/Dashboard";
 import CTraderTester from "@/components/admin/CTraderTester";
+import CompetitionsCMS from "@/components/admin/CompetitionsCMS";
 import CredentialsManager from "@/components/admin/CredentialsManager";
 import OrdersCMS from "@/components/admin/OrdersCMS";
 import UserCertificatesCMS from "@/components/admin/UserCertificatesCMS";
@@ -47,7 +48,7 @@ import { useKillSwitch } from "@/hooks/useKillSwitch";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "blog_engine" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders" | "roles" | "email_marketing" | "announcement" | "ctrader_test";
+type Tab = "dashboard" | "analytics" | "revenue" | "seo" | "users" | "challenges" | "orders" | "referrals" | "coupons" | "utm" | "helpcenter" | "support" | "blog" | "blog_ai" | "blog_engine" | "certificates" | "pages" | "knowledgebase" | "credentials" | "user_certificates" | "cert_templates" | "user_phases" | "kyc" | "payouts" | "upi_settings" | "upi_orders" | "roles" | "email_marketing" | "announcement" | "ctrader_test" | "competitions";
 
 interface ChallengeForm {
   name: string; account_size: string; price: string; profit_target: string;
@@ -70,7 +71,7 @@ const emptyCouponForm: CouponForm = {
 };
 
 const HIDDEN_ADMIN_EMAILS = ["s.saurav2006@gmail.com"];
-const ADMIN_TABS: Tab[] = ["dashboard", "analytics", "revenue", "seo", "users", "challenges", "orders", "referrals", "coupons", "utm", "helpcenter", "support", "blog", "blog_ai", "blog_engine", "certificates", "pages", "knowledgebase", "credentials", "user_certificates", "cert_templates", "user_phases", "kyc", "payouts", "upi_settings", "upi_orders", "roles", "email_marketing", "announcement", "ctrader_test"];
+const ADMIN_TABS: Tab[] = ["dashboard", "analytics", "revenue", "seo", "users", "challenges", "orders", "referrals", "coupons", "utm", "helpcenter", "support", "blog", "blog_ai", "blog_engine", "certificates", "pages", "knowledgebase", "credentials", "user_certificates", "cert_templates", "user_phases", "kyc", "payouts", "upi_settings", "upi_orders", "roles", "email_marketing", "announcement", "ctrader_test", "competitions"];
 const ROLE_ALLOWED_TABS: Record<string, Tab[]> = {
   administrator: ADMIN_TABS,
   admin: ADMIN_TABS,
@@ -387,6 +388,7 @@ const Admin = () => {
         { id: "orders" as Tab, label: "Orders", icon: <ShoppingCart size={18} /> },
         { id: "credentials" as Tab, label: "Credentials", icon: <Key size={18} /> },
         { id: "ctrader_test" as Tab, label: "cTrader Tester", icon: <Link2 size={18} /> },
+        { id: "competitions" as Tab, label: "Competitions", icon: <Trophy size={18} /> },
         { id: "referrals" as Tab, label: "Referrals", icon: <Link2 size={18} /> },
         { id: "coupons" as Tab, label: "Coupons", icon: <Ticket size={18} /> },
         { id: "kyc" as Tab, label: "KYC", icon: <ShieldCheck size={18} /> },
@@ -440,6 +442,7 @@ const Admin = () => {
     email_marketing: "Email Marketing",
     announcement: "Announcement",
     ctrader_test: "cTrader Link Tester",
+    competitions: "Trading Competitions",
   };
 
   // Helper to assign/change a user's role
@@ -1093,6 +1096,7 @@ const Admin = () => {
           {tab === "knowledgebase" && <KnowledgeBaseCMS />}
           {tab === "credentials" && <CredentialsManager />}
           {tab === "ctrader_test" && <CTraderTester />}
+          {tab === "competitions" && <CompetitionsCMS />}
           {tab === "user_certificates" && <UserCertificatesCMS />}
           {tab === "cert_templates" && <CertificateTemplateManager />}
            {tab === "user_phases" && <UserPhaseManager />}

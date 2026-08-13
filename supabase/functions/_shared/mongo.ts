@@ -97,6 +97,16 @@ const POLICIES: Record<string, Policy> = {
   support_ticket_messages: { authRead: true, anyInsert: true },
   ctrader_snapshots: { authRead: true },
   ctrader_sync_state: { authRead: true },
+
+  // Trading competitions — public leaderboard, users manage their own entry
+  competitions: { publicRead: true },
+  competition_participants: {
+    publicRead: true,
+    owner: "user_id",
+    ownerInsert: true,
+    ownerWrite: true,
+    authRead: true,
+  },
 };
 
 /** Everything not listed above is admin-only. */

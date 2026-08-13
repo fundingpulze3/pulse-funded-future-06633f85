@@ -26,6 +26,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import DashboardCertificates from "./pages/DashboardCertificates";
 import DashboardPayouts from "./pages/DashboardPayouts";
+import DashboardCompetitions from "./pages/DashboardCompetitions";
 import DashboardSettings from "./pages/DashboardSettings";
 import DashboardBilling from "./pages/DashboardBilling";
 import DashboardAI from "./pages/DashboardAI";
@@ -80,6 +81,7 @@ const AppRoutes = () => {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/dashboard/certificates" element={<DashboardCertificates />} />
       <Route path="/dashboard/payouts" element={<DashboardPayouts />} />
+      <Route path="/dashboard/competitions" element={<DashboardCompetitions />} />
       <Route path="/dashboard/settings" element={<DashboardSettings />} />
       <Route path="/dashboard/billing" element={<DashboardBilling />} />
       <Route path="/dashboard/ai" element={<DashboardAI />} />
