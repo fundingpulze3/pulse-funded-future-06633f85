@@ -389,7 +389,7 @@ const DashboardCompetitions = () => {
                     </Button>
                     {availableAccounts.length === 0 && (
                       <p className="text-[11px] text-[hsl(220,15%,50%)] w-full">
-                        You need a funded/challenge account to compete.{" "}
+                        Only funded accounts can compete.{" "}
                         <button className={`text-[hsl(${BLUE})] underline`} onClick={() => navigate("/#challenges")}>Get one</button>
                       </p>
                     )}
