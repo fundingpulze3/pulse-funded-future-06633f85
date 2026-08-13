@@ -152,7 +152,9 @@ const CredentialsManager = () => {
           .from("profiles")
           .select("user_id, display_name, email")
           .in("user_id", assignedUserIds);
-        const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+        const profileMap = new Map<string, AssignedProfile>(
+          ((profiles || []) as AssignedProfile[]).map(p => [p.user_id, p])
+        );
         creds = creds.map(c => ({
           ...c,
           assigned_profile: c.assigned_to ? (profileMap.get(c.assigned_to) || null) : null,
