@@ -153,7 +153,7 @@ const CredentialsManager = () => {
           .select("user_id, display_name, email")
           .in("user_id", assignedUserIds);
         const profileMap = new Map<string, AssignedProfile>(
-          ((profiles || []) as AssignedProfile[]).map(p => [p.user_id, p])
+          ((profiles || []) as (AssignedProfile & { user_id: string })[]).map(p => [p.user_id, p])
         );
         creds = creds.map(c => ({
           ...c,
