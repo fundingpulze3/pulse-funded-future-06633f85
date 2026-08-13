@@ -329,3 +329,9 @@
 .admin-shell nav button:hover {
   box-shadow: 0 6px 14px -10px hsl(220 40% 40% / 0.5);
 }
+
+/* Blog keyword highlight (FTMO-style accent) */
+.fp-hl {
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
