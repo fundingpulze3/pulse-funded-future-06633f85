@@ -83,6 +83,29 @@ serve(async (req) => {
   const results: Record<string, { count: number; status: string }> = {};
   let mongoClient: MongoClient | null = null;
 
+  // ?verify=1 -> just report the row count of every collection in MongoDB
+  if (new URL(req.url).searchParams.get("verify")) {
+    try {
+      const uri = Deno.env.get("MONGODB_URI");
+      if (!uri) throw new Error("MONGODB_URI not configured");
+      mongoClient = new MongoClient(uri);
+      await mongoClient.connect();
+      const db = mongoClient.db();
+      const counts: Record<string, number> = {};
+      for (const t of TABLES) counts[t] = await db.collection(t).countDocuments({});
+      return new Response(JSON.stringify({ counts }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: (e as Error).message }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } finally {
+      if (mongoClient) { await mongoClient.close(); mongoClient = null; }
+    }
+  }
+
+
   try {
     const MONGODB_URI = Deno.env.get("MONGODB_URI");
     if (!MONGODB_URI) throw new Error("MONGODB_URI not configured");
