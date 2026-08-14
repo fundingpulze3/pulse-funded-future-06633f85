@@ -89,6 +89,10 @@ const DashboardCompetitions = () => {
   const [joinAccount, setJoinAccount] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [country, setCountry] = useState<DetectedCountry | null>(null);
+
+  useEffect(() => { detectCountry().then(setCountry).catch(() => {}); }, []);
+
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
