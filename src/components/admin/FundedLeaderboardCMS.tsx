@@ -24,12 +24,40 @@ type Row = {
 const emptyForm = {
   display_name: "",
   country: "",
+  account_label: "",
+  avatar_url: "",
   account_size: "",
   gain_percentage: "",
   profit: "",
   payout_total: "",
   total_trades: "",
   win_rate: "",
+};
+
+const FIRST = ["Liam","Noah","Oliver","Elijah","James","Lucas","Mateo","Ethan","Aiden","Leo","Arjun","Rohan","Aditya","Vikram","Kabir","Omar","Yusuf","Ali","Hassan","Karim","Chen","Wei","Hiroshi","Kenji","Minho","Jisoo","Lars","Erik","Nikolai","Dmitri","Marco","Luca","Diego","Santiago","Mateus","Rafael","Pierre","Louis","Tomas","Jakub","Andres","Felipe","Sofia","Emma","Olivia","Ava","Isabella","Mia","Ananya","Priya","Layla","Zara","Nora","Elena","Marta","Ingrid","Freya","Chloe","Amara","Sanaa","Ibrahim","Daniel","Michael","Ryan","Jordan","Tyler","Nathan","Adrian","Victor","Samuel","Gabriel","Antoine","Mustafa","Bilal","Tariq","Ahmed","Rahul","Kiran","Manish","Sahil","Tanvir","Owen","Henry","Jack","Charlie","George","Harvey","Finn","Kai","Zane","Milan","Stefan","Ivan","Pavel","Sergei","Hugo","Enzo","Bruno","Caio","Thiago","Nolan","Aaron"];
+const LAST = ["Anderson","Bennett","Carter","Dawson","Ellis","Foster","Garcia","Hughes","Ibrahim","Jensen","Khan","Larsen","Morgan","Novak","Owens","Patel","Quinn","Reyes","Silva","Turner","Ueda","Vargas","Walsh","Yamada","Zhang","Kowalski","Petrov","Rossi","Moreau","Sharma","Nakamura","Okafor","Haddad","Fernandes","Lindqvist","Moretti","Sullivan","Baptiste","Duarte","Kimura"];
+const COUNTRIES = ["India","United States","United Kingdom","Canada","Germany","France","Spain","Italy","Brazil","Mexico","UAE","Saudi Arabia","Nigeria","South Africa","Australia","Japan","South Korea","Singapore","Netherlands","Poland","Sweden","Norway","Turkey","Egypt","Indonesia","Malaysia","Philippines","Vietnam","Portugal","Argentina"];
+const SIZES = [5000, 10000, 25000, 50000, 100000, 200000];
+
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+const rnd = (min: number, max: number, dp = 2) => Number((Math.random() * (max - min) + min).toFixed(dp));
+
+const makeFakeTrader = () => {
+  const size = pick(SIZES);
+  const gain = rnd(2.5, 48);
+  const profit = Number(((size * gain) / 100).toFixed(2));
+  return {
+    display_name: `${pick(FIRST)} ${pick(LAST)}`,
+    country: pick(COUNTRIES),
+    avatar_url: null,
+    account_label: `Funded · $${size.toLocaleString()}`,
+    account_size: size,
+    gain_percentage: gain,
+    profit,
+    payout_total: Number((profit * rnd(0.4, 0.85, 2)).toFixed(2)),
+    total_trades: Math.floor(rnd(24, 480, 0)),
+    win_rate: rnd(46, 82, 1),
+  };
 };
 
 const input = "w-full h-9 px-3 rounded-lg border border-[hsl(0,0%,88%)] text-xs bg-white focus:outline-none focus:ring-2 focus:ring-black";
