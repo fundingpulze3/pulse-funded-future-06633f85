@@ -218,24 +218,29 @@ const DashboardCompetitions = () => {
     return myAccounts.filter(a => !used.includes(a.purchaseId));
   }, [myAccounts, participants, activeComp, user]);
 
-  const join = async () => {
+  const join = async (mode: "account" | "seat") => {
     if (!user || !activeComp) return;
-    const acc = myAccounts.find(a => a.purchaseId === joinAccount);
-    if (!acc) { toast.error("Pick an account to enter with"); return; }
+    const acc = mode === "account" ? myAccounts.find(a => a.purchaseId === joinAccount) : null;
+    if (mode === "account" && !acc) { toast.error("Pick an account to enter with"); return; }
     try {
       setJoining(true);
-      const row = {
+      const geo = country ?? (await detectCountry());
+      if (!country) setCountry(geo);
+      const row: any = {
         competition_id: activeComp.id,
         user_id: user.id,
         display_name: profile?.display_name ?? "Trader",
         avatar_url: profile?.avatar_url ?? null,
-        purchase_id: acc.purchaseId,
-        account_label: acc.label,
-        account_size: acc.accountSize,
-        gain_percentage: acc.gain,
-        profit: acc.profit,
-        total_trades: acc.totalTrades,
-        win_rate: acc.winRate,
+        country_code: geo.code,
+        country_name: geo.name,
+        purchase_id: acc?.purchaseId ?? null,
+        account_label: acc?.label ?? "Seat account — awaiting issue",
+        account_size: acc?.accountSize ?? null,
+        gain_percentage: acc?.gain ?? 0,
+        profit: acc?.profit ?? 0,
+        total_trades: acc?.totalTrades ?? 0,
+        win_rate: acc?.winRate ?? 0,
+        seat_status: mode === "seat" ? "pending" : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -243,7 +248,7 @@ const DashboardCompetitions = () => {
       if (error) throw error;
       setParticipants(prev => [...prev, (data as any) ?? { id: crypto.randomUUID(), ...row }]);
       setJoinAccount("");
-      toast.success("You're in! Good luck 🏆");
+      toast.success(mode === "seat" ? "Seat requested — admin will issue your account 🎟️" : "You're in! Good luck 🏆");
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message || "Could not join competition");
@@ -251,6 +256,7 @@ const DashboardCompetitions = () => {
       setJoining(false);
     }
   };
+
 
   const rankBadge = (i: number) => {
     if (i === 0) return <Crown size={16} className={`text-[hsl(${GOLD})]`} />;
