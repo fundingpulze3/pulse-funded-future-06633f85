@@ -49,6 +49,45 @@ const CompetitionsCMS = () => {
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [seatOpen, setSeatOpen] = useState<string | null>(null);
+  const [seatForm, setSeatForm] = useState({ seat_login: "", seat_password: "", seat_server: "", seat_link: "" });
+  const [issuing, setIssuing] = useState(false);
+
+  const openSeat = (p: Participant) => {
+    setSeatOpen(seatOpen === p.id ? null : p.id);
+    setSeatForm({
+      seat_login: p.seat_login || "",
+      seat_password: p.seat_password || "",
+      seat_server: p.seat_server || "",
+      seat_link: p.seat_link || "",
+    });
+  };
+
+  const issueSeat = async (p: Participant) => {
+    if (!seatForm.seat_login || !seatForm.seat_server) {
+      toast.error("Login and server are required");
+      return;
+    }
+    try {
+      setIssuing(true);
+      const patch = {
+        ...seatForm,
+        seat_status: "issued",
+        account_label: `Seat account · ${seatForm.seat_login}`,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("competition_participants").update(patch).eq("id", p.id);
+      if (error) throw error;
+      setParticipants(prev => prev.map(x => (x.id === p.id ? { ...x, ...patch } : x)));
+      setSeatOpen(null);
+      toast.success("Seat account issued");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to issue seat");
+    } finally {
+      setIssuing(false);
+    }
+  };
+
 
   useEffect(() => { load(); }, []);
 
