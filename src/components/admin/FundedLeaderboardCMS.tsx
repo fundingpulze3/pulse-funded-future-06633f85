@@ -331,6 +331,8 @@ const FundedLeaderboardCMS = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-center">
                     <input className={input} value={editForm.display_name} onChange={e => setEditForm({ ...editForm, display_name: e.target.value })} />
                     <input className={input} value={editForm.country} onChange={e => setEditForm({ ...editForm, country: e.target.value })} />
+                    <input className={input} placeholder="Account label" value={editForm.account_label} onChange={e => setEditForm({ ...editForm, account_label: e.target.value })} />
+                    <input className={input} placeholder="Avatar URL" value={editForm.avatar_url} onChange={e => setEditForm({ ...editForm, avatar_url: e.target.value })} />
                     <input className={input} type="number" value={editForm.account_size} onChange={e => setEditForm({ ...editForm, account_size: e.target.value })} />
                     <input className={input} type="number" value={editForm.gain_percentage} onChange={e => setEditForm({ ...editForm, gain_percentage: e.target.value })} />
                     <input className={input} type="number" value={editForm.profit} onChange={e => setEditForm({ ...editForm, profit: e.target.value })} />
