@@ -198,8 +198,8 @@ const Admin = () => {
     return allData;
   };
 
-  const fetchAll = async () => {
   const syncMissingUsers = async () => {
+
     setSyncingUsers(true);
     try {
       const { data, error } = await supabase.functions.invoke("sync-profile", {
