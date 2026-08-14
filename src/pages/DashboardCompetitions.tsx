@@ -509,12 +509,19 @@ const DashboardCompetitions = () => {
                               {(p.display_name || "T")[0].toUpperCase()}
                             </div>
                           )}
+                          <span className="text-base leading-none" title={p.country_name || "Unknown"}>
+                            {flagEmoji(p.country_code)}
+                          </span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold truncate">
                               {p.display_name || "Trader"}{isMe && <span className={`ml-2 text-[10px] text-[hsl(${BLUE})]`}>YOU</span>}
                             </p>
-                            <p className="text-[10px] text-[hsl(220,15%,45%)] truncate">{p.account_label || "—"}</p>
+                            <p className="text-[10px] text-[hsl(220,15%,45%)] truncate">
+                              {[p.country_name, p.account_label].filter(Boolean).join(" · ") || "—"}
+                              {p.seat_status === "pending" && <span className={`ml-2 text-[hsl(${GOLD})]`}>seat pending</span>}
+                            </p>
                           </div>
+
                           <div className="hidden sm:block text-right w-16">
                             <p className="text-[10px] text-[hsl(220,15%,45%)]">Trades</p>
                             <p className="text-xs font-semibold">{p.total_trades ?? 0}</p>
