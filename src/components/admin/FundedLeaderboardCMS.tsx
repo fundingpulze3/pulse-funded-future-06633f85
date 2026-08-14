@@ -24,12 +24,40 @@ type Row = {
 const emptyForm = {
   display_name: "",
   country: "",
+  account_label: "",
+  avatar_url: "",
   account_size: "",
   gain_percentage: "",
   profit: "",
   payout_total: "",
   total_trades: "",
   win_rate: "",
+};
+
+const FIRST = ["Liam","Noah","Oliver","Elijah","James","Lucas","Mateo","Ethan","Aiden","Leo","Arjun","Rohan","Aditya","Vikram","Kabir","Omar","Yusuf","Ali","Hassan","Karim","Chen","Wei","Hiroshi","Kenji","Minho","Jisoo","Lars","Erik","Nikolai","Dmitri","Marco","Luca","Diego","Santiago","Mateus","Rafael","Pierre","Louis","Tomas","Jakub","Andres","Felipe","Sofia","Emma","Olivia","Ava","Isabella","Mia","Ananya","Priya","Layla","Zara","Nora","Elena","Marta","Ingrid","Freya","Chloe","Amara","Sanaa","Ibrahim","Daniel","Michael","Ryan","Jordan","Tyler","Nathan","Adrian","Victor","Samuel","Gabriel","Antoine","Mustafa","Bilal","Tariq","Ahmed","Rahul","Kiran","Manish","Sahil","Tanvir","Owen","Henry","Jack","Charlie","George","Harvey","Finn","Kai","Zane","Milan","Stefan","Ivan","Pavel","Sergei","Hugo","Enzo","Bruno","Caio","Thiago","Nolan","Aaron"];
+const LAST = ["Anderson","Bennett","Carter","Dawson","Ellis","Foster","Garcia","Hughes","Ibrahim","Jensen","Khan","Larsen","Morgan","Novak","Owens","Patel","Quinn","Reyes","Silva","Turner","Ueda","Vargas","Walsh","Yamada","Zhang","Kowalski","Petrov","Rossi","Moreau","Sharma","Nakamura","Okafor","Haddad","Fernandes","Lindqvist","Moretti","Sullivan","Baptiste","Duarte","Kimura"];
+const COUNTRIES = ["India","United States","United Kingdom","Canada","Germany","France","Spain","Italy","Brazil","Mexico","UAE","Saudi Arabia","Nigeria","South Africa","Australia","Japan","South Korea","Singapore","Netherlands","Poland","Sweden","Norway","Turkey","Egypt","Indonesia","Malaysia","Philippines","Vietnam","Portugal","Argentina"];
+const SIZES = [5000, 10000, 25000, 50000, 100000, 200000];
+
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+const rnd = (min: number, max: number, dp = 2) => Number((Math.random() * (max - min) + min).toFixed(dp));
+
+const makeFakeTrader = () => {
+  const size = pick(SIZES);
+  const gain = rnd(2.5, 48);
+  const profit = Number(((size * gain) / 100).toFixed(2));
+  return {
+    display_name: `${pick(FIRST)} ${pick(LAST)}`,
+    country: pick(COUNTRIES),
+    avatar_url: null,
+    account_label: `Funded · $${size.toLocaleString()}`,
+    account_size: size,
+    gain_percentage: gain,
+    profit,
+    payout_total: Number((profit * rnd(0.4, 0.85, 2)).toFixed(2)),
+    total_trades: Math.floor(rnd(24, 480, 0)),
+    win_rate: rnd(46, 82, 1),
+  };
 };
 
 const input = "w-full h-9 px-3 rounded-lg border border-[hsl(0,0%,88%)] text-xs bg-white focus:outline-none focus:ring-2 focus:ring-black";
@@ -40,6 +68,7 @@ const FundedLeaderboardCMS = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ ...emptyForm });
 
@@ -132,13 +161,15 @@ const FundedLeaderboardCMS = () => {
   const payload = (f: typeof emptyForm) => ({
     display_name: f.display_name || "Trader",
     country: f.country || null,
+    avatar_url: f.avatar_url || null,
     account_size: f.account_size ? Number(f.account_size) : null,
     gain_percentage: f.gain_percentage ? Number(f.gain_percentage) : 0,
     profit: f.profit ? Number(f.profit) : 0,
     payout_total: f.payout_total ? Number(f.payout_total) : 0,
     total_trades: f.total_trades ? Number(f.total_trades) : 0,
     win_rate: f.win_rate ? Number(f.win_rate) : 0,
-    account_label: f.account_size ? `Funded · $${Number(f.account_size).toLocaleString()}` : null,
+    account_label: f.account_label
+      || (f.account_size ? `Funded · $${Number(f.account_size).toLocaleString()}` : null),
   });
 
   const add = async () => {
@@ -149,7 +180,6 @@ const FundedLeaderboardCMS = () => {
         id: crypto.randomUUID(),
         user_id: null,
         purchase_id: null,
-        avatar_url: null,
         source: "manual",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -166,11 +196,55 @@ const FundedLeaderboardCMS = () => {
     }
   };
 
+  /** Top the board up to 100 traders with generated entries. */
+  const fillTo100 = async () => {
+    const missing = 100 - rows.length;
+    if (missing <= 0) return toast.info("Board already has 100+ traders");
+    try {
+      setSeeding(true);
+      const now = new Date().toISOString();
+      const used = new Set(rows.map(r => (r.display_name || "").toLowerCase()));
+      let added = 0;
+      for (let i = 0; i < missing; i++) {
+        let t = makeFakeTrader();
+        let guard = 0;
+        while (used.has(t.display_name.toLowerCase()) && guard++ < 25) t = makeFakeTrader();
+        used.add(t.display_name.toLowerCase());
+        const { error } = await supabase.from("funded_leaderboard").insert({
+          id: crypto.randomUUID(),
+          user_id: null,
+          purchase_id: null,
+          source: "manual",
+          created_at: now,
+          updated_at: now,
+          ...t,
+        });
+        if (!error) added++;
+      }
+      toast.success(`Added ${added} traders — board now at 100`);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to generate");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const clearManual = async () => {
+    if (!confirm("Delete every manual (generated) entry?")) return;
+    const manual = rows.filter(r => r.source !== "real");
+    for (const r of manual) await supabase.from("funded_leaderboard").delete().eq("id", r.id);
+    toast.success(`Removed ${manual.length} manual entries`);
+    load();
+  };
+
   const startEdit = (r: Row) => {
     setEditId(r.id);
     setEditForm({
       display_name: r.display_name || "",
       country: r.country || "",
+      account_label: r.account_label || "",
+      avatar_url: r.avatar_url || "",
       account_size: String(r.account_size ?? ""),
       gain_percentage: String(r.gain_percentage ?? ""),
       profit: String(r.profit ?? ""),
@@ -207,17 +281,29 @@ const FundedLeaderboardCMS = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <BadgeDollarSign size={16} />
-            <h3 className="text-sm font-display font-semibold">Funded Leaderboard</h3>
+            <h3 className="text-sm font-display font-semibold">Funded Leaderboard · {rows.length} traders</h3>
           </div>
-          <button onClick={syncReal} disabled={syncing}
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-[hsl(0,0%,88%)] text-xs font-semibold disabled:opacity-50">
-            {syncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Sync real funded accounts
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={syncReal} disabled={syncing}
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-[hsl(0,0%,88%)] text-xs font-semibold disabled:opacity-50">
+              {syncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Sync real funded accounts
+            </button>
+            <button onClick={fillTo100} disabled={seeding}
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-50">
+              {seeding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Fill board to 100
+            </button>
+            <button onClick={clearManual}
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-[hsl(0,0%,88%)] text-xs font-semibold text-[hsl(0,70%,45%)]">
+              <Trash2 size={14} /> Clear manual
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <input className={input} placeholder="Trader name" value={form.display_name} onChange={e => setForm({ ...form, display_name: e.target.value })} />
           <input className={input} placeholder="Country" value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} />
+          <input className={input} placeholder="Account label" value={form.account_label} onChange={e => setForm({ ...form, account_label: e.target.value })} />
+          <input className={input} placeholder="Avatar URL" value={form.avatar_url} onChange={e => setForm({ ...form, avatar_url: e.target.value })} />
           <input className={input} type="number" placeholder="Account size ($)" value={form.account_size} onChange={e => setForm({ ...form, account_size: e.target.value })} />
           <input className={input} type="number" placeholder="Gain %" value={form.gain_percentage} onChange={e => setForm({ ...form, gain_percentage: e.target.value })} />
           <input className={input} type="number" placeholder="Profit ($)" value={form.profit} onChange={e => setForm({ ...form, profit: e.target.value })} />
@@ -245,6 +331,8 @@ const FundedLeaderboardCMS = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-center">
                     <input className={input} value={editForm.display_name} onChange={e => setEditForm({ ...editForm, display_name: e.target.value })} />
                     <input className={input} value={editForm.country} onChange={e => setEditForm({ ...editForm, country: e.target.value })} />
+                    <input className={input} placeholder="Account label" value={editForm.account_label} onChange={e => setEditForm({ ...editForm, account_label: e.target.value })} />
+                    <input className={input} placeholder="Avatar URL" value={editForm.avatar_url} onChange={e => setEditForm({ ...editForm, avatar_url: e.target.value })} />
                     <input className={input} type="number" value={editForm.account_size} onChange={e => setEditForm({ ...editForm, account_size: e.target.value })} />
                     <input className={input} type="number" value={editForm.gain_percentage} onChange={e => setEditForm({ ...editForm, gain_percentage: e.target.value })} />
                     <input className={input} type="number" value={editForm.profit} onChange={e => setEditForm({ ...editForm, profit: e.target.value })} />
