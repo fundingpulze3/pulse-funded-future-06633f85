@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { db as supabase } from "@/integrations/db/client";
 import { toast } from "sonner";
-import { Trophy, Plus, Trash2, Loader2, Users, Crown } from "lucide-react";
+import { Trophy, Plus, Trash2, Loader2, Users, Crown, Ticket, Check } from "lucide-react";
+import { flagEmoji } from "@/lib/country";
 
 type Competition = {
   id: string;
@@ -22,7 +23,15 @@ type Participant = {
   account_label: string | null;
   gain_percentage: number | null;
   total_trades: number | null;
+  country_code?: string | null;
+  country_name?: string | null;
+  seat_status?: string | null;
+  seat_login?: string | null;
+  seat_password?: string | null;
+  seat_server?: string | null;
+  seat_link?: string | null;
 };
+
 
 const emptyForm = {
   name: "",
