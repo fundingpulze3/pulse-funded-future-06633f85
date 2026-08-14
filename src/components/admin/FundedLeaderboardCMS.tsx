@@ -281,17 +281,29 @@ const FundedLeaderboardCMS = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <BadgeDollarSign size={16} />
-            <h3 className="text-sm font-display font-semibold">Funded Leaderboard</h3>
+            <h3 className="text-sm font-display font-semibold">Funded Leaderboard · {rows.length} traders</h3>
           </div>
-          <button onClick={syncReal} disabled={syncing}
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-[hsl(0,0%,88%)] text-xs font-semibold disabled:opacity-50">
-            {syncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Sync real funded accounts
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={syncReal} disabled={syncing}
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-[hsl(0,0%,88%)] text-xs font-semibold disabled:opacity-50">
+              {syncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Sync real funded accounts
+            </button>
+            <button onClick={fillTo100} disabled={seeding}
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-50">
+              {seeding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Fill board to 100
+            </button>
+            <button onClick={clearManual}
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-[hsl(0,0%,88%)] text-xs font-semibold text-[hsl(0,70%,45%)]">
+              <Trash2 size={14} /> Clear manual
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <input className={input} placeholder="Trader name" value={form.display_name} onChange={e => setForm({ ...form, display_name: e.target.value })} />
           <input className={input} placeholder="Country" value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} />
+          <input className={input} placeholder="Account label" value={form.account_label} onChange={e => setForm({ ...form, account_label: e.target.value })} />
+          <input className={input} placeholder="Avatar URL" value={form.avatar_url} onChange={e => setForm({ ...form, avatar_url: e.target.value })} />
           <input className={input} type="number" placeholder="Account size ($)" value={form.account_size} onChange={e => setForm({ ...form, account_size: e.target.value })} />
           <input className={input} type="number" placeholder="Gain %" value={form.gain_percentage} onChange={e => setForm({ ...form, gain_percentage: e.target.value })} />
           <input className={input} type="number" placeholder="Profit ($)" value={form.profit} onChange={e => setForm({ ...form, profit: e.target.value })} />
