@@ -108,6 +108,8 @@ const Admin = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [syncingUsers, setSyncingUsers] = useState(false);
+
 
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
   const [editingChallengeId, setEditingChallengeId] = useState<string | null>(null);
