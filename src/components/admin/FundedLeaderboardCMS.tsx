@@ -160,13 +160,15 @@ const FundedLeaderboardCMS = () => {
   const payload = (f: typeof emptyForm) => ({
     display_name: f.display_name || "Trader",
     country: f.country || null,
+    avatar_url: f.avatar_url || null,
     account_size: f.account_size ? Number(f.account_size) : null,
     gain_percentage: f.gain_percentage ? Number(f.gain_percentage) : 0,
     profit: f.profit ? Number(f.profit) : 0,
     payout_total: f.payout_total ? Number(f.payout_total) : 0,
     total_trades: f.total_trades ? Number(f.total_trades) : 0,
     win_rate: f.win_rate ? Number(f.win_rate) : 0,
-    account_label: f.account_size ? `Funded · $${Number(f.account_size).toLocaleString()}` : null,
+    account_label: f.account_label
+      || (f.account_size ? `Funded · $${Number(f.account_size).toLocaleString()}` : null),
   });
 
   const add = async () => {
@@ -177,7 +179,6 @@ const FundedLeaderboardCMS = () => {
         id: crypto.randomUUID(),
         user_id: null,
         purchase_id: null,
-        avatar_url: null,
         source: "manual",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -194,11 +195,55 @@ const FundedLeaderboardCMS = () => {
     }
   };
 
+  /** Top the board up to 100 traders with generated entries. */
+  const fillTo100 = async () => {
+    const missing = 100 - rows.length;
+    if (missing <= 0) return toast.info("Board already has 100+ traders");
+    try {
+      setSeeding(true);
+      const now = new Date().toISOString();
+      const used = new Set(rows.map(r => (r.display_name || "").toLowerCase()));
+      let added = 0;
+      for (let i = 0; i < missing; i++) {
+        let t = makeFakeTrader();
+        let guard = 0;
+        while (used.has(t.display_name.toLowerCase()) && guard++ < 25) t = makeFakeTrader();
+        used.add(t.display_name.toLowerCase());
+        const { error } = await supabase.from("funded_leaderboard").insert({
+          id: crypto.randomUUID(),
+          user_id: null,
+          purchase_id: null,
+          source: "manual",
+          created_at: now,
+          updated_at: now,
+          ...t,
+        });
+        if (!error) added++;
+      }
+      toast.success(`Added ${added} traders — board now at 100`);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to generate");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const clearManual = async () => {
+    if (!confirm("Delete every manual (generated) entry?")) return;
+    const manual = rows.filter(r => r.source !== "real");
+    for (const r of manual) await supabase.from("funded_leaderboard").delete().eq("id", r.id);
+    toast.success(`Removed ${manual.length} manual entries`);
+    load();
+  };
+
   const startEdit = (r: Row) => {
     setEditId(r.id);
     setEditForm({
       display_name: r.display_name || "",
       country: r.country || "",
+      account_label: r.account_label || "",
+      avatar_url: r.avatar_url || "",
       account_size: String(r.account_size ?? ""),
       gain_percentage: String(r.gain_percentage ?? ""),
       profit: String(r.profit ?? ""),
