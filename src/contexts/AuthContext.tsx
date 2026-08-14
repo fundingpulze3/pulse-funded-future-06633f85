@@ -56,6 +56,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(currentSession?.user ?? null);
         setLoading(false);
 
+        // Mirror the signup into the app database (new users are created by an
+        // auth trigger the app DB doesn't see).
+        if ((event === "SIGNED_IN" || event === "USER_UPDATED") && currentSession?.user) {
+          supabase.functions.invoke("sync-profile", { body: {} }).catch(() => {});
+        }
+
+
         // Send password-changed alert
         if (event === "USER_UPDATED" && currentSession?.user) {
           supabase.functions

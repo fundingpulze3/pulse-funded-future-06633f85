@@ -108,6 +108,8 @@ const Admin = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [syncingUsers, setSyncingUsers] = useState(false);
+
 
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
   const [editingChallengeId, setEditingChallengeId] = useState<string | null>(null);
@@ -196,8 +198,26 @@ const Admin = () => {
     return allData;
   };
 
+  const syncMissingUsers = async () => {
+
+    setSyncingUsers(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-profile", {
+        body: { backfill: true },
+      });
+      if (error) throw error;
+      toast.success(`Synced ${(data as any)?.inserted ?? 0} new users`);
+      await fetchAll();
+    } catch (e: any) {
+      toast.error(e?.message || "Sync failed");
+    } finally {
+      setSyncingUsers(false);
+    }
+  };
+
   const fetchAll = async () => {
     try {
+
       const [profilesData, c, r, cp, pu, ur] = await Promise.all([
         fetchAllRows("profiles", "created_at", false),
         supabase.from("challenges").select("*").order("account_size", { ascending: true }),
@@ -705,11 +725,15 @@ const Admin = () => {
                   <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{visibleProfiles.length} registered users</p>
                 </div>
                 <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={syncMissingUsers} disabled={syncingUsers} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">
+                    {syncingUsers ? "Syncing…" : "Sync New Users"}
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => setImportUsersOpen(true)} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">
                     <Upload size={14} className="mr-1" /> Import Users
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => exportCSV(visibleProfiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
                 </div>
+
               </div>
               <ImportUsers open={importUsersOpen} onOpenChange={setImportUsersOpen} onImportComplete={fetchAll} />
               <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden overflow-x-auto">
