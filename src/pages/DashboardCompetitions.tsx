@@ -39,7 +39,15 @@ type Participant = {
   total_trades: number | null;
   win_rate: number | null;
   updated_at: string | null;
+  country_code?: string | null;
+  country_name?: string | null;
+  seat_status?: string | null;      // pending | issued
+  seat_login?: string | null;
+  seat_password?: string | null;
+  seat_server?: string | null;
+  seat_link?: string | null;        // cTrader investor token / link
 };
+
 
 type MyAccount = {
   purchaseId: string;
