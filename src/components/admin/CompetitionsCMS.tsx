@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { db as supabase } from "@/integrations/db/client";
 import { toast } from "sonner";
-import { Trophy, Plus, Trash2, Loader2, Users, Crown } from "lucide-react";
+import { Trophy, Plus, Trash2, Loader2, Users, Crown, Ticket, Check } from "lucide-react";
+import { flagEmoji } from "@/lib/country";
 
 type Competition = {
   id: string;
@@ -22,7 +23,15 @@ type Participant = {
   account_label: string | null;
   gain_percentage: number | null;
   total_trades: number | null;
+  country_code?: string | null;
+  country_name?: string | null;
+  seat_status?: string | null;
+  seat_login?: string | null;
+  seat_password?: string | null;
+  seat_server?: string | null;
+  seat_link?: string | null;
 };
+
 
 const emptyForm = {
   name: "",
@@ -40,6 +49,45 @@ const CompetitionsCMS = () => {
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [seatOpen, setSeatOpen] = useState<string | null>(null);
+  const [seatForm, setSeatForm] = useState({ seat_login: "", seat_password: "", seat_server: "", seat_link: "" });
+  const [issuing, setIssuing] = useState(false);
+
+  const openSeat = (p: Participant) => {
+    setSeatOpen(seatOpen === p.id ? null : p.id);
+    setSeatForm({
+      seat_login: p.seat_login || "",
+      seat_password: p.seat_password || "",
+      seat_server: p.seat_server || "",
+      seat_link: p.seat_link || "",
+    });
+  };
+
+  const issueSeat = async (p: Participant) => {
+    if (!seatForm.seat_login || !seatForm.seat_server) {
+      toast.error("Login and server are required");
+      return;
+    }
+    try {
+      setIssuing(true);
+      const patch = {
+        ...seatForm,
+        seat_status: "issued",
+        account_label: `Seat account · ${seatForm.seat_login}`,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("competition_participants").update(patch).eq("id", p.id);
+      if (error) throw error;
+      setParticipants(prev => prev.map(x => (x.id === p.id ? { ...x, ...patch } : x)));
+      setSeatOpen(null);
+      toast.success("Seat account issued");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to issue seat");
+    } finally {
+      setIssuing(false);
+    }
+  };
+
 
   useEffect(() => { load(); }, []);
 
@@ -160,22 +208,57 @@ const CompetitionsCMS = () => {
 
               {rows.length > 0 && (
                 <div className="divide-y divide-[hsl(0,0%,95%)]">
-                  {rows.slice(0, 15).map((p, i) => (
-                    <div key={p.id} className="flex items-center gap-3 py-2">
-                      <span className="w-6 text-xs font-semibold text-[hsl(0,0%,45%)] flex justify-center">
-                        {i === 0 ? <Crown size={13} className="text-[hsl(45,90%,45%)]" /> : i + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{p.display_name || "Trader"}</p>
-                        <p className="text-[10px] text-[hsl(0,0%,50%)] truncate">{p.account_label}</p>
+                  {rows.map((p, i) => (
+                    <div key={p.id} className="py-2">
+                      <div className="flex items-center gap-3">
+                        <span className="w-6 text-xs font-semibold text-[hsl(0,0%,45%)] flex justify-center">
+                          {i === 0 ? <Crown size={13} className="text-[hsl(45,90%,45%)]" /> : i + 1}
+                        </span>
+                        <span className="text-base leading-none" title={p.country_name || "Unknown"}>{flagEmoji(p.country_code)}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{p.display_name || "Trader"}</p>
+                          <p className="text-[10px] text-[hsl(0,0%,50%)] truncate">
+                            {[p.country_name, p.account_label].filter(Boolean).join(" · ")}
+                          </p>
+                        </div>
+                        {p.seat_status && (
+                          <button
+                            onClick={() => openSeat(p)}
+                            className={`inline-flex items-center gap-1 h-7 px-2 rounded-lg text-[11px] font-semibold border ${
+                              p.seat_status === "issued"
+                                ? "border-[hsl(142,50%,70%)] text-[hsl(142,60%,30%)] bg-[hsl(142,60%,96%)]"
+                                : "border-[hsl(45,80%,65%)] text-[hsl(38,80%,32%)] bg-[hsl(45,90%,95%)]"
+                            }`}
+                          >
+                            {p.seat_status === "issued" ? <Check size={12} /> : <Ticket size={12} />}
+                            {p.seat_status === "issued" ? "Seat issued" : "Issue seat"}
+                          </button>
+                        )}
+                        <span className="text-[11px] text-[hsl(0,0%,45%)]">{p.total_trades ?? 0} trades</span>
+                        <span className={`text-xs font-bold w-16 text-right ${(p.gain_percentage ?? 0) >= 0 ? "text-[hsl(142,60%,32%)]" : "text-[hsl(0,70%,45%)]"}`}>
+                          {(p.gain_percentage ?? 0) >= 0 ? "+" : ""}{(p.gain_percentage ?? 0).toFixed(2)}%
+                        </span>
                       </div>
-                      <span className="text-[11px] text-[hsl(0,0%,45%)]">{p.total_trades ?? 0} trades</span>
-                      <span className={`text-xs font-bold w-16 text-right ${(p.gain_percentage ?? 0) >= 0 ? "text-[hsl(142,60%,32%)]" : "text-[hsl(0,70%,45%)]"}`}>
-                        {(p.gain_percentage ?? 0) >= 0 ? "+" : ""}{(p.gain_percentage ?? 0).toFixed(2)}%
-                      </span>
+
+                      {seatOpen === p.id && (
+                        <div className="mt-2 ml-9 grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+                          <input className={input} placeholder="Login" value={seatForm.seat_login} onChange={e => setSeatForm({ ...seatForm, seat_login: e.target.value })} />
+                          <input className={input} placeholder="Password" value={seatForm.seat_password} onChange={e => setSeatForm({ ...seatForm, seat_password: e.target.value })} />
+                          <input className={input} placeholder="Server" value={seatForm.seat_server} onChange={e => setSeatForm({ ...seatForm, seat_server: e.target.value })} />
+                          <input className={input} placeholder="Report link (cTrader investor)" value={seatForm.seat_link} onChange={e => setSeatForm({ ...seatForm, seat_link: e.target.value })} />
+                          <button
+                            onClick={() => issueSeat(p)}
+                            disabled={issuing}
+                            className="h-9 px-4 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-50 md:col-span-1"
+                          >
+                            {issuing ? "Saving…" : "Issue seat account"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
+
               )}
             </div>
           );

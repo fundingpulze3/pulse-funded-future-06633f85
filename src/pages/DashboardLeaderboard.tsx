@@ -4,6 +4,8 @@ import { db as supabase } from "@/integrations/db/client";
 import { useNavigate } from "react-router-dom";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { Crown, Medal, Loader2, BadgeDollarSign, TrendingUp, Search } from "lucide-react";
+import { flagEmoji, toCountryCode } from "@/lib/country";
+
 
 const BLUE = "207,90%,77%";
 const GREEN = "142,60%,50%";
@@ -163,6 +165,9 @@ const DashboardLeaderboard = () => {
                           {(r.display_name || "T")[0].toUpperCase()}
                         </div>
                       )}
+                      <span className="text-base leading-none" title={r.country || "Unknown"}>
+                        {flagEmoji(toCountryCode(r.country))}
+                      </span>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold truncate">
                           {r.display_name || "Trader"}
@@ -173,6 +178,7 @@ const DashboardLeaderboard = () => {
                             .filter(Boolean).join(" · ") || "—"}
                         </p>
                       </div>
+
                       <div className="hidden sm:block text-right w-20">
                         <p className="text-[10px] text-[hsl(220,15%,45%)]">Payouts</p>
                         <p className="text-xs font-semibold">{money(r.payout_total)}</p>
