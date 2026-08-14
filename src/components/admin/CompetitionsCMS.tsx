@@ -19,12 +19,14 @@ type Competition = {
 type Participant = {
   id: string;
   competition_id: string;
+  user_id?: string | null;
   display_name: string | null;
   account_label: string | null;
   gain_percentage: number | null;
   total_trades: number | null;
   country_code?: string | null;
   country_name?: string | null;
+  account_size?: number | null;
   seat_status?: string | null;
   seat_login?: string | null;
   seat_password?: string | null;
