@@ -199,7 +199,25 @@ const Admin = () => {
   };
 
   const fetchAll = async () => {
+  const syncMissingUsers = async () => {
+    setSyncingUsers(true);
     try {
+      const { data, error } = await supabase.functions.invoke("sync-profile", {
+        body: { backfill: true },
+      });
+      if (error) throw error;
+      toast.success(`Synced ${(data as any)?.inserted ?? 0} new users`);
+      await fetchAll();
+    } catch (e: any) {
+      toast.error(e?.message || "Sync failed");
+    } finally {
+      setSyncingUsers(false);
+    }
+  };
+
+  const fetchAll = async () => {
+    try {
+
       const [profilesData, c, r, cp, pu, ur] = await Promise.all([
         fetchAllRows("profiles", "created_at", false),
         supabase.from("challenges").select("*").order("account_size", { ascending: true }),
