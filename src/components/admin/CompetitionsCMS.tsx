@@ -19,12 +19,14 @@ type Competition = {
 type Participant = {
   id: string;
   competition_id: string;
+  user_id?: string | null;
   display_name: string | null;
   account_label: string | null;
   gain_percentage: number | null;
   total_trades: number | null;
   country_code?: string | null;
   country_name?: string | null;
+  account_size?: number | null;
   seat_status?: string | null;
   seat_login?: string | null;
   seat_password?: string | null;
@@ -50,8 +52,9 @@ const CompetitionsCMS = () => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [seatOpen, setSeatOpen] = useState<string | null>(null);
-  const [seatForm, setSeatForm] = useState({ seat_login: "", seat_password: "", seat_server: "", seat_link: "" });
+  const [seatForm, setSeatForm] = useState({ seat_login: "", seat_password: "", seat_server: "", seat_link: "", account_size: "100000" });
   const [issuing, setIssuing] = useState(false);
+  const [emails, setEmails] = useState<Record<string, string>>({});
 
   const openSeat = (p: Participant) => {
     setSeatOpen(seatOpen === p.id ? null : p.id);
@@ -60,6 +63,7 @@ const CompetitionsCMS = () => {
       seat_password: p.seat_password || "",
       seat_server: p.seat_server || "",
       seat_link: p.seat_link || "",
+      account_size: String(p.account_size ?? 100000),
     });
   };
 
@@ -70,17 +74,22 @@ const CompetitionsCMS = () => {
     }
     try {
       setIssuing(true);
+      const size = Number(seatForm.account_size) || 100000;
       const patch = {
-        ...seatForm,
+        seat_login: seatForm.seat_login,
+        seat_password: seatForm.seat_password,
+        seat_server: seatForm.seat_server,
+        seat_link: seatForm.seat_link,
+        account_size: size,
         seat_status: "issued",
-        account_label: `Seat account · ${seatForm.seat_login}`,
+        account_label: `Seat account · $${size.toLocaleString()}`,
         updated_at: new Date().toISOString(),
       };
       const { error } = await supabase.from("competition_participants").update(patch).eq("id", p.id);
       if (error) throw error;
       setParticipants(prev => prev.map(x => (x.id === p.id ? { ...x, ...patch } : x)));
       setSeatOpen(null);
-      toast.success("Seat account issued");
+      toast.success(seatForm.seat_link ? "Seat issued — live sync started" : "Seat account issued");
     } catch (e: any) {
       toast.error(e?.message || "Failed to issue seat");
     } finally {
@@ -93,14 +102,19 @@ const CompetitionsCMS = () => {
 
   const load = async () => {
     setLoading(true);
-    const [c, p] = await Promise.all([
+    const [c, p, pr] = await Promise.all([
       supabase.from("competitions").select("*").order("starts_at", { ascending: false }),
       supabase.from("competition_participants").select("*"),
+      supabase.from("profiles").select("user_id, email, display_name"),
     ]);
     setComps(((c.data as any[]) ?? []) as Competition[]);
     setParticipants(((p.data as any[]) ?? []) as Participant[]);
+    const map: Record<string, string> = {};
+    ((pr.data as any[]) ?? []).forEach((r: any) => { if (r.user_id) map[r.user_id] = r.email || ""; });
+    setEmails(map);
     setLoading(false);
   };
+
 
   const create = async () => {
     if (!form.name || !form.starts_at || !form.ends_at) {
@@ -147,8 +161,62 @@ const CompetitionsCMS = () => {
 
   const input = "w-full h-9 px-3 rounded-lg border border-[hsl(0,0%,88%)] text-xs bg-white focus:outline-none focus:ring-2 focus:ring-black";
 
+  const pendingRequests = participants.filter(p => !p.seat_login || p.seat_status === "pending");
+
   return (
     <div className="space-y-4">
+      {/* Account requests */}
+      <div className="bg-white rounded-xl border border-[hsl(0,0%,90%)] p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Ticket size={16} />
+          <h3 className="text-sm font-display font-semibold">Account requests</h3>
+          <span className="ml-1 inline-flex items-center h-5 px-2 rounded-full bg-[hsl(45,90%,94%)] border border-[hsl(45,80%,70%)] text-[10px] font-bold text-[hsl(38,80%,32%)]">
+            {pendingRequests.length} account needed
+          </span>
+        </div>
+        {pendingRequests.length === 0 ? (
+          <p className="text-xs text-[hsl(0,0%,50%)]">Everyone who joined has an account assigned.</p>
+        ) : (
+          <div className="divide-y divide-[hsl(0,0%,95%)]">
+            {pendingRequests.map(p => {
+              const comp = comps.find(c => c.id === p.competition_id);
+              return (
+                <div key={p.id} className="py-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-base leading-none" title={p.country_name || "Unknown"}>{flagEmoji(p.country_code)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold truncate">{p.display_name || "Trader"}</p>
+                      <p className="text-[10px] text-[hsl(0,0%,50%)] truncate">
+                        {(p.user_id && emails[p.user_id]) || "no email on file"} · {comp?.name || "competition"}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 h-6 px-2 rounded-full bg-[hsl(45,90%,95%)] border border-[hsl(45,80%,70%)] text-[10px] font-bold text-[hsl(38,80%,32%)]">
+                      <Ticket size={11} /> Account needed
+                    </span>
+                    <button onClick={() => openSeat(p)} className="h-8 px-3 rounded-lg bg-black text-white text-[11px] font-semibold">
+                      {seatOpen === p.id ? "Close" : "Assign account"}
+                    </button>
+                  </div>
+
+                  {seatOpen === p.id && (
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <input className={input} placeholder="Login" value={seatForm.seat_login} onChange={e => setSeatForm({ ...seatForm, seat_login: e.target.value })} />
+                      <input className={input} placeholder="Password" value={seatForm.seat_password} onChange={e => setSeatForm({ ...seatForm, seat_password: e.target.value })} />
+                      <input className={input} placeholder="Server" value={seatForm.seat_server} onChange={e => setSeatForm({ ...seatForm, seat_server: e.target.value })} />
+                      <input className={input} type="number" placeholder="Account size ($)" value={seatForm.account_size} onChange={e => setSeatForm({ ...seatForm, account_size: e.target.value })} />
+                      <input className={`${input} md:col-span-2`} placeholder="cTrader investor link (starts live sync)" value={seatForm.seat_link} onChange={e => setSeatForm({ ...seatForm, seat_link: e.target.value })} />
+                      <button onClick={() => issueSeat(p)} disabled={issuing} className="h-9 px-4 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-50">
+                        {issuing ? "Saving…" : "Issue account & start sync"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Create */}
       <div className="bg-white rounded-xl border border-[hsl(0,0%,90%)] p-5">
         <div className="flex items-center gap-2 mb-4">
