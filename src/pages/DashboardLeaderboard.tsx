@@ -4,6 +4,8 @@ import { db as supabase } from "@/integrations/db/client";
 import { useNavigate } from "react-router-dom";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { Crown, Medal, Loader2, BadgeDollarSign, TrendingUp, Search } from "lucide-react";
+import { flagEmoji, toCountryCode } from "@/lib/country";
+
 
 const BLUE = "207,90%,77%";
 const GREEN = "142,60%,50%";
