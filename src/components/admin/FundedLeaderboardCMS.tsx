@@ -68,6 +68,7 @@ const FundedLeaderboardCMS = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ ...emptyForm });
 
