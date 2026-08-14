@@ -359,64 +359,126 @@ const DashboardCompetitions = () => {
               {/* My standing / join */}
               <div className="rounded-2xl border border-[hsl(220,15%,12%)] bg-[hsl(220,20%,6%)] p-5">
                 {myEntry ? (
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-11 h-11 rounded-xl bg-[hsl(${BLUE})]/15 flex items-center justify-center font-bold text-[hsl(${BLUE})]`}>
-                        #{myRank}
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-11 h-11 rounded-xl bg-[hsl(${BLUE})]/15 flex items-center justify-center font-bold text-[hsl(${BLUE})]`}>
+                          #{myRank}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold flex items-center gap-2">
+                            Your standing
+                            <span title={myEntry.country_name || ""}>{flagEmoji(myEntry.country_code)}</span>
+                          </p>
+                          <p className="text-[11px] text-[hsl(220,15%,50%)]">{myEntry.account_label}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold">Your standing</p>
-                        <p className="text-[11px] text-[hsl(220,15%,50%)]">{myEntry.account_label}</p>
+                      <div className="flex gap-6 text-right">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)]">Gain</p>
+                          <p className={`text-lg font-bold ${(myEntry.gain_percentage ?? 0) >= 0 ? `text-[hsl(${GREEN})]` : `text-[hsl(${RED})]`}`}>
+                            {pct(myEntry.gain_percentage)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)]">Trades</p>
+                          <p className="text-lg font-bold">{myEntry.total_trades ?? 0}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)]">Win rate</p>
+                          <p className="text-lg font-bold">{(myEntry.win_rate ?? 0).toFixed(1)}%</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-6 text-right">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)]">Gain</p>
-                        <p className={`text-lg font-bold ${(myEntry.gain_percentage ?? 0) >= 0 ? `text-[hsl(${GREEN})]` : `text-[hsl(${RED})]`}`}>
-                          {pct(myEntry.gain_percentage)}
+
+                    {/* Seat account state */}
+                    {myEntry.seat_status === "pending" && (
+                      <div className={`rounded-xl border border-[hsl(${GOLD})]/25 bg-[hsl(${GOLD})]/8 p-4 flex items-start gap-3`}>
+                        <Ticket size={16} className={`text-[hsl(${GOLD})] mt-0.5`} />
+                        <div>
+                          <p className="text-xs font-semibold">Seat account — awaiting issue</p>
+                          <p className="text-[11px] text-[hsl(220,15%,55%)] mt-1">
+                            You're registered for this competition. Our team is preparing your seat account —
+                            login details and the live equity report link will appear right here once issued.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {myEntry.seat_status === "issued" && (
+                      <div className="rounded-xl border border-[hsl(220,15%,14%)] bg-[hsl(220,20%,8%)] p-4 space-y-3">
+                        <p className="text-xs font-semibold flex items-center gap-2">
+                          <KeyRound size={14} className={`text-[hsl(${GREEN})]`} /> Your seat account
                         </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {[
+                            { l: "Login", v: myEntry.seat_login },
+                            { l: "Password", v: myEntry.seat_password },
+                            { l: "Server", v: myEntry.seat_server },
+                          ].map(f => (
+                            <div key={f.l}>
+                              <p className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)]">{f.l}</p>
+                              <p className="text-xs font-mono break-all">{f.v || "—"}</p>
+                            </div>
+                          ))}
+                        </div>
+                        {myEntry.seat_link && (
+                          <div className="pt-2">
+                            <p className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)] mb-2">Live equity report</p>
+                            <CTraderStats token={parseCTraderToken(myEntry.seat_link).token} />
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)]">Trades</p>
-                        <p className="text-lg font-bold">{myEntry.total_trades ?? 0}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)]">Win rate</p>
-                        <p className="text-lg font-bold">{(myEntry.win_rate ?? 0).toFixed(1)}%</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ) : activeComp.status !== "active" ? (
                   <p className="text-xs text-[hsl(220,15%,55%)]">This competition has ended.</p>
                 ) : (
-                  <div className="flex flex-wrap items-end gap-3">
-                    <div className="flex-1 min-w-[220px]">
-                      <label className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)] mb-1 block">
-                        Enter with an account
-                      </label>
-                      <select
-                        value={joinAccount}
-                        onChange={e => setJoinAccount(e.target.value)}
-                        className="w-full h-10 px-3 rounded-xl bg-[hsl(220,20%,8%)] border border-[hsl(220,15%,14%)] text-xs text-white focus:outline-none focus:border-[hsl(207,90%,77%)]"
-                      >
-                        <option value="">Select account…</option>
-                        {availableAccounts.map(a => (
-                          <option key={a.purchaseId} value={a.purchaseId}>{a.label}</option>
-                        ))}
-                      </select>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="flex-1 min-w-[220px]">
+                        <label className="text-[10px] uppercase tracking-wider text-[hsl(220,15%,45%)] mb-1 block">
+                          Enter with one of your accounts
+                        </label>
+                        <select
+                          value={joinAccount}
+                          onChange={e => setJoinAccount(e.target.value)}
+                          className="w-full h-10 px-3 rounded-xl bg-[hsl(220,20%,8%)] border border-[hsl(220,15%,14%)] text-xs text-white focus:outline-none focus:border-[hsl(207,90%,77%)]"
+                        >
+                          <option value="">Select account…</option>
+                          {availableAccounts.map(a => (
+                            <option key={a.purchaseId} value={a.purchaseId}>{a.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <Button onClick={() => join("account")} disabled={joining || !joinAccount} className="h-10">
+                        {joining ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} className="mr-1" />}
+                        Join Competition
+                      </Button>
                     </div>
-                    <Button onClick={join} disabled={joining || !joinAccount} className="h-10">
-                      {joining ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} className="mr-1" />}
-                      Join Competition
-                    </Button>
-                    {availableAccounts.length === 0 && (
-                      <p className="text-[11px] text-[hsl(220,15%,50%)] w-full">
-                        You need a trading account to enter — it's free to join with any account.{" "}
-                        <button className={`text-[hsl(${BLUE})] underline`} onClick={() => navigate("/#challenges")}>Get one</button>
-                      </p>
-                    )}
+
+                    <div className="rounded-xl border border-[hsl(220,15%,14%)] bg-[hsl(220,20%,8%)] p-4 flex flex-wrap items-center justify-between gap-3">
+                      <div className="max-w-md">
+                        <p className="text-xs font-semibold flex items-center gap-2">
+                          <Ticket size={14} className={`text-[hsl(${GOLD})]`} /> No account? Grab a free seat account
+                        </p>
+                        <p className="text-[11px] text-[hsl(220,15%,55%)] mt-1">
+                          No purchase required. Request a seat and our team issues you a competition
+                          seat account with a live report link so you can watch your equity update.
+                        </p>
+                      </div>
+                      <Button variant="outline" onClick={() => join("seat")} disabled={joining} className="h-10">
+                        {joining ? <Loader2 size={14} className="animate-spin" /> : <Ticket size={14} className="mr-1" />}
+                        Request seat account
+                      </Button>
+                    </div>
+
+                    <p className="text-[11px] text-[hsl(220,15%,45%)] flex items-center gap-2">
+                      Joining from {flagEmoji(country?.code)} {country?.name || "detecting…"}
+                    </p>
                   </div>
                 )}
+
               </div>
 
               {/* Leaderboard */}
