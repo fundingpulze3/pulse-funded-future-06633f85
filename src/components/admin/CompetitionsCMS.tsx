@@ -52,8 +52,9 @@ const CompetitionsCMS = () => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [seatOpen, setSeatOpen] = useState<string | null>(null);
-  const [seatForm, setSeatForm] = useState({ seat_login: "", seat_password: "", seat_server: "", seat_link: "" });
+  const [seatForm, setSeatForm] = useState({ seat_login: "", seat_password: "", seat_server: "", seat_link: "", account_size: "100000" });
   const [issuing, setIssuing] = useState(false);
+  const [emails, setEmails] = useState<Record<string, string>>({});
 
   const openSeat = (p: Participant) => {
     setSeatOpen(seatOpen === p.id ? null : p.id);
@@ -62,6 +63,7 @@ const CompetitionsCMS = () => {
       seat_password: p.seat_password || "",
       seat_server: p.seat_server || "",
       seat_link: p.seat_link || "",
+      account_size: String(p.account_size ?? 100000),
     });
   };
 
@@ -72,17 +74,22 @@ const CompetitionsCMS = () => {
     }
     try {
       setIssuing(true);
+      const size = Number(seatForm.account_size) || 100000;
       const patch = {
-        ...seatForm,
+        seat_login: seatForm.seat_login,
+        seat_password: seatForm.seat_password,
+        seat_server: seatForm.seat_server,
+        seat_link: seatForm.seat_link,
+        account_size: size,
         seat_status: "issued",
-        account_label: `Seat account · ${seatForm.seat_login}`,
+        account_label: `Seat account · $${size.toLocaleString()}`,
         updated_at: new Date().toISOString(),
       };
       const { error } = await supabase.from("competition_participants").update(patch).eq("id", p.id);
       if (error) throw error;
       setParticipants(prev => prev.map(x => (x.id === p.id ? { ...x, ...patch } : x)));
       setSeatOpen(null);
-      toast.success("Seat account issued");
+      toast.success(seatForm.seat_link ? "Seat issued — live sync started" : "Seat account issued");
     } catch (e: any) {
       toast.error(e?.message || "Failed to issue seat");
     } finally {
@@ -95,14 +102,19 @@ const CompetitionsCMS = () => {
 
   const load = async () => {
     setLoading(true);
-    const [c, p] = await Promise.all([
+    const [c, p, pr] = await Promise.all([
       supabase.from("competitions").select("*").order("starts_at", { ascending: false }),
       supabase.from("competition_participants").select("*"),
+      supabase.from("profiles").select("user_id, email, display_name"),
     ]);
     setComps(((c.data as any[]) ?? []) as Competition[]);
     setParticipants(((p.data as any[]) ?? []) as Participant[]);
+    const map: Record<string, string> = {};
+    ((pr.data as any[]) ?? []).forEach((r: any) => { if (r.user_id) map[r.user_id] = r.email || ""; });
+    setEmails(map);
     setLoading(false);
   };
+
 
   const create = async () => {
     if (!form.name || !form.starts_at || !form.ends_at) {
