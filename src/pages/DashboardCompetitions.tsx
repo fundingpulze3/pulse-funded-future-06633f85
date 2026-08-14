@@ -5,9 +5,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import CTraderStats from "@/components/CTraderStats";
+import { detectCountry, flagEmoji, type DetectedCountry } from "@/lib/country";
+import { parseCTraderToken } from "@/lib/ctrader";
 import {
-  Trophy, Medal, Crown, Loader2, Timer, Users, Flame, TrendingUp, Gift,
+  Trophy, Medal, Crown, Loader2, Timer, Users, Flame, TrendingUp, Gift, Ticket, KeyRound,
 } from "lucide-react";
+
 
 const BLUE = "207,90%,77%";
 const GREEN = "142,60%,50%";
