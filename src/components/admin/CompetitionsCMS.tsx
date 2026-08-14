@@ -208,22 +208,57 @@ const CompetitionsCMS = () => {
 
               {rows.length > 0 && (
                 <div className="divide-y divide-[hsl(0,0%,95%)]">
-                  {rows.slice(0, 15).map((p, i) => (
-                    <div key={p.id} className="flex items-center gap-3 py-2">
-                      <span className="w-6 text-xs font-semibold text-[hsl(0,0%,45%)] flex justify-center">
-                        {i === 0 ? <Crown size={13} className="text-[hsl(45,90%,45%)]" /> : i + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{p.display_name || "Trader"}</p>
-                        <p className="text-[10px] text-[hsl(0,0%,50%)] truncate">{p.account_label}</p>
+                  {rows.map((p, i) => (
+                    <div key={p.id} className="py-2">
+                      <div className="flex items-center gap-3">
+                        <span className="w-6 text-xs font-semibold text-[hsl(0,0%,45%)] flex justify-center">
+                          {i === 0 ? <Crown size={13} className="text-[hsl(45,90%,45%)]" /> : i + 1}
+                        </span>
+                        <span className="text-base leading-none" title={p.country_name || "Unknown"}>{flagEmoji(p.country_code)}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{p.display_name || "Trader"}</p>
+                          <p className="text-[10px] text-[hsl(0,0%,50%)] truncate">
+                            {[p.country_name, p.account_label].filter(Boolean).join(" · ")}
+                          </p>
+                        </div>
+                        {p.seat_status && (
+                          <button
+                            onClick={() => openSeat(p)}
+                            className={`inline-flex items-center gap-1 h-7 px-2 rounded-lg text-[11px] font-semibold border ${
+                              p.seat_status === "issued"
+                                ? "border-[hsl(142,50%,70%)] text-[hsl(142,60%,30%)] bg-[hsl(142,60%,96%)]"
+                                : "border-[hsl(45,80%,65%)] text-[hsl(38,80%,32%)] bg-[hsl(45,90%,95%)]"
+                            }`}
+                          >
+                            {p.seat_status === "issued" ? <Check size={12} /> : <Ticket size={12} />}
+                            {p.seat_status === "issued" ? "Seat issued" : "Issue seat"}
+                          </button>
+                        )}
+                        <span className="text-[11px] text-[hsl(0,0%,45%)]">{p.total_trades ?? 0} trades</span>
+                        <span className={`text-xs font-bold w-16 text-right ${(p.gain_percentage ?? 0) >= 0 ? "text-[hsl(142,60%,32%)]" : "text-[hsl(0,70%,45%)]"}`}>
+                          {(p.gain_percentage ?? 0) >= 0 ? "+" : ""}{(p.gain_percentage ?? 0).toFixed(2)}%
+                        </span>
                       </div>
-                      <span className="text-[11px] text-[hsl(0,0%,45%)]">{p.total_trades ?? 0} trades</span>
-                      <span className={`text-xs font-bold w-16 text-right ${(p.gain_percentage ?? 0) >= 0 ? "text-[hsl(142,60%,32%)]" : "text-[hsl(0,70%,45%)]"}`}>
-                        {(p.gain_percentage ?? 0) >= 0 ? "+" : ""}{(p.gain_percentage ?? 0).toFixed(2)}%
-                      </span>
+
+                      {seatOpen === p.id && (
+                        <div className="mt-2 ml-9 grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+                          <input className={input} placeholder="Login" value={seatForm.seat_login} onChange={e => setSeatForm({ ...seatForm, seat_login: e.target.value })} />
+                          <input className={input} placeholder="Password" value={seatForm.seat_password} onChange={e => setSeatForm({ ...seatForm, seat_password: e.target.value })} />
+                          <input className={input} placeholder="Server" value={seatForm.seat_server} onChange={e => setSeatForm({ ...seatForm, seat_server: e.target.value })} />
+                          <input className={input} placeholder="Report link (cTrader investor)" value={seatForm.seat_link} onChange={e => setSeatForm({ ...seatForm, seat_link: e.target.value })} />
+                          <button
+                            onClick={() => issueSeat(p)}
+                            disabled={issuing}
+                            className="h-9 px-4 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-50 md:col-span-1"
+                          >
+                            {issuing ? "Saving…" : "Issue seat account"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
+
               )}
             </div>
           );
