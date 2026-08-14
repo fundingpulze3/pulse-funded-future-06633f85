@@ -705,11 +705,15 @@ const Admin = () => {
                   <p className="text-xs text-[hsl(0,0%,50%)] mt-0.5">{visibleProfiles.length} registered users</p>
                 </div>
                 <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={syncMissingUsers} disabled={syncingUsers} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">
+                    {syncingUsers ? "Syncing…" : "Sync New Users"}
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => setImportUsersOpen(true)} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">
                     <Upload size={14} className="mr-1" /> Import Users
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => exportCSV(visibleProfiles, "users")} className="text-xs rounded-lg border-[hsl(0,0%,88%)]">Export CSV</Button>
                 </div>
+
               </div>
               <ImportUsers open={importUsersOpen} onOpenChange={setImportUsersOpen} onImportComplete={fetchAll} />
               <div className="bg-[hsl(0,0%,100%)] border border-[hsl(0,0%,90%)] rounded-xl overflow-hidden overflow-x-auto">
