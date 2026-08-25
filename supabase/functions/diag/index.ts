@@ -29,6 +29,12 @@ Deno.serve(async (req) => {
     }
   }
 
+  out.user_roles = await db.collection("user_roles").find({}).toArray();
+  out.counts = {
+    profiles: await db.collection("profiles").countDocuments(),
+    purchases: await db.collection("challenge_purchases").countDocuments(),
+  };
+
   // 2. indexes present?
   out.indexes = {
     page_visits: await db.collection("page_visits").indexes(),
