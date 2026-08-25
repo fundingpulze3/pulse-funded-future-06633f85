@@ -27,7 +27,9 @@ export default function UPIOrdersCMS({
 
   const filtered = useMemo(() => {
     let list = upiOrders;
-    if (filter !== "all") list = list.filter(p => p.payment_status === filter);
+    if (filter === "completed") list = list.filter(p => ["completed", "paid", "confirmed"].includes(p.payment_status));
+    else if (filter === "failed") list = list.filter(p => ["failed", "expired"].includes(p.payment_status));
+    else if (filter !== "all") list = list.filter(p => p.payment_status === filter);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(p => {
@@ -115,6 +117,7 @@ export default function UPIOrdersCMS({
     { key: "all", label: "All" },
     { key: "pending", label: "Pending" },
     { key: "completed", label: "Confirmed" },
+    { key: "failed", label: "Failed" },
     { key: "cancelled", label: "Rejected" },
   ];
 
@@ -126,7 +129,7 @@ export default function UPIOrdersCMS({
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {filters.map(f => (
           <button
             key={f.key}

@@ -223,7 +223,10 @@ const Admin = () => {
         supabase.from("challenges").select("*").order("account_size", { ascending: true }),
         supabase.from("affiliate_referrals").select("*").order("created_at", { ascending: false }),
         supabase.from("coupons").select("*").order("created_at", { ascending: false }),
-        supabase.from("challenge_purchases").select("*").order("created_at", { ascending: false }),
+        // BUG: this was the only table fetched WITHOUT fetchAllRows, so it was
+        // capped at the backend's default page size. Every other table here is
+        // paginated. Purchases are the one place a silent cut-off is expensive.
+        fetchAllRows("challenge_purchases", "created_at", false),
         supabase.from("user_roles").select("*"),
       ]);
 
@@ -231,7 +234,7 @@ const Admin = () => {
       if (c.data) setChallenges(c.data);
       if (r.data) setReferrals(r.data);
       if (cp.data) setCoupons(cp.data);
-      if (pu.data) setPurchases(pu.data);
+      if (pu) setPurchases(Array.isArray(pu) ? pu : (pu as any).data || []);
       if (ur.data) {
         const roleMap: Record<string, string> = {};
         ur.data.forEach((r: any) => { roleMap[r.user_id] = r.role; });

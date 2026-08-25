@@ -25,19 +25,26 @@ Deno.serve(async (req) => {
     
     // Verify IPN signature using IPN Secret (NOT API key)
     const receivedSig = req.headers.get("x-nowpayments-sig");
-    if (receivedSig) {
+    // FAIL CLOSED. This used to be wrapped in `if (receivedSig)` with an else
+    // branch that logged a warning and processed anyway, so anyone who POSTed
+    // here WITHOUT the x-nowpayments-sig header skipped verification entirely
+    // and could mark any order paid by guessing an order_id. Missing signature
+    // is now a rejection, not a shortcut.
+    if (!receivedSig) {
+      console.error("Missing x-nowpayments-sig header, rejecting");
+      return new Response("Missing signature", { status: 401 });
+    }
+    {
       const sortedBody = JSON.stringify(sortObject(body));
       const hmac = createHmac("sha512", IPN_SECRET);
       hmac.update(sortedBody);
       const expectedSig = hmac.digest("hex");
-      
+
       if (receivedSig !== expectedSig) {
         console.error("Invalid IPN signature. Received:", receivedSig, "Expected:", expectedSig);
         return new Response("Invalid signature", { status: 403 });
       }
       console.log("IPN signature verified successfully");
-    } else {
-      console.warn("No IPN signature header received - processing anyway");
     }
 
     const { payment_status, order_id } = body;
@@ -127,7 +134,14 @@ Deno.serve(async (req) => {
           }),
         });
       } catch (e) { console.error("Purchase email failed:", e); }
-    } else if (payment_status === "failed" || payment_status === "expired") {
+    } else if (payment_status === "partially_paid") {
+      // Underpaid. Previously fell through and was silently ignored, so the
+      // order sat on "pending" forever with no explanation anywhere in admin.
+      await adminClient
+        .from("challenge_purchases")
+        .update({ payment_status: "pending", status: "partially_paid" })
+        .eq("id", order_id);
+    } else if (payment_status === "failed" || payment_status === "expired" || payment_status === "refunded") {
       await adminClient
         .from("challenge_purchases")
         .update({ payment_status: "failed" })

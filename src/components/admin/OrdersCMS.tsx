@@ -14,7 +14,11 @@ interface OrdersCMSProps {
   onRefresh: () => void;
 }
 
-type StatusFilter = "all" | "pending" | "completed" | "cancelled";
+// The app WRITES pending | completed | failed. It previously only offered tabs
+// for pending | completed | cancelled, so a failed crypto payment landed in a
+// status no tab displayed and looked like it had vanished. "cancelled" is kept
+// for legacy rows.
+type StatusFilter = "all" | "pending" | "completed" | "failed" | "cancelled";
 
 export default function OrdersCMS({
   purchases, profiles, challenges, getProfileName, getProfileByUserId, getChallengeNameById, onRefresh,
@@ -25,7 +29,9 @@ export default function OrdersCMS({
 
   const filtered = useMemo(() => {
     let list = purchases;
-    if (filter !== "all") list = list.filter(p => p.payment_status === filter);
+    if (filter === "completed") list = list.filter(p => ["completed", "paid", "confirmed"].includes(p.payment_status));
+    else if (filter === "failed") list = list.filter(p => ["failed", "expired"].includes(p.payment_status));
+    else if (filter !== "all") list = list.filter(p => p.payment_status === filter);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(p => {
@@ -40,7 +46,11 @@ export default function OrdersCMS({
   const counts = useMemo(() => ({
     all: purchases.length,
     pending: purchases.filter(p => p.payment_status === "pending").length,
-    completed: purchases.filter(p => p.payment_status === "completed").length,
+    // Treat the synonyms the codebase reads for elsewhere as completed, so a
+    // paid order can never be invisible just because a gateway used a different
+    // word for the same thing.
+    completed: purchases.filter(p => ["completed", "paid", "confirmed"].includes(p.payment_status)).length,
+    failed: purchases.filter(p => ["failed", "expired"].includes(p.payment_status)).length,
     cancelled: purchases.filter(p => p.payment_status === "cancelled").length,
   }), [purchases]);
 
@@ -138,6 +148,7 @@ export default function OrdersCMS({
     { key: "all", label: "All", color: "" },
     { key: "pending", label: "Pending", color: "bg-amber-100 text-amber-700" },
     { key: "completed", label: "Completed", color: "bg-emerald-100 text-emerald-700" },
+    { key: "failed", label: "Failed", color: "bg-red-100 text-red-700" },
     { key: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-700" },
   ];
 
@@ -178,7 +189,7 @@ export default function OrdersCMS({
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {filters.map(f => (
           <button
             key={f.key}
