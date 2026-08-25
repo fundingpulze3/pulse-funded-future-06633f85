@@ -19,6 +19,11 @@ const IDEATE = process.env.BLOG_ENGINE_IDEATE_MODEL || "claude-haiku-4-5";
 const PRICE_IN = num("BLOG_ENGINE_PRICE_IN", 3), PRICE_OUT = num("BLOG_ENGINE_PRICE_OUT", 15);
 const DAILY_CAP = num("BLOG_ENGINE_DAILY_CAP", 10), DAILY_USD_CAP = num("BLOG_ENGINE_DAILY_USD_CAP", 0.60);
 const PER_BLOG_USD_CAP = num("BLOG_ENGINE_PER_BLOG_USD_CAP", 0.15);
+// Attempts, not successes. A day of pure failures used to be uncapped.
+const DAILY_ATTEMPT_CAP = num("BLOG_ENGINE_DAILY_ATTEMPT_CAP", 20);
+// Stop entirely after this many consecutive failures.
+const MAX_CONSECUTIVE_FAILS = num("BLOG_ENGINE_MAX_CONSECUTIVE_FAILS", 3);
+let consecutiveFails = 0;
 const SITE_URL = (process.env.SITE_URL || "https://fundingpulze.com").replace(/\/$/, "");
 const SLOTS_FALLBACK = process.env.SLOTS || "09:00,14:00,19:00";
 
@@ -71,10 +76,10 @@ const maxOut = () => Math.max(2000, Math.min(8000, Math.floor((PER_BLOG_USD_CAP 
 
 // works with or without the optional engine tables
 let runtime = { auto: process.env.AUTO_PUBLISH !== "false", slots: SLOTS_FALLBACK };
-let mem = { day: "", count: 0, spent: 0, slots: {} };
+let mem = { day: "", count: 0, attempts: 0, fails: 0, spent: 0, slots: {} };
 let lastRun = null;
 let lastGen = null;
-const memDay = () => { const d = utcDay(); if (mem.day !== d) mem = { day: d, count: 0, spent: 0, slots: {} }; return mem; };
+const memDay = () => { const d = utcDay(); if (mem.day !== d) mem = { day: d, count: 0, attempts: 0, fails: 0, spent: 0, slots: {} }; return mem; };
 
 async function claude(model, maxTokens, system, user) {
   const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -88,12 +93,46 @@ async function claude(model, maxTokens, system, user) {
 }
 function parseJson(t) {
   if (!t) return null;
-  let str = String(t).trim();
-  const fence = str.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fence) str = fence[1].trim();
-  try { return JSON.parse(str); } catch {}
-  const a = str.indexOf("{"), b = str.lastIndexOf("}");
-  if (a !== -1 && b > a) { try { return JSON.parse(str.slice(a, b + 1)); } catch {} }
+  const raw = String(t).trim();
+
+  // 1. Straight parse.
+  try { return JSON.parse(raw); } catch {}
+
+  // 2. Fenced block. NOTE: the old version used a non-greedy ```...``` match,
+  // which is wrong here. Our payload is a JSON object whose blog_content is
+  // MARKDOWN, and markdown routinely contains its own ``` code fences. The
+  // non-greedy match stopped at the FIRST inner fence and handed back a
+  // truncated fragment that could never parse. That alone was enough to make
+  // every generation "fail" while still being billed. Take the outermost fence.
+  const first = raw.indexOf("```");
+  const last = raw.lastIndexOf("```");
+  if (first !== -1 && last > first) {
+    let inner = raw.slice(first + 3, last);
+    inner = inner.replace(/^json\s*/i, "").trim();
+    try { return JSON.parse(inner); } catch {}
+  }
+
+  // 3. Brace matching. lastIndexOf("}") is unreliable when the model emits a
+  // preamble or trailing prose, so walk from the first { and track depth,
+  // ignoring braces inside strings.
+  const start = raw.indexOf("{");
+  if (start !== -1) {
+    let depth = 0, inStr = false, esc = false;
+    for (let i = start; i < raw.length; i++) {
+      const c = raw[i];
+      if (esc) { esc = false; continue; }
+      if (c === "\\") { esc = true; continue; }
+      if (c === '"') { inStr = !inStr; continue; }
+      if (inStr) continue;
+      if (c === "{") depth++;
+      else if (c === "}") {
+        depth--;
+        if (depth === 0) {
+          try { return JSON.parse(raw.slice(start, i + 1)); } catch { break; }
+        }
+      }
+    }
+  }
   return null;
 }
 
@@ -106,10 +145,28 @@ async function settings() {
 }
 async function usageToday() {
   try {
-    const { data, error } = await supabase.from("blog_engine_usage").select("cost_usd").eq("day", utcDay()).eq("ok", true);
-    if (!error) return { count: data.length, spent: data.reduce((s, r) => s + Number(r.cost_usd || 0), 0) };
+    // MONEY BUG: this used to filter .eq("ok", true), so a run that called the
+    // API, was charged, and then failed to parse was logged with ok:false and
+    // EXCLUDED from the spend total. Spend therefore read $0 no matter how much
+    // had actually been burned, the cap never tripped, and the 5-minute cron
+    // retried forever. Failures cost exactly as much as successes, so the guard
+    // has to count every row.
+    const { data, error } = await supabase
+      .from("blog_engine_usage")
+      .select("cost_usd, ok")
+      .eq("day", utcDay());
+    if (!error) {
+      const rows = data || [];
+      return {
+        count: rows.filter((r) => r.ok).length,          // posts made
+        attempts: rows.length,                            // API calls paid for
+        fails: rows.filter((r) => !r.ok).length,
+        spent: rows.reduce((s, r) => s + Number(r.cost_usd || 0), 0),
+      };
+    }
   } catch { /* fall back */ }
-  const m = memDay(); return { count: m.count, spent: m.spent };
+  const m = memDay();
+  return { count: m.count, attempts: m.attempts, fails: m.fails, spent: m.spent };
 }
 // Durable counters based on blog_posts (the one table that always exists), so
 // caps survive free-tier restarts instead of resetting an in-memory counter.
@@ -128,16 +185,36 @@ async function hasPendingDraft() {
 }
 
 async function capBlocked() {
-  // Durable primary guard: how many posts were actually created today (survives restarts).
+  // CIRCUIT BREAKER. Without this, a run that fails for a reason that will keep
+  // failing (bad model name, malformed output, schema mismatch) is retried every
+  // five minutes forever, and every retry is billed. Three strikes and the
+  // engine stops until someone looks at it or the day rolls over.
+  if (consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
+    return `circuit breaker: ${consecutiveFails} consecutive failures. Check /api/status, then POST /api/reset-breaker.`;
+  }
+
+  const u = await usageToday();
+
+  // Money first. This is the guard that actually matters and it now counts
+  // failed calls, which are billed identically to successful ones.
+  if (u.spent >= DAILY_USD_CAP) return `daily budget ($${DAILY_USD_CAP})`;
+
+  // Attempt cap, not just a success cap. A day of nothing but failures used to
+  // be unlimited because zero posts were created.
+  if ((u.attempts ?? 0) >= DAILY_ATTEMPT_CAP) return `daily attempt cap (${DAILY_ATTEMPT_CAP} API calls)`;
+
+  // Durable success guard: how many posts were actually created today.
   const made = await postsCreatedToday();
   if (made >= DAILY_CAP) return `daily cap (${DAILY_CAP})`;
-  const u = await usageToday();
   if (u.count >= DAILY_CAP) return `daily cap (${DAILY_CAP})`;
-  if (u.spent >= DAILY_USD_CAP) return "daily budget";
   return null;
 }
 async function logUsage(row) {
-  const m = memDay(); m.count += 1; m.spent += Number(row.cost_usd || 0);
+  const m = memDay();
+  m.attempts += 1;
+  m.spent += Number(row.cost_usd || 0);
+  if (row.ok) { m.count += 1; consecutiveFails = 0; }
+  else { m.fails += 1; consecutiveFails += 1; }
   try { await supabase.from("blog_engine_usage").insert(row); } catch { /* optional */ }
 }
 
@@ -416,7 +493,10 @@ app.get("/api/status", async (_req, res) => {
     try { const { count } = await supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("is_published", true); published = count ?? 0; } catch {}
     res.json({
       signedIn: await ensureAuth(), auto: s.auto_publish, slots: s.slots,
-      today: u, caps: { daily: DAILY_CAP, usd: DAILY_USD_CAP },
+      today: u,
+      caps: { daily: DAILY_CAP, usd: DAILY_USD_CAP, attempts: DAILY_ATTEMPT_CAP },
+      breaker: { consecutiveFails, max: MAX_CONSECUTIVE_FAILS, tripped: consecutiveFails >= MAX_CONSECUTIVE_FAILS },
+      blocked: await capBlocked(),
       lastPost, prepared, published, slotRuns: memDay().slots, usingTables: !s._fallback, lastRun, lastGen,
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -443,6 +523,20 @@ app.post("/api/generate-article", requireAdmin, async (req, res) => {
     await logUsage({ day: utcDay(), model: WRITER, topic, input_tokens: out.inTok, output_tokens: out.outTok, cost_usd: Math.round(costOf(out.inTok, out.outTok) * 1e4) / 1e4, words: (parsed.blog_content || "").split(/\s+/).length, ok: !parsed.parse_error });
     res.json(parsed);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Clear the circuit breaker after fixing whatever was failing.
+app.post("/api/reset-breaker", requireAdmin, (_req, res) => {
+  const was = consecutiveFails;
+  consecutiveFails = 0;
+  res.json({ ok: true, clearedFailures: was });
+});
+
+// Emergency stop. Survives nothing but a restart, which is the point: it is for
+// "it is burning money right now and I need it to stop this second".
+app.post("/api/kill", requireAdmin, (_req, res) => {
+  consecutiveFails = MAX_CONSECUTIVE_FAILS;
+  res.json({ ok: true, stopped: true });
 });
 
 app.post("/api/tick", async (_req, res) => { try { res.json(await tick()); } catch (e) { res.status(500).json({ error: e.message }); } });
