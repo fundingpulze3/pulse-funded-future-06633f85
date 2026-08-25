@@ -9,16 +9,33 @@ Deno.serve(async (req) => {
   }
   const db = await getDb();
   const out: Record<string, unknown> = {};
-  for (const c of ["challenge_purchases", "page_visits", "user_roles", "profiles", "blog_posts", "blog_topics", "blog_slot_runs", "blog_settings", "blog_engine_usage"]) {
-    out[c] = await db.collection(c).countDocuments({});
+
+  // 1. does a sorted paged read of page_visits work at all?
+  for (const [name, run] of Object.entries({
+    visits_sorted_page: async () =>
+      (await db.collection("page_visits").find({}).sort({ created_at: -1 }).skip(0).limit(1000).toArray()).length,
+    visits_deep_page: async () =>
+      (await db.collection("page_visits").find({}).sort({ created_at: -1 }).skip(20000).limit(1000).toArray()).length,
+    purchases_sorted: async () =>
+      (await db.collection("challenge_purchases").find({}).sort({ created_at: -1 }).toArray()).length,
+    profiles_sorted_page: async () =>
+      (await db.collection("profiles").find({}).sort({ created_at: -1 }).skip(4000).limit(1000).toArray()).length,
+  })) {
+    const t = Date.now();
+    try {
+      out[name] = { ok: await run(), ms: Date.now() - t };
+    } catch (e) {
+      out[name] = { error: (e as Error).message, ms: Date.now() - t };
+    }
   }
-  out.roles = await db.collection("user_roles").find({}).limit(20).toArray();
-  out.recent_posts = await db.collection("blog_posts").find({}).sort({ created_at: -1 }).limit(5)
-    .project({ title: 1, created_at: 1, is_published: 1, _id: 0 }).toArray();
-  out.slot_runs = await db.collection("blog_slot_runs").find({}).sort({ created_at: -1 }).limit(10).toArray();
-  out.settings = await db.collection("blog_settings").find({}).toArray();
-  out.usage = await db.collection("blog_engine_usage").find({}).sort({ created_at: -1 }).limit(5).toArray();
-  out.topics = await db.collection("blog_topics").find({}).sort({ created_at: -1 }).limit(5).toArray();
+
+  // 2. indexes present?
+  out.indexes = {
+    page_visits: await db.collection("page_visits").indexes(),
+    challenge_purchases: await db.collection("challenge_purchases").indexes(),
+    profiles: await db.collection("profiles").indexes(),
+  };
+
   return new Response(JSON.stringify(out, null, 1), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
