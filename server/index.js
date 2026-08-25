@@ -162,11 +162,15 @@ async function usageToday() {
         attempts: rows.length,                            // API calls paid for
         fails: rows.filter((r) => !r.ok).length,
         spent: rows.reduce((s, r) => s + Number(r.cost_usd || 0), 0),
+        durable: true,
       };
     }
   } catch { /* fall back */ }
+  // In-memory fallback. NOT durable: Render's free tier sleeps and restarts,
+  // which resets these to zero and hands the engine a fresh budget it has not
+  // earned. Flagged so capBlocked can refuse to spend on an unverifiable number.
   const m = memDay();
-  return { count: m.count, attempts: m.attempts, fails: m.fails, spent: m.spent };
+  return { count: m.count, attempts: m.attempts, fails: m.fails, spent: m.spent, durable: false };
 }
 // Durable counters based on blog_posts (the one table that always exists), so
 // caps survive free-tier restarts instead of resetting an in-memory counter.
@@ -194,6 +198,15 @@ async function capBlocked() {
   }
 
   const u = await usageToday();
+
+  // FAIL CLOSED. If blog_engine_usage is missing or unwritable we cannot know
+  // what has been spent today, and the in-memory counter resets on every free
+  // tier restart. Spending against a number we cannot verify is exactly how a
+  // capped engine burns an uncapped amount. Refuse instead.
+  // Set BLOG_ENGINE_ALLOW_UNMETERED=1 to override, only for local testing.
+  if (u.durable === false && process.env.BLOG_ENGINE_ALLOW_UNMETERED !== "1") {
+    return "cannot verify today's spend (blog_engine_usage unreachable). Refusing to spend.";
+  }
 
   // Money first. This is the guard that actually matters and it now counts
   // failed calls, which are billed identically to successful ones.
@@ -408,7 +421,12 @@ async function tick() {
   const slots = (s.slots || SLOTS_FALLBACK).split(",").map((x) => x.trim()).filter(Boolean).sort();
   const results = [];
 
-  for (const slot of slots.filter((t) => t <= hhmm)) {
+  // Only the most recent due slot. This used to iterate EVERY slot earlier than
+  // now, so a restart with empty in-memory state fired all of them back to back:
+  // three slots meant three billed generations per tick, repeating on every
+  // free tier wake. One slot per tick, and the durable guards below decide.
+  const due = slots.filter((t) => t <= hhmm).slice(-1);
+  for (const slot of due) {
     // Durable guard first — if this slot already produced a post today, skip it
     // regardless of in-memory state (survives free-tier restarts and pings).
     if (await slotAlreadyPosted(utcDay(), slot, slots)) { memDay().slots[slot] = "posted"; continue; }
