@@ -5,12 +5,14 @@ import logo from "@/assets/logo.png";
 const footerLinks = {
   Company: [
     { label: "About", href: "/about" },
-    { label: "Careers", href: "#" },
+    { label: "Careers", href: "/careers" },
+    { label: "Contact", href: "/help" },
   ],
   Resources: [
     { label: "FAQ", href: "/faq" },
     { label: "Help Center", href: "/help" },
     { label: "Blog", href: "/blog" },
+    { label: "Challenges", href: "/#challenges" },
   ],
   Legal: [
     { label: "Terms", href: "/terms" },
