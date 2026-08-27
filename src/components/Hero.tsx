@@ -89,8 +89,8 @@ const Hero = () => {
           </MagneticButton>
           <MagneticButton>
             <Button variant="outline" size="lg" className="rounded-xl text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6"
-              onClick={() => document.getElementById("challenges")?.scrollIntoView({ behavior: "smooth" })}>
-              View Rules
+              onClick={() => window.open("https://discord.gg/YgWhnxNewG", "_blank", "noopener")}>
+              Join Discord
             </Button>
           </MagneticButton>
         </div>

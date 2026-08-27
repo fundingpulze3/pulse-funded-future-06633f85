@@ -29,25 +29,26 @@ const AnnouncementBar = () => {
 
   return (
     <div
-      className="w-full py-2.5 px-4 text-center text-sm font-medium relative z-[60] flex items-center justify-center gap-2"
+      className="w-full py-2 pl-4 pr-10 sm:pr-12 text-center text-[11px] leading-snug sm:text-sm font-medium relative z-[60] flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5"
       style={{ backgroundColor: announcement.bg_color, color: announcement.text_color }}
     >
-      <span>{announcement.message}</span>
+      <span className="break-words">{announcement.message}</span>
       {announcement.link_url && announcement.link_text && (
         <a
           href={announcement.link_url}
-          className="underline font-semibold hover:opacity-80 transition-opacity"
+          className="underline font-semibold hover:opacity-80 transition-opacity whitespace-nowrap"
           style={{ color: announcement.text_color }}
         >
           {announcement.link_text}
         </a>
       )}
       <button
+        aria-label="Dismiss announcement"
         onClick={() => setDismissed(true)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition-opacity"
+        className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition-opacity p-1"
         style={{ color: announcement.text_color }}
       >
-        <X size={16} />
+        <X size={14} />
       </button>
     </div>
   );

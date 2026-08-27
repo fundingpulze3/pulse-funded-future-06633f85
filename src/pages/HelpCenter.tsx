@@ -271,9 +271,12 @@ const HelpCenter = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Force dark mode
+  // Help Center uses the light theme: black header/hero on top, white content below.
   useEffect(() => {
-    document.documentElement.classList.add("dark");
+    const root = document.documentElement;
+    const wasDark = root.classList.contains("dark");
+    root.classList.remove("dark");
+    return () => { if (wasDark) root.classList.add("dark"); };
   }, []);
 
   // Determine base path (either /help or / for help subdomain)
