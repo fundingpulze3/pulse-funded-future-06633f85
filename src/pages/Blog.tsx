@@ -168,37 +168,39 @@ const Blog = () => {
                   className="group cursor-pointer"
                   onClick={() => navigate(`/blog/${featuredPost.slug}`)}
                 >
-                  <div className="relative overflow-hidden rounded-2xl aspect-[16/10] bg-card border border-border">
-                    {featuredPost.thumbnail_url ? (
-                      <img
-                        src={featuredPost.thumbnail_url}
-                        alt={featuredPost.thumbnail_alt || featuredPost.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-muted flex items-center justify-center">
-                        <span className="text-muted-foreground text-sm">No thumbnail</span>
-                      </div>
-                    )}
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                    {/* Content */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+                  <div className="rounded-2xl overflow-hidden border border-border bg-card">
+                    <div className="relative aspect-[16/10] overflow-hidden">
+                      {featuredPost.thumbnail_url ? (
+                        <img
+                          src={featuredPost.thumbnail_url}
+                          alt={featuredPost.thumbnail_alt || featuredPost.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                          <span className="text-muted-foreground text-sm">No thumbnail</span>
+                        </div>
+                      )}
+                    </div>
+                    {/* Content — kept below the image, never overlaid on it, so a
+                        thumbnail with its own baked-in text/graphics can never
+                        collide with the real post title. */}
+                    <div className="p-6 md:p-8">
                       {featuredPost.is_featured && (
                         <Badge className="mb-3 bg-foreground text-background border-0 text-xs font-medium">
                           Featured
                         </Badge>
                       )}
-                      <h2 className="text-white font-display text-2xl md:text-3xl font-bold leading-tight group-hover:underline decoration-1 underline-offset-4">
+                      <h2 className="font-display text-2xl md:text-3xl font-bold leading-tight group-hover:underline decoration-1 underline-offset-4">
                         {featuredPost.title}
                       </h2>
                       {featuredPost.excerpt && (
-                        <p className="mt-3 text-white/70 text-sm md:text-base line-clamp-3">
+                        <p className="mt-3 text-muted-foreground text-sm md:text-base line-clamp-3">
                           <Highlighted text={featuredPost.excerpt} keyword={featuredPost.focus_keyword} />
                         </p>
                       )}
-                      <div className="mt-4 flex items-center gap-4 text-white/50 text-xs">
+                      <div className="mt-4 flex items-center gap-4 text-muted-foreground text-xs">
                         <span className="flex items-center gap-1">
                           <Calendar size={12} />
                           {formatDate(featuredPost.published_at || featuredPost.created_at)}
