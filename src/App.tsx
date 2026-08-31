@@ -22,6 +22,7 @@ import FAQ from "./pages/FAQ";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
+import Careers from "./pages/Careers";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import DashboardCertificates from "./pages/DashboardCertificates";
@@ -91,6 +92,7 @@ const AppRoutes = () => {
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/about" element={<About />} />
+      <Route path="/careers" element={<Careers />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/help/*" element={<HelpCenter />} />

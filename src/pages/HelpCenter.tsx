@@ -568,8 +568,8 @@ const HelpCenter = () => {
 
   // ---- LANDING PAGE ----
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground">
+    <div className="min-h-screen bg-white">
+      <header className="bg-black text-white">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <button onClick={goHome} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <img src={logo} alt="Funding Pulze" className="h-7 w-7 rounded-lg" />
@@ -578,16 +578,16 @@ const HelpCenter = () => {
         </div>
       </header>
 
-      <section className="bg-primary pb-16 pt-10">
+      <section className="bg-black pb-16 pt-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-primary-foreground mb-6 sm:mb-8">Funding Pulze Help Centre</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 sm:mb-8">Funding Pulze Help Centre</h1>
           <div className="relative max-w-2xl mx-auto" ref={searchRef}>
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
             <input value={search}
               onChange={e => { setSearch(e.target.value); if (selectedCollection) goHome(); setShowSuggestions(true); }}
               onFocus={() => setShowSuggestions(true)}
               placeholder="Search for articles..."
-              className="w-full h-13 pl-12 pr-4 py-3.5 bg-foreground/10 border border-foreground/15 rounded-xl text-primary-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all" />
+              className="w-full h-13 pl-12 pr-4 py-3.5 bg-white/10 border border-white/15 rounded-xl text-white text-sm placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent transition-all" />
             {showSuggestions && <SearchSuggestions articles={articles} query={search} onSelect={selectArticle} isDark />}
           </div>
         </div>
@@ -596,40 +596,40 @@ const HelpCenter = () => {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 -mt-2 pb-10">
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+            <div className="animate-spin h-6 w-6 border-2 border-black border-t-transparent rounded-full" />
           </div>
         ) : search.trim() || (selectedCollection && !selectedArticle) ? (
           <div className="pt-8">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-xl font-bold text-foreground">
+              <h2 className="font-display text-xl font-bold text-black">
                 {selectedCollection ? selectedCollection.name : `Results for "${search}"`}
               </h2>
               {selectedCollection && (
                 <button onClick={goHome}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-black transition-colors">
                   <ArrowLeft size={12} /> All categories
                 </button>
               )}
             </div>
             {selectedCollection && (() => {
-              return selectedCollection.description ? <p className="text-sm text-muted-foreground mb-6 -mt-2">{selectedCollection.description}</p> : null;
+              return selectedCollection.description ? <p className="text-sm text-gray-500 mb-6 -mt-2">{selectedCollection.description}</p> : null;
             })()}
             {filteredArticles.length === 0 ? (
-              <div className="text-center py-16 bg-card rounded-2xl border border-border">
-                <Search size={32} className="text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-muted-foreground">No articles found</p>
-                <p className="text-xs text-muted-foreground mt-1">Try a different search term</p>
+              <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+                <Search size={32} className="text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No articles found</p>
+                <p className="text-xs text-gray-400 mt-1">Try a different search term</p>
               </div>
             ) : (
-              <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden divide-y divide-border">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden divide-y divide-gray-200">
                 {filteredArticles.map(a => (
                   <button key={a.id} onClick={() => selectArticle(a)}
-                    className="w-full text-left px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between group">
+                    className="w-full text-left px-6 py-4 hover:bg-gray-50 transition-colors flex items-center justify-between group">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{a.title}</p>
-                      {a.excerpt && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{a.excerpt}</p>}
+                      <p className="text-sm font-medium text-black">{a.title}</p>
+                      {a.excerpt && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{a.excerpt}</p>}
                     </div>
-                    <ChevronRight size={14} className="text-muted-foreground/50 group-hover:text-muted-foreground shrink-0 ml-3" />
+                    <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-500 shrink-0 ml-3" />
                   </button>
                 ))}
               </div>
@@ -638,14 +638,14 @@ const HelpCenter = () => {
         ) : (
           <div className="space-y-8 pt-8">
             {mostViewed.length > 0 && (
-              <div className="bg-card rounded-2xl border border-border shadow-sm p-6 lg:p-8">
-                <h2 className="font-display text-xl font-bold text-foreground mb-5">Most Viewed Articles</h2>
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 lg:p-8">
+                <h2 className="font-display text-xl font-bold text-black mb-5">Most Viewed Articles</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
                   {mostViewed.map(a => (
                     <button key={a.id} onClick={() => selectArticle(a)}
-                      className="text-left py-3 flex items-center justify-between border-b border-border last:border-0 hover:text-foreground transition-colors group">
-                      <span className="text-sm text-foreground/80 group-hover:text-foreground">{a.title}</span>
-                      <ChevronRight size={14} className="text-muted-foreground/50 group-hover:text-muted-foreground shrink-0 ml-2" />
+                      className="text-left py-3 flex items-center justify-between border-b border-gray-200 last:border-0 hover:text-black transition-colors group">
+                      <span className="text-sm text-gray-600 group-hover:text-black">{a.title}</span>
+                      <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-500 shrink-0 ml-2" />
                     </button>
                   ))}
                 </div>
@@ -658,28 +658,28 @@ const HelpCenter = () => {
                 const icon = iconMap[c.icon || "folder"] || iconMap.folder;
                 return (
                   <button key={c.id} onClick={() => selectCollection(c.id)}
-                    className="text-left bg-card rounded-2xl border border-border p-6 hover:shadow-lg hover:border-border/70 transition-all group">
-                    <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center mb-4 text-foreground/60 group-hover:border-muted-foreground transition-colors">
+                    className="text-left bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg hover:border-gray-300 transition-all group">
+                    <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center mb-4 text-gray-500 group-hover:border-gray-400 transition-colors">
                       {icon}
                     </div>
-                    <h3 className="font-display text-base font-bold text-foreground mb-1">{c.name}</h3>
-                    {c.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{c.description}</p>}
-                    <p className="text-xs text-muted-foreground">{count} article{count !== 1 ? "s" : ""}</p>
+                    <h3 className="font-display text-base font-bold text-black mb-1">{c.name}</h3>
+                    {c.description && <p className="text-sm text-gray-500 mb-3 line-clamp-2">{c.description}</p>}
+                    <p className="text-xs text-gray-400">{count} article{count !== 1 ? "s" : ""}</p>
                   </button>
                 );
               })}
             </div>
 
             {collections.length === 0 && articles.length > 0 && (
-              <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden divide-y divide-border">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden divide-y divide-gray-200">
                 {articles.map(a => (
                   <button key={a.id} onClick={() => selectArticle(a)}
-                    className="w-full text-left px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between group">
+                    className="w-full text-left px-6 py-4 hover:bg-gray-50 transition-colors flex items-center justify-between group">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{a.title}</p>
-                      {a.excerpt && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{a.excerpt}</p>}
+                      <p className="text-sm font-medium text-black">{a.title}</p>
+                      {a.excerpt && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{a.excerpt}</p>}
                     </div>
-                    <ChevronRight size={14} className="text-muted-foreground/50 group-hover:text-muted-foreground shrink-0 ml-3" />
+                    <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-500 shrink-0 ml-3" />
                   </button>
                 ))}
               </div>
@@ -691,15 +691,15 @@ const HelpCenter = () => {
         )}
       </main>
 
-      <footer className="border-t border-border bg-card py-8 mt-4">
+      <footer className="border-t border-gray-200 bg-white py-8 mt-4">
         <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <img src={logo} alt="Funding Pulze" className="h-5 w-5 rounded" />
-            <span className="text-xs text-muted-foreground">© {new Date().getFullYear()} Funding Pulze. All rights reserved.</span>
+            <span className="text-xs text-gray-500">© {new Date().getFullYear()} Funding Pulze. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://fundingpulze.com" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Main Site</a>
-            <a href="https://fundingpulze.com/faq" className="text-xs text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+            <a href="https://fundingpulze.com" className="text-xs text-gray-500 hover:text-black transition-colors">Main Site</a>
+            <a href="https://fundingpulze.com/faq" className="text-xs text-gray-500 hover:text-black transition-colors">FAQ</a>
           </div>
         </div>
       </footer>

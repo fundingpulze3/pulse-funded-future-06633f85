@@ -87,7 +87,7 @@ const REFERRAL_DOMAIN = "https://fundingpulze.com";
 type AccountFilter = "all" | "1-step" | "2-step" | "ongoing" | "breached" | "funded" | "completed";
 type SidebarTab = "overview" | "affiliate";
 type StepFilter = "all" | "1-step" | "2-step";
-type StatusFilter = "all" | "ongoing" | "funded" | "breached" | "completed";
+type StatusFilter = "all" | "ongoing" | "phase1" | "phase2" | "funded" | "breached" | "completed";
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -311,6 +311,8 @@ const Dashboard = () => {
     return accountViews.filter(v => {
       if (stepFilter === "1-step" && !getStepType(v.purchase).includes("1")) return false;
       if (stepFilter === "2-step" && !getStepType(v.purchase).includes("2")) return false;
+      if (statusFilter === "phase1") return v.phaseLabel === "Phase 1" && v.derivedStatus === "ongoing";
+      if (statusFilter === "phase2") return v.phaseLabel === "Phase 2" && v.derivedStatus === "ongoing";
       if (statusFilter !== "all" && v.derivedStatus !== statusFilter) return false;
       return true;
     });
@@ -492,7 +494,8 @@ const Dashboard = () => {
 
   const statusOptions: { key: StatusFilter; label: string }[] = [
     { key: "all", label: "All" },
-    { key: "ongoing", label: "Active" },
+    { key: "phase1", label: "Phase 1" },
+    { key: "phase2", label: "Phase 2" },
     { key: "funded", label: "Funded" },
     { key: "breached", label: "Not Passed" },
     { key: "completed", label: "Passed" },

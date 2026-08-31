@@ -14,7 +14,7 @@ import {
   CheckCircle2, XCircle, DollarSign, Ticket, Home, LogOut,
   LayoutDashboard, ShoppingCart, TrendingUp, BarChart3, Globe, LogIn, BookOpen, FileText, Award, Layers, Headphones, Brain,
   LineChart as LineChartIcon, Search as SearchIcon, Bell, Key,
-  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles, Smartphone, IndianRupee, Power, Mail,
+  Image as ImageIcon, ShieldCheck, Menu, X as XIcon, Sparkles, Smartphone, IndianRupee, Power, Mail, RefreshCw,
 } from "lucide-react";
 import HelpCenterCMS from "@/components/admin/HelpCenterCMS";
 import BlogCMS from "@/components/admin/BlogCMS";
@@ -182,6 +182,19 @@ const Admin = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, adminLoading, user, isAdmin, userRole, tab, navigate, allowedTabs, fallbackTab]);
+
+  // Keep admin data (orders, analytics, etc.) fresh automatically while the
+  // panel stays open — previously it only ever loaded once on mount, so new
+  // orders/records that came in afterward silently didn't show until a full
+  // page reload.
+  useEffect(() => {
+    if (!isAdmin) return;
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") fetchAll();
+    }, 30000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   // Paginated fetch helper to get ALL rows beyond 1000 limit
   const fetchAllRows = async (table: string, orderCol: string, ascending: boolean = false) => {
@@ -796,15 +809,27 @@ const Admin = () => {
 
           {/* ===== Orders Tab ===== */}
           {tab === "orders" && (
-            <OrdersCMS
-              purchases={purchases}
-              profiles={profiles}
-              challenges={challenges}
-              getProfileName={getProfileName}
-              getProfileByUserId={(userId: string) => profiles.find((p: any) => p.user_id === userId)}
-              getChallengeNameById={getChallengeNameById}
-              onRefresh={fetchAll}
-            />
+            <div>
+              <div className="mb-3 flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchAll()}
+                  className="gap-1.5 text-xs"
+                >
+                  <RefreshCw size={13} /> Refresh
+                </Button>
+              </div>
+              <OrdersCMS
+                purchases={purchases}
+                profiles={profiles}
+                challenges={challenges}
+                getProfileName={getProfileName}
+                getProfileByUserId={(userId: string) => profiles.find((p: any) => p.user_id === userId)}
+                getChallengeNameById={getChallengeNameById}
+                onRefresh={fetchAll}
+              />
+            </div>
           )}
 
           {/* ===== Challenges Tab ===== */}

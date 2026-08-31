@@ -225,9 +225,9 @@ const Shop = () => {
           {/* Column Headers */}
           <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-2">
             <div />
-            <p className="text-center font-display font-bold text-[10px] sm:text-lg text-foreground">Student</p>
-            <p className="text-center font-display font-bold text-[10px] sm:text-lg text-foreground">Practitioner</p>
-            <p className="text-center font-display font-bold text-[10px] sm:text-lg text-foreground">Master</p>
+            <p className="text-center font-display font-bold text-[10px] sm:text-lg text-foreground">Student - Phase 1</p>
+            <p className="text-center font-display font-bold text-[10px] sm:text-lg text-foreground">Practitioner - Phase 2</p>
+            <p className="text-center font-display font-bold text-[10px] sm:text-lg text-foreground">Master - Funded</p>
           </div>
 
           {/* Rules Table */}
@@ -266,7 +266,19 @@ const Shop = () => {
               </div>
               <div>
                 <span className="text-xs sm:text-sm text-muted-foreground">Price: </span>
-                <span className="font-display text-3xl sm:text-4xl font-bold text-foreground">{price}</span>
+                {account === "$100K" ? (
+                  <span className="inline-flex items-baseline gap-2">
+                    <span className="font-display text-3xl sm:text-4xl font-bold text-foreground">{price}</span>
+                    <span className="text-sm sm:text-base text-muted-foreground line-through">
+                      ${(Number(price.replace("$", "")) * 2).toLocaleString()}
+                    </span>
+                    <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-highlight text-primary-foreground">
+                      -50%
+                    </span>
+                  </span>
+                ) : (
+                  <span className="font-display text-3xl sm:text-4xl font-bold text-foreground">{price}</span>
+                )}
               </div>
             </div>
             <Button

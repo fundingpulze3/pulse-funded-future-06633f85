@@ -76,6 +76,9 @@ async function ensureCopperplateFont(): Promise<void> {
       const font = new FontFace("Copperplate Gothic", src);
       await font.load();
       document.fonts.add(font);
+      // Wait for the font to be fully ready for canvas measurement/drawing —
+      // font.load() resolving is not always sufficient before ctx.font usage.
+      await document.fonts.ready;
       fontLoaded = true;
       return;
     } catch {

@@ -3,11 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { db as supabase } from "@/integrations/db/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Search, Clock, Eye, ArrowRight, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Search, Clock, Eye, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface BlogPost {
   id: string;
@@ -47,7 +46,6 @@ const Blog = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [carouselIndex, setCarouselIndex] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,10 +82,6 @@ const Blog = () => {
 
   const featuredPost = useMemo(() => filteredPosts.find((p) => p.is_featured) || filteredPosts[0], [filteredPosts]);
   const restPosts = useMemo(() => filteredPosts.filter((p) => p.id !== featuredPost?.id), [filteredPosts, featuredPost]);
-
-  const postsPerPage = 3;
-  const maxCarouselIndex = Math.max(0, Math.ceil(restPosts.length / postsPerPage) - 1);
-  const visiblePosts = restPosts.slice(carouselIndex * postsPerPage, carouselIndex * postsPerPage + postsPerPage);
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "";
@@ -144,7 +138,7 @@ const Blog = () => {
             <Input
               placeholder="Search articles..."
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCarouselIndex(0); }}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-11 h-12 rounded-xl bg-card border-border text-foreground placeholder:text-muted-foreground"
             />
           </motion.div>
@@ -174,7 +168,7 @@ const Blog = () => {
                   className="group cursor-pointer"
                   onClick={() => navigate(`/blog/${featuredPost.slug}`)}
                 >
-                  <div className="relative overflow-hidden rounded-2xl aspect-[4/5] bg-card border border-border">
+                  <div className="relative overflow-hidden rounded-2xl aspect-[16/10] bg-card border border-border">
                     {featuredPost.thumbnail_url ? (
                       <img
                         src={featuredPost.thumbnail_url}
@@ -277,86 +271,62 @@ const Blog = () => {
             </div>
           </section>
 
-          {/* Carousel Section — More Articles */}
+          {/* More Articles — plain grid, no carousel, so every post is reachable by scrolling */}
           {restPosts.length > 4 && (
-            <section className="px-6 pb-20">
+            <section className="px-4 sm:px-6 pb-20">
               <div className="max-w-6xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="font-display text-2xl font-bold">More Articles</h2>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="rounded-full h-9 w-9"
-                      onClick={() => setCarouselIndex(Math.max(0, carouselIndex - 1))}
-                      disabled={carouselIndex === 0}
-                    >
-                      <ChevronLeft size={16} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="rounded-full h-9 w-9"
-                      onClick={() => setCarouselIndex(Math.min(maxCarouselIndex, carouselIndex + 1))}
-                      disabled={carouselIndex >= maxCarouselIndex}
-                    >
-                      <ChevronRight size={16} />
-                    </Button>
-                  </div>
-                </div>
+                <h2 className="font-display text-2xl font-bold mb-8">More Articles</h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <AnimatePresence mode="wait">
-                    {restPosts.slice(4 + carouselIndex * postsPerPage, 4 + carouselIndex * postsPerPage + postsPerPage).map((post, i) => (
-                      <motion.div
-                        key={post.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="group cursor-pointer"
-                        onClick={() => navigate(`/blog/${post.slug}`)}
-                      >
-                        <div className="rounded-xl overflow-hidden border border-border bg-card hover:shadow-lg transition-shadow">
-                          {post.thumbnail_url ? (
-                            <div className="aspect-video overflow-hidden">
-                              <img
-                                src={post.thumbnail_url}
-                                alt={post.thumbnail_alt || post.title}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                loading="lazy"
-                              />
-                            </div>
-                          ) : (
-                            <div className="aspect-video bg-muted flex items-center justify-center">
-                              <span className="text-muted-foreground text-xs">No thumbnail</span>
-                            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {restPosts.slice(4).map((post, i) => (
+                    <motion.div
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-40px" }}
+                      transition={{ delay: (i % 3) * 0.05 }}
+                      className="group cursor-pointer"
+                      onClick={() => navigate(`/blog/${post.slug}`)}
+                    >
+                      <div className="rounded-xl overflow-hidden border border-border bg-card hover:shadow-lg hover:border-foreground/20 transition-all">
+                        {post.thumbnail_url ? (
+                          <div className="aspect-video overflow-hidden">
+                            <img
+                              src={post.thumbnail_url}
+                              alt={post.thumbnail_alt || post.title}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div className="aspect-video bg-muted flex items-center justify-center">
+                            <span className="text-muted-foreground text-xs">No thumbnail</span>
+                          </div>
+                        )}
+                        <div className="p-5">
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {formatDate(post.published_at || post.created_at)}
+                          </p>
+                          <h3 className="font-display text-base font-bold leading-snug group-hover:underline line-clamp-2">
+                            {post.title}
+                          </h3>
+                          {post.excerpt && (
+                            <p className="mt-2 text-sm text-muted-foreground line-clamp-2"><Highlighted text={post.excerpt} keyword={post.focus_keyword} /></p>
                           )}
-                          <div className="p-5">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              {formatDate(post.published_at || post.created_at)}
-                            </p>
-                            <h3 className="font-display text-base font-bold leading-snug group-hover:underline line-clamp-2">
-                              {post.title}
-                            </h3>
-                            {post.excerpt && (
-                              <p className="mt-2 text-sm text-muted-foreground line-clamp-2"><Highlighted text={post.excerpt} keyword={post.focus_keyword} /></p>
-                            )}
-                            <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-                              {post.reading_time > 0 && (
-                                <span className="flex items-center gap-1">
-                                  <Clock size={11} /> {post.reading_time} min
-                                </span>
-                              )}
+                          <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                            {post.reading_time > 0 && (
                               <span className="flex items-center gap-1">
-                                <Eye size={11} /> {post.views_count}
+                                <Clock size={11} /> {post.reading_time} min
                               </span>
-                            </div>
+                            )}
+                            <span className="flex items-center gap-1">
+                              <Eye size={11} /> {post.views_count}
+                            </span>
                           </div>
                         </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </section>
