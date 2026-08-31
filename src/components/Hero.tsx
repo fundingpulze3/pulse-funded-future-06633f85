@@ -60,7 +60,13 @@ const Hero = () => {
       {/* Background image */}
       <div className="absolute inset-0 z-0">
         <img src={heroBg} alt="" className="w-full h-full object-cover object-center" aria-hidden="true" />
+        {/* Full-height wash so the whole scene recedes a bit, not just near the bottom */}
+        <div className="absolute inset-0 bg-background/45" />
+        {/* Bottom-heavy fade, same as before, for the ticker/buttons area */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        {/* Targeted vignette centered on the text column — guarantees legibility
+            no matter where decorative elements land in the source photo. */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_60%_at_50%_45%,hsl(var(--background)/0.75)_0%,transparent_70%)]" />
       </div>
 
       <div className="relative z-10 text-center max-w-4xl mx-auto px-6 drop-shadow-lg">
