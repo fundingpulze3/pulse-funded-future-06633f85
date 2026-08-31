@@ -19,7 +19,7 @@ const USD_TO_INR = 85;
 export default function UPIOrdersCMS({
   purchases, profiles, challenges, getProfileName, getProfileByUserId, getChallengeNameById, onRefresh,
 }: UPIOrdersCMSProps) {
-  const [filter, setFilter] = useState<"all" | "pending" | "completed" | "cancelled">("all");
+  const [filter, setFilter] = useState<"all" | "pending" | "completed" | "cancelled" | "failed">("all");
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -46,6 +46,7 @@ export default function UPIOrdersCMS({
     pending: upiOrders.filter(p => p.payment_status === "pending").length,
     completed: upiOrders.filter(p => p.payment_status === "completed").length,
     cancelled: upiOrders.filter(p => p.payment_status === "cancelled").length,
+    failed: upiOrders.filter(p => ["failed", "expired"].includes(p.payment_status)).length,
   }), [upiOrders]);
 
   const updateStatus = async (id: string, status: "confirmed" | "cancelled") => {
